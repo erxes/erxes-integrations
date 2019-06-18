@@ -6,7 +6,7 @@ import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Conversations } from './models';
 import receiveMessage from './receiveMessage';
-import { getPageAccessToken, getPageList, graphRequest } from './utils';
+import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
 
 const init = async app => {
   app.get('/fblogin', loginMiddleware);
@@ -16,6 +16,13 @@ const init = async app => {
 
     const { accountId, integrationId, data } = req.body;
     const facebookPageIds = JSON.parse(data).pageIds;
+
+    const account = await Accounts.findOne({ _id: accountId });
+
+    if (!account) {
+      debugFacebook('Account not found');
+      return next(new Error('Account not found'));
+    }
 
     const integration = await Integrations.create({
       kind: 'facebook',
@@ -27,7 +34,10 @@ const init = async app => {
     const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
     const DOMAIN = getEnv({ name: 'DOMAIN' });
 
+    debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
+
     if (ENDPOINT_URL) {
+      // send domain to core endpoints
       try {
         await sendRequest({
           url: ENDPOINT_URL,
@@ -40,6 +50,23 @@ const init = async app => {
       } catch (e) {
         await Integrations.remove({ _id: integration._id });
         return next(e);
+      }
+
+      for (const pageId of facebookPageIds) {
+        try {
+          const pageAccessToken = await getPageAccessToken(pageId, account.token);
+
+          try {
+            await subscribePage(pageId, pageAccessToken);
+            debugFacebook(`Successfully subscribed page ${pageId}`);
+          } catch (e) {
+            debugFacebook(`Error ocurred while trying to subscribe page ${e.message}`);
+            return next(e);
+          }
+        } catch (e) {
+          debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+          return next(e);
+        }
       }
     }
 
@@ -76,7 +103,7 @@ const init = async app => {
   app.post('/facebook/reply', async (req, res, next) => {
     debugRequest(debugFacebook, req);
 
-    const { integrationId, conversationId, content } = req.body;
+    const { integrationId, conversationId, content, attachments } = req.body;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId });
 
@@ -104,16 +131,26 @@ const init = async app => {
     try {
       pageAccessToken = await getPageAccessToken(conversation.recipientId, account.token);
     } catch (e) {
-      debugFacebook(
-        `Error ocurred while trying to get page access token with ${conversation.recipientId} ${account.token}`,
-      );
+      debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
       return next(e);
+    }
+
+    let attachment;
+
+    if (attachments && attachments.length > 0) {
+      attachment = {
+        type: 'file',
+        payload: {
+          url: attachments[0].url,
+        },
+      };
     }
 
     const data = {
       recipient: { id: conversation.senderId },
       message: {
         text: content,
+        attachment,
       },
     };
 
@@ -122,7 +159,8 @@ const init = async app => {
       debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
       return res.json(response);
     } catch (e) {
-      debugFacebook(`Error ocurred while trying to send post request to facebook ${JSON.stringify(data)}`);
+      debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
+      return next(new Error(e));
     }
   });
 
@@ -152,42 +190,48 @@ const init = async app => {
   });
 
   app.post('/facebook/receive', (req, res, next) => {
-    adapter.processActivity(req, res, async context => {
-      const { activity } = context;
+    adapter
+      .processActivity(req, res, async context => {
+        const { activity } = context;
 
-      if (activity.type === 'message') {
-        debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
+        if (activity.type === 'message') {
+          debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
 
-        const pageId = activity.recipient.id;
+          const pageId = activity.recipient.id;
 
-        const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+          const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
 
-        if (!integration) {
-          debugFacebook(`Integration not found with pageId: ${pageId}`);
-          return next();
+          if (!integration) {
+            debugFacebook(`Integration not found with pageId: ${pageId}`);
+            return next();
+          }
+
+          const account = await Accounts.findOne({ _id: integration.accountId });
+
+          if (!account) {
+            debugFacebook(`Account not found with _id: ${integration.accountId}`);
+            return next();
+          }
+
+          try {
+            accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
+          } catch (e) {
+            debugFacebook(`Error occurred while getting page access token: ${e.message}`);
+            return next();
+          }
+
+          await receiveMessage(adapter, activity);
+
+          debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
         }
 
-        const account = await Accounts.findOne({ _id: integration.accountId });
+        next();
+      })
 
-        if (!account) {
-          debugFacebook(`Account not found with _id: ${integration.accountId}`);
-          return next();
-        }
-
-        try {
-          accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
-        } catch (e) {
-          debugFacebook(`Error occurred while getting page access token: ${e.message}`);
-          return next();
-        }
-
-        await receiveMessage(adapter, activity);
-
-        debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
-      }
-
-      next();
-    });
+      .catch(e => {
+        debugFacebook(`Error occurred while processing activity: ${e.message}`);
+        next();
+      });
   });
 };
 
