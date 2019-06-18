@@ -45,6 +45,7 @@
     "meteor-random": "^0.0.3",
     "mongoose": "^5.2.16",
     "node-scheduler": "^1.0.0",
+    "request": "^2.88.0",
     "requestify": "^0.2.5"
   },
   "peerOptionalDependencies": {

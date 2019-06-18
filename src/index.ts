@@ -4,8 +4,10 @@ import * as express from 'express';
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
+import initGmail from './gmail/controller';
 import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
+import { init } from './startup';
 
 // load environment variables
 dotenv.config();
@@ -62,6 +64,9 @@ app.post('/accounts/remove', async (req, res) => {
 // init bots
 initFacebook(app);
 
+// init gmail
+initGmail(app);
+
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
@@ -72,4 +77,7 @@ const { PORT } = process.env;
 
 app.listen(PORT, () => {
   debugInit(`Integrations server is running on port ${PORT}`);
+
+  // Initialize startup
+  init();
 });

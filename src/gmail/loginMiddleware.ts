@@ -40,7 +40,7 @@ const loginMiddleware = async (req, res) => {
     await Accounts.create({
       name: email,
       uid: email,
-      kind: 'gmail',
+      kind: 'google',
       token: access_token,
       tokenSecret: credentials.refresh_token,
       expireDate: credentials.expiry_date,
@@ -52,7 +52,7 @@ const loginMiddleware = async (req, res) => {
 
   debugResponse(debugGmail, req, url);
 
-  return res.redirect();
+  return res.redirect(url);
 };
 
 export default loginMiddleware;

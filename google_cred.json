@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "erxes-gmail-244007",
+  "private_key_id": "eff19e5190e5647bc958a50932a19016ace83e3f",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC2gIFvmqELlvKm\ntjEpfJfLf628sA5n6muVWMT4H54QXQVlJtrKqrZKA40bCaTMpMYlfYvzouTs6u+Q\nwVSjV669vh/tn70Dr5enX/RJ8LvCQ5GCVBAByG13LThUihhSLsRsd2ZytuOzU0rF\nHe/exAh6vjuE17PvZ6PAb35uK6dmRSi7g8T94g+UgHb7WZGEfudhAG0gMqs03SIC\n5nrQjaBLlJCaO/+QE2bqfyhWTJo1Wv2OslHyvmRRUWRWgLYEX0snKiSoaMd9kzOF\n4N+rEiHAHaDdCrMn4b6B8P1QQvdx2vHeS2Bkm0M7IGRHDj4SUk8v0Yhh3RAyKWnj\n+WGnUDSFAgMBAAECggEAFf1Q2zol6mgTL6wnK0kEXzQwoloSOkogEVwjS4Q/vtf+\ndOwkE6RTF4LrBxV34mJ+L3k7mi0H6VX7bJUm1hGUD++vGCoVk7KeEsA4hoo3jVYn\n26y2Swizy9bKgUEsYgaZizotwWew8uP3z91mEBDNtsBiGoUE/LUfoWmtsaeX4XYC\ntWSd+9CC0h28M86TXLoI66T5yTPSIoXVeBWCzfYDveUUfX9vwzzEm91g73aPHuAk\nQPCFOqymZC5M7M4wlAPl1uDSUuMFM+dBlOjjyWr1glmJVRad/4tm1OiA+zrnk7ry\n4zO/anBklwJwgGVTlWt/ce0/DblbwHs8RciyoE7z9wKBgQDaxFLwgMGBvXknVa49\n77TGU4KKJboIikqnkA9Rrp1QpbXUY8S9KMKx/Ncz2pUQdeIA21OPoEj6NRXoNzbk\nMRGLdsc/Y6yDmtWr44xa6n4KKhLnYgz6znK5ln8qPWhVbi1hlA+93bEuBpllquiC\nyzIhiHrn/heXc8A3RgdQ+QYs1wKBgQDVkB5rd+AZkEV3DTU3j587wq/xyc5j29Wi\nquTxSoBT7iOESWazaXyCqGBMYKF1LhAfTkcJ7igoKI/N6bpNd2lf9jJCiE1z4piG\nBiJgJAiHZARpvaWmYj0hNjmxoBvys7LLqUhGTcwsyyF9LkRu9FszyIu/E1/BqQfd\nynmADrwCAwKBgC/lA3N7/OF2peuiqn8M17sD1XSBRfVQsX913qS3YeGiJejV3uC6\n58Un4cWMeU4dQNmHKwgqw09kB+PLEs1qoLizzHNoUwCNCXKUYsoUxHtdMr5NjSHr\nyNowxK5uu0TY1j6it7+NpZi6ASNtA3J/If6NbrsTuf6CbPas8jUcD+oJAoGAQu0p\nO1CT4C8ANfDjrofJxPacIM+3aD/qUVHw8VUBpkvIwZonHy59oIyXsRfPQWOwFb94\nL7p8xyj+9+65PbGgSjxjP8prS1fFqKqfdzWTnqpPX7vY/61lrtTJe8rLN2HtNDnW\ntoGG7LqzwgEP3R2ivzWn5bdymMQZ/P2I2gLEFHUCgYAXOXOAj3Beh3Fh9FTUpTZr\nN8kCPMKGd6Dd570HlrHCRGBjufpSosn/ExYVyDVsE1vQ/wmvNmeG94F3IQo774Hv\nTCDNxO9ylk1IljrW08AfXxYm4NNccnB8hG5VR9NMmzvZV1WeD/JGXm4+ClR6Z6xS\n07aStlDtCxZJ70YTNZyxWQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "erxes-gmail-pubsub@erxes-gmail-244007.iam.gserviceaccount.com",
+  "client_id": "111775490410580701565",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/erxes-gmail-pubsub%40erxes-gmail-244007.iam.gserviceaccount.com"
+}

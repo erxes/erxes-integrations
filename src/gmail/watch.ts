@@ -3,17 +3,19 @@ import { google } from 'googleapis';
 import { debugGmail } from '../debuggers';
 import { getEnv } from '../utils';
 import { getAuth } from './auth';
+import { syncPartially } from './receiveEmails';
+import { getAccountCredentials } from './userController';
 
 const gmail: any = google.gmail('v1');
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
-const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_TOPIC' });
+const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_GMAIL_TOPIC' });
 const GOOGLE_APPLICATION_CREDENTIALS = getEnv({ name: 'GOOGLE_APPLICATION_CREDENTIALS' });
 const GOOGLE_GMAIL_SUBSCRIPTION_NAME = getEnv({ name: 'GOOGLE_GMAIL_SUBSCRIPTION_NAME' });
 
 /**
  * Create topic and subscription for gmail
  */
-export const createSubscription = async () => {
+export const trackGmail = async () => {
   if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC || !GOOGLE_APPLICATION_CREDENTIALS || !GOOGLE_GMAIL_SUBSCRIPTION_NAME) {
     return debugGmail(`
       Failed to create google pubsub topic following config missing
@@ -29,16 +31,31 @@ export const createSubscription = async () => {
     keyFilename: GOOGLE_APPLICATION_CREDENTIALS,
   });
 
-  const topic: Topic = pubsubClient.topic(GOOGLE_GMAIL_TOPIC);
+  // Check existing topic
+  const [pubsubTopics = []] = await pubsubClient.getTopics();
+  let topic: Topic;
 
-  debugGmail(`Creating google pubsub topic for gmail as ${GOOGLE_GMAIL_TOPIC}`);
+  debugGmail(`Checking existing gmail topic in pubsub`);
 
-  const options = {
-    flowControl: {
-      maxBytes: 10000,
-      maxMessages: 5,
-    },
-  };
+  if (pubsubTopics.length > 0) {
+    debugGmail(`${GOOGLE_GMAIL_TOPIC} already exists in Google Cloud`);
+  } else {
+    debugGmail(`Creating google pubsub topic for gmail as ${GOOGLE_GMAIL_TOPIC}`);
+    topic = pubsubClient.topic(GOOGLE_GMAIL_TOPIC);
+  }
+
+  debugGmail(`Checking existing gmail subscription`);
+
+  const subscriptions = await topic.getSubscriptions();
+
+  if (subscriptions.length > 0) {
+    debugGmail(`Creating subscription for topic of gmail as ${GOOGLE_GMAIL_SUBSCRIPTION_NAME}`);
+    return;
+  }
+
+  debugGmail(`Creating subscription for topic of gmail as ${GOOGLE_GMAIL_SUBSCRIPTION_NAME}`);
+
+  const options = { flowControl: { maxBytes: 10000, maxMessages: 5 } };
 
   topic.createSubscription(GOOGLE_GMAIL_SUBSCRIPTION_NAME, options, (error, subscription) => {
     if (error) {
@@ -60,13 +77,16 @@ export const createSubscription = async () => {
 /**
  * Gmail subscription receive message
  */
-const onMessage = (message: any) => {
+const onMessage = async (message: any) => {
   const base64Url = message.data;
   const { emailAddress, historyId } = JSON.parse(base64Url.toString());
 
   debugGmail(`Gmail message received ${emailAddress} ${historyId}`);
 
-  // Update customer's gmail messages
+  const credentials = await getAccountCredentials(emailAddress);
+
+  // Get mailbox updates with latest received historyId
+  await syncPartially(emailAddress, credentials, historyId);
 
   message.ack();
 };

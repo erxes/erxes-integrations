@@ -1,6 +1,8 @@
 import { google } from 'googleapis';
 import { debugGmail } from '../debuggers';
+import { Accounts } from '../models';
 import { getAuth } from './auth';
+
 const gmail: any = google.gmail('v1');
 
 /**
@@ -20,4 +22,25 @@ export const getProfile = async (credentials: any) => {
   }
 
   return userProfile;
+};
+
+/**
+ * Get account credentials with email UID
+ */
+export const getAccountCredentials = async (email: string) => {
+  debugGmail(`Get account credentials with email`);
+
+  const account = await Accounts.findOne({ uid: email });
+
+  if (!account) {
+    debugGmail(`Account not found with email: ${email}`);
+    return;
+  }
+
+  return {
+    token: account.token,
+    tokenSecret: account.tokenSecret,
+    expireDate: account.expireDate,
+    scope: account.scope,
+  };
 };

@@ -8,7 +8,6 @@ const SCOPES_GMAIL = [
   'https://www.googleapis.com/auth/gmail.compose',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/calendar',
 ];
 
 export const getOauthClient = () => {
@@ -84,6 +83,7 @@ export const getAuthorizeUrl = () => {
 
 export const getAccessToken = async (code: string) => {
   const oauthClient = getOauthClient();
+
   let accessToken;
 
   debugGmail(`Google OAuthClient request to get token with ${code}`);
