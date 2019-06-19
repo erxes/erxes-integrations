@@ -1,68 +1,65 @@
 import { google } from 'googleapis';
 import { debugGmail } from '../debuggers';
+import { Accounts } from '../models';
 import { getEnv } from '../utils';
+import { SCOPES_GMAIL } from './constant';
 
-const SCOPES_GMAIL = [
-  'https://mail.google.com/',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.compose',
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.readonly',
-];
+const gmail: any = google.gmail('v1');
 
-export const getOauthClient = () => {
+export const gmailClient = gmail.users;
+
+const getOauthClient = () => {
   const GOOGLE_CLIENT_ID = getEnv({ name: 'GOOGLE_CLIENT_ID' });
   const GOOGLE_CLIENT_SECRET = getEnv({ name: 'GOOGLE_CLIENT_SECRET' });
   const GMAIL_REDIRECT_URL = getEnv({ name: 'GMAIL_REDIRECT_URL' });
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GMAIL_REDIRECT_URL) {
-    return debugGmail(`
-      Failed to get OAuthClient following config missing
+    debugGmail(`
+      Error Google: Missing env values
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GMAIL_REDIRECT_URL: ${GMAIL_REDIRECT_URL}
     `);
   }
 
-  let oauthClient;
-
-  debugGmail(`
-    Get OAuthClient with following data
-    ${GOOGLE_CLIENT_ID}
-    ${GOOGLE_CLIENT_SECRET}
-    ${GMAIL_REDIRECT_URL}
-  `);
+  let response;
 
   try {
-    oauthClient = new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REDIRECT_URL);
+    response = new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REDIRECT_URL);
   } catch (e) {
     debugGmail(`
-      Failed to get OAuth2 Google client with 
+      Error Google: Could not create OAuth2 Client with
       ${GOOGLE_CLIENT_ID}
       ${GOOGLE_CLIENT_SECRET}
       ${GMAIL_REDIRECT_URL}
     `);
+    return;
   }
 
-  return oauthClient;
+  return response;
 };
+
+const oauth2Client = getOauthClient();
 
 /**
  * Get OAuth client with given credentials
  */
-export const getAuth = (credentials: any) => {
-  const oauthClient = getOauthClient();
+export const getAuth = (credentials: any, accountId?: string) => {
+  oauth2Client.on('tokens', async tokens => {
+    await refreshAccessToken(accountId, credentials);
 
-  oauthClient.setCredentials(credentials);
+    credentials = tokens;
+  });
 
-  return oauthClient;
+  oauth2Client.setCredentials(credentials);
+
+  return oauth2Client;
 };
 
 /**
- * Get auth url defends on google services such us gmail, calendar
+ * Get auth url depends on google services such us gmail, calendar
  */
 export const getAuthorizeUrl = () => {
-  const oauthClient = getOauthClient();
   const options = { access_type: 'offline', scope: SCOPES_GMAIL };
 
   let authUrl;
@@ -73,7 +70,7 @@ export const getAuthorizeUrl = () => {
   `);
 
   try {
-    authUrl = oauthClient.generateAuthUrl(options);
+    authUrl = oauth2Client.generateAuthUrl(options);
   } catch (e) {
     debugGmail(`Google OAuthClient failed to generate auth url`);
   }
@@ -81,16 +78,17 @@ export const getAuthorizeUrl = () => {
   return authUrl;
 };
 
+/**
+ * Get access token from gmail callback
+ */
 export const getAccessToken = async (code: string) => {
-  const oauthClient = getOauthClient();
-
   let accessToken;
 
   debugGmail(`Google OAuthClient request to get token with ${code}`);
 
   try {
     accessToken = await new Promise((resolve, reject) =>
-      oauthClient.getToken(code, (err: any, token: any) => {
+      oauth2Client.getToken(code, (err: any, token: any) => {
         if (err) {
           return reject(err.response.data.error);
         }
@@ -99,8 +97,32 @@ export const getAccessToken = async (code: string) => {
       }),
     );
   } catch (e) {
-    debugGmail(`Google OAuthClient failed to get access token with ${code}`);
+    debugGmail(`Error Google: Google OAuthClient failed to get access token with ${code}`);
   }
 
   return accessToken;
+};
+
+/*
+ * Refresh token and save when access_token expires
+ */
+export const refreshAccessToken = async (accountId: string, tokens: any) => {
+  const account = await Accounts.findOne({ accountId });
+
+  if (!account) {
+    debugGmail(`Error Google: Account not found id with ${accountId}`);
+    return;
+  }
+
+  account.token = tokens.access_token;
+
+  if (tokens.refresh_token) {
+    account.tokenSecret = tokens.refresh_token;
+  }
+
+  if (tokens.expiry_date) {
+    account.expireDate = tokens.expiry_date;
+  }
+
+  await account.save();
 };

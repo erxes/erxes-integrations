@@ -10,3 +10,4 @@ npm-debug.log*
 coverage
 *.un~
 *.swp
+./google_cred.json

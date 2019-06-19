@@ -2,7 +2,7 @@ import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import { getEnv } from '../utils';
 import { getAccessToken, getAuthorizeUrl } from './auth';
-import { getProfile } from './userController';
+import { getProfile } from './util';
 
 const loginMiddleware = async (req, res) => {
   const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
@@ -34,13 +34,15 @@ const loginMiddleware = async (req, res) => {
   const account = await Accounts.findOne({ uid: data.emailAddress });
   const { access_token } = credentials;
 
+  debugGmail(credentials);
+
   if (account) {
     await Accounts.updateOne({ _id: account._id }, { $set: { token: access_token } });
   } else {
     await Accounts.create({
       name: email,
       uid: email,
-      kind: 'google',
+      kind: 'gmail',
       token: access_token,
       tokenSecret: credentials.refresh_token,
       expireDate: credentials.expiry_date,
