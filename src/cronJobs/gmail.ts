@@ -8,7 +8,6 @@ import { Integrations } from '../models';
  * In order to keep users updated
  */
 const renewPushNotification = async () => {
-  debugGmail('laksjdklajsdklajdlkajdlkajdlkajkksldsjad');
   const integrations = await Integrations.aggregate([
     {
       $match: { email: { $exists: true } }, // email field indicates the gmail
