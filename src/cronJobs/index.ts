@@ -1,3 +1,3 @@
 import gmail from './gmail';
 
-export { gmail };
+export default { ...gmail };

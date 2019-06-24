@@ -11,7 +11,7 @@ const encodeBase64 = (subject: string) => {
  */
 export const createMIME = (mailParams: any) => {
   const { toEmail, body, fromEmail, subject, toName, fromName, files } = mailParams;
-  const { html } = body;
+  const { html, text } = body;
 
   const nl = '\n';
   const boundary = '__erxes__';
@@ -23,6 +23,11 @@ export const createMIME = (mailParams: any) => {
     'Subject: ' + encodeBase64(subject),
 
     'Content-Type: multipart/mixed; boundary=' + boundary + nl,
+    '--' + boundary,
+
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit' + nl,
+    text + nl,
     '--' + boundary,
 
     'Content-Type: text/html; charset=UTF-8',

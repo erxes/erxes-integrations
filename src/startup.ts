@@ -1,3 +1,4 @@
+import './cronJobs';
 import { debugIntegrations } from './debuggers';
 import { trackGmail } from './gmail/watch';
 

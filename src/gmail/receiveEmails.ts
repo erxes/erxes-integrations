@@ -56,8 +56,6 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
 export const syncPartially = async (email: string, credentials: ICredentials, startHistoryId: string) => {
   const integration = await Integrations.findOne({ email });
 
-  debugGmail(integration);
-
   if (!integration) {
     return;
   }
@@ -91,6 +89,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   for (const data of parsedMessages) {
     const { from } = data;
     const userId = extractEmailFromString(from);
+    debugGmail(data);
 
     // get customer
     let customer = await Customers.findOne({ userId });
@@ -165,7 +164,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
           payload: JSON.stringify({
             conversationId: conversation.erxesApiId,
             customerId: customer.erxesApiId,
-            content: data.subject,
+            content: data.textPlain,
           }),
         },
       });

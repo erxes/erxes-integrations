@@ -133,7 +133,7 @@ export const watchPushNotification = async (accountId: string, credentials: any)
       },
     });
   } catch (e) {
-    debugGmail(`Google OAuthCLient request to watch push notification failed ${e}`);
+    debugGmail(`Google OAuthClient request to watch push notification failed ${e}`);
   }
 
   return response;

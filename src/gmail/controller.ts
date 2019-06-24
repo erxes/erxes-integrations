@@ -99,6 +99,7 @@ const init = async app => {
       toEmail: 'munkhorgil@live.com',
       body: {
         html: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
+        text: 'Hello World',
       },
       fromName: 'erxes',
       fromEmail: 'bfyhdgzj@gmail.com',
