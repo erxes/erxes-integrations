@@ -11,33 +11,45 @@ const encodeBase64 = (subject: string) => {
  * @see {https://tools.ietf.org/html/rfc2822}
  */
 const createMimeMessage = (mailParams: IMailParams): string => {
-  const { toEmails, textHtml, textPlain, fromEmail, subject, attachments } = mailParams;
+  const { bcc, cc, toEmails, textHtml, textPlain, fromEmail, subject, attachments } = mailParams;
 
   const nl = '\n';
   const boundary = '__erxes__';
 
-  const mimeBody = [
+  const mimeBase = [
     'MIME-Version: 1.0',
-    'To: ' + toEmails,
+    'To: ' + toEmails, // "user1@email.com, user2@email.com"
     'From: <' + fromEmail + '>',
     'Subject: ' + encodeBase64(subject),
-
-    'Content-Type: multipart/mixed; boundary=' + boundary + nl,
-    '--' + boundary,
-
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 8bit' + nl,
-    textPlain + nl,
-    '--' + boundary,
-
-    'Content-Type: text/html; charset=UTF-8',
-    'Content-Transfer-Encoding: 8bit' + nl,
-    textHtml + nl,
   ];
+
+  if (cc) {
+    mimeBase.push('Cc: ' + cc);
+  }
+
+  if (bcc) {
+    mimeBase.push('Bcc: ' + bcc);
+  }
+
+  mimeBase.push(
+    [
+      'Content-Type: multipart/mixed; boundary=' + boundary + nl,
+      '--' + boundary,
+
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: 8bit' + nl,
+      textPlain + nl,
+      '--' + boundary,
+
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: 8bit' + nl,
+      textHtml + nl,
+    ].join(nl),
+  );
 
   if (attachments) {
     for (const attachment of attachments) {
-      const data = [
+      const mimeAttachment = [
         '--' + boundary,
         'Content-Type: ' + attachment.mimeType + '; name="' + attachment.filename + '"',
         'Content-Length: 3.7*1024',
@@ -46,13 +58,13 @@ const createMimeMessage = (mailParams: IMailParams): string => {
         Buffer.from(attachment.data).toString('base64'),
       ];
 
-      mimeBody.push(data.join(nl));
+      mimeBase.push(mimeAttachment.join(nl));
     }
   }
 
-  mimeBody.push('--' + boundary + '--');
+  mimeBase.push('--' + boundary + '--');
 
-  return mimeBody.join(nl);
+  return mimeBase.join(nl);
 };
 
 export const sendGmail = (credentials: ICredentials, mailParams: IMailParams) => {

@@ -93,11 +93,12 @@ const init = async app => {
 
     // TEST send
     await sendGmail(credentials, {
-      toEmails: 'munkhorgil@live.com, munkhorgil.m@nmma.co',
+      toEmails: 'munkhorgil@live.com',
       textHtml: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
-      textPlain: 'THIS IS NEW GMAIL THAT I AM TESTING THAT IT IS SAVED OR NOT',
+      textPlain: 'testing cc',
       fromEmail: 'bfyhdgzj@gmail.com',
       subject: 'Test',
+      bcc: 'munkhorgil.m@nmma.co',
     });
 
     return res.json('success');
