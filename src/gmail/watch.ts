@@ -32,8 +32,9 @@ export const trackGmail = async () => {
   debugGmail(`Pubsub: Check existing gmail topic in google cloud`);
 
   let topic = await pubsubClient.topic(GOOGLE_GMAIL_TOPIC);
+  const [topicExists] = await topic.exists();
 
-  if (!topic) {
+  if (!topicExists) {
     debugGmail(`Pubsub: Creating gmail pubsub topic as ${GOOGLE_GMAIL_TOPIC}`);
 
     const [topicResponse] = await pubsubClient.createTopic(GOOGLE_GMAIL_TOPIC);
@@ -44,8 +45,9 @@ export const trackGmail = async () => {
   debugGmail(`Pubsub: Check existing gmail subscription in google cloud`);
 
   const subscription = await pubsubClient.subscription(GOOGLE_GMAIL_SUBSCRIPTION_NAME);
+  const [subscriptionExists] = await subscription.exists();
 
-  if (!subscription) {
+  if (!subscriptionExists) {
     debugGmail(`Pubsub: Creating a subscription of gmail topic`);
 
     const options = { flowControl: { maxBytes: 10000, maxMessages: 5 } };
@@ -57,21 +59,20 @@ export const trackGmail = async () => {
       }
 
       newSubscription.on('message', onMessage);
-      newSubscription.on('error', onError.bind(this, newSubscription));
+      newSubscription.on('error', onError);
     });
+
+    return;
   }
 
   subscription.on('message', onMessage);
-  subscription.on('error', onError.bind(this, subscription));
+  subscription.on('error', onError);
 };
 
 /**
  * Error handler for subscription of gmail
  */
-const onError = (error: any, subscription: any) => {
-  subscription.removeListener('message', onMessage);
-  subscription.removeListener('error', this);
-
+const onError = (error: any) => {
   debugGmail(`Error Pubsub: occured in google pubsub subscription of gmail ${error}`);
 };
 

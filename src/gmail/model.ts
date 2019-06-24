@@ -2,7 +2,6 @@ import { Document, Model, model, Schema } from 'mongoose';
 import { field } from '../models/utils';
 
 export interface ICustomer {
-  userId: string;
   primaryEmail: string;
   firstName?: string;
   lastName?: string;
@@ -14,7 +13,6 @@ export interface ICustomerDocument extends ICustomer, Document {}
 
 export const customerSchema = new Schema({
   _id: field({ pkey: true }),
-  userId: String,
   erxesApiId: String,
   firstName: String,
   lastName: String,
@@ -30,8 +28,10 @@ export const Customers = model<ICustomerDocument, ICustomerModel>('customers_goo
 export interface IConversation {
   to: string;
   from: string;
+  content: string;
   customerId: string;
   erxesApiId: string;
+  threadId: string;
 }
 
 export interface IConversationDocument extends IConversation, Document {}
@@ -40,8 +40,10 @@ export const conversationSchema = new Schema({
   _id: field({ pkey: true }),
   to: String,
   from: String,
+  content: String,
   customerId: String,
   erxesApiId: String,
+  threadId: String,
 });
 
 export interface IConversatonModel extends Model<IConversationDocument> {}
@@ -62,8 +64,6 @@ interface IAttachmentParams {
 export interface IConversationMessage {
   conversationId: string;
   erxesApiId: string;
-  cocType: string;
-  cocId: string;
   subject: string;
   body: string;
   toEmails: string;
@@ -92,8 +92,6 @@ export const conversationMessageSchema = new Schema({
   _id: field({ pkey: true }),
   conversationId: String,
   erxesApiId: String,
-  cocType: String,
-  cocId: String,
   subject: String,
   body: String,
   toEmails: String,
@@ -113,6 +111,6 @@ export interface IConversatonMessageModel extends Model<IConversationMessageDocu
 
 // tslint:disable-next-line
 export const ConversationMessages = model<IConversationMessageDocument, IConversatonMessageModel>(
-  'conversations__message_google',
+  'conversation_messages_google',
   conversationMessageSchema,
 );

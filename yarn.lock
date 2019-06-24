@@ -2328,6 +2328,11 @@ globals@^9.18.0:
   resolved "https://registry.yarnpkg.com/globals/-/globals-9.18.0.tgz#aa3896b3e69b487f17e31ed2143d69a8e30c2d8a"
   integrity sha512-S0nG3CLEQiY/ILxqtztTWH/3iRRdyBLw6KMDxnKMchrtbj2OFmehVh0WUCfW3DUrIgx/qFrJPICrq4Z4sTR9UQ==
 
+gmail-api-create-message-body@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/gmail-api-create-message-body/-/gmail-api-create-message-body-1.0.0.tgz#a3978f276a73f047e281a0759d66eb4e0acc16f2"
+  integrity sha1-o5ePJ2pz8EfigaB1nWbrTgrMFvI=
+
 google-auth-library@^3.0.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/google-auth-library/-/google-auth-library-3.1.2.tgz#ff2f88cd5cd2118a57bd3d5ad3c093c8837fc350"

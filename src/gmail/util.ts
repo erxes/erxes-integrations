@@ -73,6 +73,7 @@ export const extractEmailFromString = (str: string) => {
  * Parse result of users.messages.get response
  */
 export const parseMessage = (response: any) => {
+  debugGmail(response);
   const { id, threadId, payload, labelIds } = response;
 
   if (!payload || labelIds.includes('TRASH') || labelIds.includes('DRAFT')) {
@@ -126,6 +127,7 @@ export const mapHeaders = (headers: any) => {
  * Get headers specific values from gmail.users.messages.get response
  */
 const getHeaderProperties = (headers: any, messageId: string, threadId: string, labelIds: string[]) => {
+  debugGmail(headers);
   return {
     subject: headers.subject,
     from: headers.from,

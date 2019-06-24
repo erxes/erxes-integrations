@@ -1,7 +1,8 @@
 import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
-import { getCredentials } from './util';
+import { sendGmail } from './send';
+import { getCredentials, getCredentialsByEmailAccountId } from './util';
 import { watchPushNotification } from './watch';
 
 const init = async app => {
@@ -39,8 +40,8 @@ const init = async app => {
     try {
       const response = await watchPushNotification(accountId, credentials);
 
-      historyId = response.historyId;
-      expiration = response.expiration;
+      historyId = response.data.historyId;
+      expiration = response.data.expiration;
     } catch (e) {
       debugGmail(`Error Google: Could not subscribe user ${email} to topic`);
       next(e);
@@ -67,6 +68,44 @@ const init = async app => {
     }
 
     return res.json(account.uid);
+  });
+
+  app.post('/gmail/send-email', async (req, res, next) => {
+    debugRequest(debugGmail, req);
+    debugGmail(`Sending gmail`);
+
+    const { data } = req.body;
+    const { mailParams, email } = JSON.parse(data);
+
+    const credentials = await getCredentialsByEmailAccountId({ email });
+
+    try {
+      await sendGmail(credentials, mailParams);
+    } catch (e) {
+      next(e);
+    }
+
+    // TODO: Create conversation, conversationMessage
+
+    return res.json({ status: 'success' });
+  });
+
+  app.get('/gmail/send-email', async (_req, res) => {
+    const credentials = await getCredentialsByEmailAccountId({ email: 'bfyhdgzj@gmail.com' });
+
+    // TEST send
+    await sendGmail(credentials, {
+      toName: 'Orgil',
+      toEmail: 'munkhorgil@live.com',
+      body: {
+        html: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
+      },
+      fromName: 'erxes',
+      fromEmail: 'bfyhdgzj@gmail.com',
+      subject: 'Test',
+    });
+
+    return res.json('success');
   });
 };
 
