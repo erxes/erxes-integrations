@@ -85,8 +85,6 @@ const init = async app => {
       next(e);
     }
 
-    // TODO: Create conversation, conversationMessage
-
     return res.json({ status: 'success' });
   });
 
@@ -95,13 +93,9 @@ const init = async app => {
 
     // TEST send
     await sendGmail(credentials, {
-      toName: 'Orgil',
-      toEmail: 'munkhorgil@live.com',
-      body: {
-        html: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
-        text: 'Hello World',
-      },
-      fromName: 'erxes',
+      toEmails: ['munkhorgil@live.com'],
+      textHtml: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
+      textPlain: 'THIS IS NEW GMAIL THAT I AM TESTING THAT IT IS SAVED OR NOT',
       fromEmail: 'bfyhdgzj@gmail.com',
       subject: 'Test',
     });

@@ -1,11 +1,12 @@
 import { debugGmail } from '../debuggers';
-import { Accounts } from '../models';
+import Accounts, { IAccount } from '../models/Accounts';
 import { getAuth, gmailClient } from './auth';
+import { ICredentials } from './types';
 
 /**
  * Gets the current user's Gmail profile
  */
-export const getProfile = async (credentials: any, email?: string) => {
+export const getProfile = async (credentials: ICredentials, email?: string) => {
   const auth = getAuth(credentials);
 
   debugGmail(`Gmail get an user profile`);
@@ -24,7 +25,13 @@ export const getProfile = async (credentials: any, email?: string) => {
   return userProfile;
 };
 
-export const getCredentialsByEmailAccountId = async ({ email, accountId }: { email?: string; accountId?: string }) => {
+export const getCredentialsByEmailAccountId = async ({
+  email,
+  accountId,
+}: {
+  email?: string;
+  accountId?: string;
+}): Promise<ICredentials> => {
   const selector: any = {};
 
   if (accountId) {
@@ -48,7 +55,7 @@ export const getCredentialsByEmailAccountId = async ({ email, accountId }: { ema
 /**
  * Get credential values from account and return formatted
  */
-export const getCredentials = (credentials: any) => ({
+export const getCredentials = (credentials: IAccount): ICredentials => ({
   access_token: credentials.token,
   refresh_token: credentials.tokenSecret,
   expire_date: credentials.expireDate,
@@ -59,7 +66,7 @@ export const getCredentials = (credentials: any) => ({
  * Exctract email from string
  * example: <user@mail.com>
  */
-export const extractEmailFromString = (str: string) => {
+export const extractEmailFromString = (str: string): string => {
   const result = str.match('\\<(.*)>');
 
   if (!result || result.length === 0) {

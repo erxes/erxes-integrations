@@ -1,5 +1,6 @@
 import { Document, Model, model, Schema } from 'mongoose';
 import { field } from '../models/utils';
+import { IMailParams } from './types';
 
 export interface ICustomer {
   primaryEmail: string;
@@ -54,29 +55,9 @@ export const Conversations = model<IConversationDocument, IConversatonModel>(
   conversationSchema,
 );
 
-interface IAttachmentParams {
-  data: string;
-  filename: string;
-  size: number;
-  mimeType: string;
-}
-
-export interface IConversationMessage {
+export interface IConversationMessage extends IMailParams {
   conversationId: string;
   erxesApiId: string;
-  subject: string;
-  body: string;
-  toEmails: string;
-  cc?: string;
-  bcc?: string;
-  attachments?: IAttachmentParams[];
-  references?: string;
-  headerId?: string;
-  fromEmail?: string;
-  reply?: string[];
-  messageId?: string;
-  textHtml?: string;
-  textPlain?: string;
 }
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
@@ -92,6 +73,7 @@ export const conversationMessageSchema = new Schema({
   _id: field({ pkey: true }),
   conversationId: String,
   erxesApiId: String,
+  labelIds: [String],
   subject: String,
   body: String,
   toEmails: String,

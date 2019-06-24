@@ -3,6 +3,7 @@ import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
 import { getEnv } from '../utils';
 import { SCOPES_GMAIL } from './constant';
+import { ICredentials } from './types';
 
 const gmail: any = google.gmail('v1');
 
@@ -44,7 +45,7 @@ const oauth2Client = getOauthClient();
 /**
  * Get OAuth client with given credentials
  */
-export const getAuth = (credentials: any, accountId?: string) => {
+export const getAuth = (credentials: ICredentials, accountId?: string) => {
   oauth2Client.on('tokens', async tokens => {
     await refreshAccessToken(accountId, credentials);
 
@@ -59,7 +60,7 @@ export const getAuth = (credentials: any, accountId?: string) => {
 /**
  * Get auth url depends on google services such us gmail, calendar
  */
-export const getAuthorizeUrl = () => {
+export const getAuthorizeUrl = (): string => {
   const options = { access_type: 'offline', scope: SCOPES_GMAIL };
 
   let authUrl;

@@ -74,8 +74,6 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
     return;
   }
 
-  debugGmail(message);
-
   const messagesToParse = messages ? messages : [message.data];
   const parsedMessages: any = [];
 
@@ -87,9 +85,8 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   // Create or get conversation, message, customer
   // according to received email
   for (const data of parsedMessages) {
-    const { from } = data;
+    const { from, threadId } = data;
     const userId = extractEmailFromString(from);
-    debugGmail(data);
 
     // get customer
     let customer = await Customers.findOne({ userId });
@@ -121,10 +118,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
     }
 
     // get conversation
-    let conversation = await Conversations.findOne({
-      to: email,
-      from: userId,
-    });
+    let conversation = await Conversations.findOne({ threadId });
 
     if (!conversation) {
       const apiConversationResponse = await fetchMainApi({
@@ -145,7 +139,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
         erxesApiId: apiConversationResponse._id,
         to: email,
         from: userId,
-        threadId: data.threadId,
+        threadId,
       });
     }
 
