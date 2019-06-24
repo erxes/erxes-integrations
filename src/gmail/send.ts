@@ -18,7 +18,7 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 
   const mimeBody = [
     'MIME-Version: 1.0',
-    'To: <' + toEmails + '>',
+    'To: ' + toEmails,
     'From: <' + fromEmail + '>',
     'Subject: ' + encodeBase64(subject),
 
