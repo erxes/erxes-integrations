@@ -1,32 +1,31 @@
 import * as requestify from 'requestify';
 
-const sendRequest = (url, params) => {
-  return requestify.request(url, {
-    headers: { 'Content-Type': 'application/json' },
-    method: 'POST',
-    body: {
-      data: JSON.stringify(params),
-    },
-  });
-};
-
-export const sendEmail = (params, reply) => {
-  if (reply) {
-    return sendRequest('http://localhost:3400/gmail/reply', params);
-  }
-
+/**
+ * Send gmail
+ */
+export const sendEmail = params => {
   return sendRequest('http://localhost:3400/gmail/send', params);
 };
 
-export const replyEmail = params => {
-  return sendRequest('http://localhost:3400/gmail/reply', params);
+/**
+ * Post request to erxes-integration to send gmail
+ */
+const sendRequest = (url: string, params: any) => {
+  return requestify.request(url, {
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    body: { data: JSON.stringify(params) },
+  });
 };
 
+/**
+ * Generate random color
+ */
 export const getRandomColor = () => {
   const letters = '0123456789ABCDEF';
   let color = '#';
 
-  for (const i = 0; i < 6; i++) {
+  for (let i = 0; i < 6; i++) {
     color += letters[Math.floor(Math.random() * 16)];
   }
 

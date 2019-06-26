@@ -80,22 +80,28 @@ class Wrapper extends React.Component<IProps, IState> {
   };
 
   onSubmit = () => {
-    const { message, send, user } = this.props;
-    const { from } = this.state;
+    const { message, send, user, type } = this.props;
+    const { messageId, headerId, references, threadId } = message;
+    const { to, from, cc, bcc, subject, textPlain } = this.state;
 
-    const doc = {
-      email: from, // new
-      userEmail: user.email, // reply
-      mailParams: {
-        ...this.state,
-        messageId: message.messageId,
-        headerId: message.headerId,
-        references: message.references,
-        threadId: message.threadId
+    const doc = {} as any;
+    const params = { to, from, cc, bcc, subject, textPlain } as any;
+
+    if (type === 'new') {
+      doc.email = from;
+      doc.mailParams = { ...params };
+    } else {
+      doc.email = user.email;
+      doc.mailParams = {
+        ...params,
+        messageId: messageId,
+        headerId: headerId,
+        references: references,
+        threadId: threadId
       }
-    };
+    }
 
-    send(doc, true);
+    send(doc);
   };
 
   onChange = <T extends keyof IState>(key: T, event: any) => {
