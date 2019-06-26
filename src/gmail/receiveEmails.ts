@@ -161,24 +161,13 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
         },
       });
 
+      data.from = extractEmailFromString(data.from);
+      data.to = extractEmailFromString(data.to);
+
       conversationMessage = await ConversationMessages.create({
         conversationId: apiConversationMessageResponse._id,
         customerId: customer.erxesApiId,
-        labelIds,
-        subject,
-        body,
-        to,
-        cc,
-        bcc,
-        attachments,
-        references,
-        headerId,
-        from,
-        reply,
-        messageId,
-        textHtml,
-        textPlain,
-        threadId,
+        ...data,
       });
     }
   }
