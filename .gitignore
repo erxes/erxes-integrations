@@ -11,3 +11,4 @@ coverage
 *.un~
 *.swp
 ./google_cred.json
+.cache
