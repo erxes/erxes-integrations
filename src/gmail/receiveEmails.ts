@@ -85,7 +85,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   // Create or get conversation, message, customer
   // according to received email
   for (const data of parsedMessages) {
-    const { from, threadId } = data;
+    const { from, threadId, messageId } = data;
     const userId = extractEmailFromString(from);
 
     // get customer
@@ -144,9 +144,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
     }
 
     // get conversation message
-    let conversationMessage = await ConversationMessages.findOne({
-      conversationId: conversation.erxesApiId,
-    });
+    let conversationMessage = await ConversationMessages.findOne({ messageId });
 
     if (!conversationMessage) {
       // save message on api
@@ -166,7 +164,21 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
       conversationMessage = await ConversationMessages.create({
         conversationId: apiConversationMessageResponse._id,
         customerId: customer.erxesApiId,
-        ...data,
+        labelIds,
+        subject,
+        body,
+        to,
+        cc,
+        bcc,
+        attachments,
+        references,
+        headerId,
+        from,
+        reply,
+        messageId,
+        textHtml,
+        textPlain,
+        threadId,
       });
     }
   }

@@ -33,6 +33,7 @@ export interface IConversation {
   customerId: string;
   erxesApiId: string;
   threadId: string;
+  createdAt: Date;
 }
 
 export interface IConversationDocument extends IConversation, Document {}
@@ -45,6 +46,7 @@ export const conversationSchema = new Schema({
   customerId: String,
   erxesApiId: String,
   threadId: String,
+  createdAt: field({ type: Date, index: true, default: new Date() }),
 });
 
 export interface IConversatonModel extends Model<IConversationDocument> {}
@@ -58,6 +60,7 @@ export const Conversations = model<IConversationDocument, IConversatonModel>(
 export interface IConversationMessage extends IMailParams {
   conversationId: string;
   erxesApiId: string;
+  createdAt: string;
 }
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
@@ -76,17 +79,19 @@ export const conversationMessageSchema = new Schema({
   labelIds: [String],
   subject: String,
   body: String,
-  toEmails: String,
+  to: String,
   cc: String,
   bcc: String,
   attachments: [attachmentSchema],
   references: String,
   headerId: String,
-  fromEmail: String,
+  from: String,
+  threadId: String,
   reply: [String],
   messageId: String,
   textHtml: String,
   textPlain: String,
+  createdAt: field({ type: Date, index: true, default: new Date() }),
 });
 
 export interface IConversatonMessageModel extends Model<IConversationMessageDocument> {}

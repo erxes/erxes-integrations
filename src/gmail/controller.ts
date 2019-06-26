@@ -2,7 +2,7 @@ import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
 import { sendGmail } from './send';
-import { getCredentials, getCredentialsByEmailAccountId } from './util';
+import { getCredentials } from './util';
 import { watchPushNotification } from './watch';
 
 const init = async app => {
@@ -70,17 +70,31 @@ const init = async app => {
     return res.json(account.uid);
   });
 
-  app.post('/gmail/send-email', async (req, res, next) => {
+  app.post('/gmail/send', async (req, res, next) => {
     debugRequest(debugGmail, req);
-    debugGmail(`Sending gmail`);
+    debugGmail(`Sending gmail ===`);
 
     const { data } = req.body;
     const { mailParams, email } = JSON.parse(data);
 
-    const credentials = await getCredentialsByEmailAccountId({ email });
+    try {
+      await sendGmail(email, mailParams);
+    } catch (e) {
+      next(e);
+    }
+
+    return res.json({ status: 'success' });
+  });
+
+  app.post('/gmail/reply', async (req, res, next) => {
+    debugRequest(debugGmail, req);
+    debugGmail(`Reply to gmail === `);
+
+    const { data } = req.body;
+    const { mailParams, userEmail } = JSON.parse(data);
 
     try {
-      await sendGmail(credentials, mailParams);
+      await sendGmail(userEmail, mailParams);
     } catch (e) {
       next(e);
     }
@@ -89,14 +103,12 @@ const init = async app => {
   });
 
   app.get('/gmail/send-email', async (_req, res) => {
-    const credentials = await getCredentialsByEmailAccountId({ email: 'bfyhdgzj@gmail.com' });
-
     // TEST send
-    await sendGmail(credentials, {
-      toEmails: 'munkhorgil@live.com',
+    await sendGmail('bfyhdgzj@gmail.com', {
+      to: 'munkhorgil@live.com',
       textHtml: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
       textPlain: 'testing cc',
-      fromEmail: 'bfyhdgzj@gmail.com',
+      from: 'bfyhdgzj@gmail.com',
       subject: 'Test',
       bcc: 'munkhorgil.m@nmma.co',
     });

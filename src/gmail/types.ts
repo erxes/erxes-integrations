@@ -23,13 +23,13 @@ export interface IMailParams {
   labelIds?: string[];
   subject: string;
   body?: string;
-  toEmails: string;
+  to: string;
   cc?: string;
   bcc?: string;
   attachments?: IAttachmentParams[];
   references?: string;
   headerId?: string;
-  fromEmail?: string;
+  from?: string;
   reply?: string[];
   messageId?: string;
   textHtml?: string;

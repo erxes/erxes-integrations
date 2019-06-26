@@ -80,8 +80,8 @@ export const extractEmailFromString = (str: string): string => {
  * Parse result of users.messages.get response
  */
 export const parseMessage = (response: any) => {
-  debugGmail(response);
   const { id, threadId, payload, labelIds } = response;
+  debugGmail(response);
 
   if (!payload || labelIds.includes('TRASH') || labelIds.includes('DRAFT')) {
     return;
@@ -124,6 +124,7 @@ export const mapHeaders = (headers: any) => {
     return {};
   }
 
+  debugGmail(headers);
   return headers.reduce((result, header) => {
     result[header.name.toLowerCase()] = header.value;
     return result;
@@ -134,14 +135,13 @@ export const mapHeaders = (headers: any) => {
  * Get headers specific values from gmail.users.messages.get response
  */
 const getHeaderProperties = (headers: any, messageId: string, threadId: string, labelIds: string[]) => {
-  debugGmail(headers);
   return {
     subject: headers.subject,
     from: headers.from,
     to: headers.to,
     cc: headers.cc,
     bcc: headers.bcc,
-    references: headers.references,
+    ...(headers.references ? { references: headers.references } : {}),
     headerId: headers['message-id'],
     reply: headers['in-reply-to'],
     messageId,

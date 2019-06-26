@@ -12,17 +12,22 @@ const encodeBase64 = (subject: string) => {
  * @see {https://tools.ietf.org/html/rfc2822}
  */
 const createMimeMessage = (mailParams: IMailParams): string => {
-  const { bcc, cc, toEmails, textHtml, textPlain, fromEmail, subject, attachments } = mailParams;
+  const { bcc, cc, to, textHtml, headerId, references, textPlain, from, subject, attachments } = mailParams;
 
   const nl = '\n';
   const boundary = '__erxes__';
 
   const mimeBase = [
     'MIME-Version: 1.0',
-    'To: ' + toEmails, // "user1@email.com, user2@email.com"
-    'From: <' + fromEmail + '>',
+    'To: ' + to, // "user1@email.com, user2@email.com"
+    'From: <' + from + '>',
     'Subject: ' + encodeBase64(subject),
   ];
+
+  // Reply
+  if (headerId) {
+    mimeBase.push(['References:' + references, 'In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
+  }
 
   if (cc && cc.length > 0) {
     mimeBase.push('Cc: ' + cc);

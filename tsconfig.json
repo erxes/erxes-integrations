@@ -5,12 +5,13 @@
     "target": "es5",
     "moduleResolution": "node",
     "module": "commonjs",
-    "lib": ["es2015", "es6", "es7"],
+    "lib": ["es2015", "es6", "es7", "dom"],
     "sourceMap": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "jsx": "react"
   },
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./src/*"],
   "exclude": ["node_modules", "dist"]
 }
