@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { isEmail, ReactMultiEmail } from 'react-multi-email';
-import { Avatar, Base, Container, Details, Footer, Header, InputWrapper, Label, Title } from '../styles';
+import { IMailParams } from '../../types';
+import { Avatar, Base, Container, Content, Details, Footer, Header, InputWrapper, Label, Title } from '../styles';
 
 interface IProps {
   type: string;
@@ -8,7 +9,7 @@ interface IProps {
     email: string;
     firstName: string;
   },
-  message?: any;
+  message?: IMailParams;
   send?: any;
 };
 
@@ -52,11 +53,15 @@ class Wrapper extends React.Component<IProps, IState> {
     }
   };
 
+  onChange = <T extends keyof IState>(key: T, event: any) => {
+    this.setState(({ [key]: event.target.value }) as Pick<IState, keyof IState>);
+  };
+
   validateEmail = (email: string) => {
     return isEmail(email);
   };
 
-  renderMultiEmailInput(emails, name) {
+  renderMultiEmailInput(emails: string[], name: string) {
     return (
       <ReactMultiEmail
         emails={emails}
@@ -68,11 +73,11 @@ class Wrapper extends React.Component<IProps, IState> {
   }
 
   renderEmailLabel = (email: string, index: number, removeEmail: (index: number) => void) => {
+    // tslint:disable
     return (
-      // tslint:disable
-      <div data-tag key={index}>
+      <div key={index}>
         {email}
-        <span data-tag-handle onClick={() => removeEmail(index)}>
+        <span onClick={() => removeEmail(index)}>
           ×
         </span>
       </div>
@@ -84,38 +89,35 @@ class Wrapper extends React.Component<IProps, IState> {
     const { messageId, headerId, references, threadId } = message;
     const { to, from, cc, bcc, subject, textPlain } = this.state;
 
-    const doc = {} as any;
+    const doc = { email: user.email } as any;
     const params = { to, from, cc, bcc, subject, textPlain } as any;
 
     if (type === 'new') {
-      doc.email = from;
       doc.mailParams = { ...params };
     } else {
-      doc.email = user.email;
       doc.mailParams = {
         ...params,
-        messageId: messageId,
-        headerId: headerId,
-        references: references,
-        threadId: threadId
+        messageId,
+        headerId,
+        references,
+        threadId
       }
     }
 
     send(doc);
   };
 
-  onChange = <T extends keyof IState>(key: T, event: any) => {
-    this.setState(({ [key]: event.target.value }) as Pick<IState, keyof IState>);
-  };
+  renderInput(label: string, email: boolean = true) {
+    const name = label.toLocaleLowerCase();
+    const value = this.state[name];
 
-  renderInput(label: string, name: string, email: boolean = true) {
     return (
       <InputWrapper>
         <Label>{label}</Label>
-        {email ? this.renderMultiEmailInput(this.state[name], name) : (
+        {email ? this.renderMultiEmailInput(value, name) : (
           <input 
             type="text" 
-            value={this.state[name]} 
+            value={value} 
             onChange={this.onChange.bind(this, name)} 
           />
         )}
@@ -134,18 +136,30 @@ class Wrapper extends React.Component<IProps, IState> {
   renderDetails() {
     const { type, user, message } = this.props;
 
-    const commonInput = <>
-      {this.renderInput('Cc', 'cc')}
-      {this.renderInput('bcc', 'bcc')}
+    const commonInputs = <>
+      {this.renderInput('Cc')}
+      {this.renderInput('Bcc')}
     </>;
 
     if (type === 'new') {
       return (
         <Details>
           {this.renderLabel('From', user.email)}
-          {this.renderInput('To', 'to')}
-          {commonInput}
-          {this.renderInput('Subject', 'subject', false)}
+          {this.renderInput('To')}
+          {commonInputs}
+          {this.renderInput('Subject', false)}
+        </Details>
+      );
+    }
+
+    if (type === 'show') {
+      return (
+        <Details>
+          {this.renderLabel('From', message.from)}
+          {this.renderLabel('To', message.to)}
+          {this.renderLabel('Cc', message.cc)}
+          {this.renderLabel('Bcc', message.bcc)}
+          {this.renderLabel('Subject', message.subject)}
         </Details>
       );
     }
@@ -153,8 +167,8 @@ class Wrapper extends React.Component<IProps, IState> {
     return (
       <Details>
         {this.renderLabel('From', message.from)}
-        {this.renderLabel('To', user.email)}
-        {commonInput}
+        {this.renderLabel('To', message.to)}
+        {commonInputs}
         {this.renderLabel('Subject', message.subject)}
       </Details>
     );
@@ -168,7 +182,7 @@ class Wrapper extends React.Component<IProps, IState> {
 
     return (
       <Header>
-        <Title>{type.toUpperCase()} message</Title>
+        <Title>{type} message</Title>
         <Avatar>{letter}</Avatar>
         {this.renderDetails()}
       </Header>
@@ -178,6 +192,14 @@ class Wrapper extends React.Component<IProps, IState> {
   renderBody() {
     const { textPlain } = this.state;
 
+    if (this.props.type === 'show') {
+      return (
+        <Container>
+          <Content>{textPlain}</Content>
+        </Container>
+      );
+    }
+
     return (
       <Container>
         <textarea value={textPlain} onChange={this.onChange.bind(this, 'textPlain')} />
@@ -186,7 +208,9 @@ class Wrapper extends React.Component<IProps, IState> {
   }
 
   renderFooter() {
-    const label = this.props.type === 'new' ? 'Send' : 'Reply';
+    const { type } = this.props;
+
+    const label = type === 'new' || type === 'reply' ? 'Send' : 'Reply';
 
     return (
       <Footer>
