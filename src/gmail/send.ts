@@ -41,10 +41,9 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     [
       'Content-Type: multipart/mixed; boundary=' + boundary + nl,
       '--' + boundary,
-
       'Content-Type: text/plain; charset=UTF-8',
       'Content-Transfer-Encoding: 8bit' + nl,
-      textPlain + nl,
+      textPlain,
     ].join(nl),
   );
 
@@ -54,7 +53,7 @@ const createMimeMessage = (mailParams: IMailParams): string => {
         '--' + boundary,
         'Content-Type: text/html; charset=UTF-8',
         'Content-Transfer-Encoding: 8bit' + nl,
-        textHtml + nl,
+        textHtml,
       ].join(nl),
     );
   }
@@ -79,8 +78,8 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 };
 
 export const sendGmail = async (email: string, mailParams: IMailParams) => {
-  const credentials = await getCredentialsByEmailAccountId({ email });
   const message = createMimeMessage(mailParams);
+  const credentials = await getCredentialsByEmailAccountId({ email });
   const { threadId } = mailParams;
 
   return composeEmail(credentials, message, threadId);
