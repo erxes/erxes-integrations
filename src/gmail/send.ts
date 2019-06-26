@@ -1,6 +1,7 @@
 import { debugGmail } from '../debuggers';
 import { getAuth, gmailClient } from './auth';
 import { ICredentials, IMailParams } from './types';
+import { getCredentialsByEmailAccountId } from './util';
 
 const encodeBase64 = (subject: string) => {
   return `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
@@ -23,11 +24,11 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     'Subject: ' + encodeBase64(subject),
   ];
 
-  if (cc) {
+  if (cc && cc.length > 0) {
     mimeBase.push('Cc: ' + cc);
   }
 
-  if (bcc) {
+  if (bcc && bcc.length > 0) {
     mimeBase.push('Bcc: ' + bcc);
   }
 
@@ -39,20 +40,25 @@ const createMimeMessage = (mailParams: IMailParams): string => {
       'Content-Type: text/plain; charset=UTF-8',
       'Content-Transfer-Encoding: 8bit' + nl,
       textPlain + nl,
-      '--' + boundary,
-
-      'Content-Type: text/html; charset=UTF-8',
-      'Content-Transfer-Encoding: 8bit' + nl,
-      textHtml + nl,
     ].join(nl),
   );
+
+  if (textHtml && textHtml.length > 0) {
+    mimeBase.push(
+      [
+        '--' + boundary,
+        'Content-Type: text/html; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit' + nl,
+        textHtml + nl,
+      ].join(nl),
+    );
+  }
 
   if (attachments) {
     for (const attachment of attachments) {
       const mimeAttachment = [
         '--' + boundary,
         'Content-Type: ' + attachment.mimeType + '; name="' + attachment.filename + '"',
-        'Content-Length: 3.7*1024',
         'Content-Disposition: attachment; attachmentname="' + attachment.filename + '"',
         'Content-Transfer-Encoding: base64' + nl,
         Buffer.from(attachment.data).toString('base64'),
@@ -67,7 +73,8 @@ const createMimeMessage = (mailParams: IMailParams): string => {
   return mimeBase.join(nl);
 };
 
-export const sendGmail = (credentials: ICredentials, mailParams: IMailParams) => {
+export const sendGmail = async (email: string, mailParams: IMailParams) => {
+  const credentials = await getCredentialsByEmailAccountId({ email });
   const message = createMimeMessage(mailParams);
   const { threadId } = mailParams;
 
