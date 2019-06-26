@@ -86,22 +86,6 @@ const init = async app => {
     return res.json({ status: 'success' });
   });
 
-  app.post('/gmail/reply', async (req, res, next) => {
-    debugRequest(debugGmail, req);
-    debugGmail(`Reply to gmail === `);
-
-    const { data } = req.body;
-    const { mailParams, userEmail } = JSON.parse(data);
-
-    try {
-      await sendGmail(userEmail, mailParams);
-    } catch (e) {
-      next(e);
-    }
-
-    return res.json({ status: 'success' });
-  });
-
   app.get('/gmail/send-email', async (_req, res) => {
     // TEST send
     await sendGmail('bfyhdgzj@gmail.com', {
