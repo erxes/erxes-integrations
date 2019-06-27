@@ -99,6 +99,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
         body: {
           action: 'create-customer',
           payload: JSON.stringify({
+            emails: [userId],
             firstName: '',
             lastName: '',
             integrationId: integration.erxesApiId,
@@ -148,7 +149,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
 
     if (!conversationMessage) {
       // save message on api
-      const apiConversationMessageResponse = await fetchMainApi({
+      await fetchMainApi({
         path: '/integrations-api',
         method: 'POST',
         body: {
@@ -165,7 +166,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
       data.to = extractEmailFromString(data.to);
 
       conversationMessage = await ConversationMessages.create({
-        conversationId: apiConversationMessageResponse._id,
+        conversationId: conversation.erxesApiId,
         customerId: customer.erxesApiId,
         ...data,
       });
@@ -178,6 +179,9 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   await integration.save();
 };
 
+/**
+ * Send multiple request at once
+ */
 const sendBatchRequest = (token: string, messages) => {
   debugGmail('IN BATCH REQUEST');
   const boundary = 'erxes';
@@ -260,4 +264,15 @@ const sendSingleRequest = async (auth: ICredentials, messagesAdded) => {
   }
 
   return response;
+};
+
+export const getAttachment = async (conversationMessageId: string, attachmentId: string) => {
+  debugGmail(`Get attachment with conversationId: ${conversationMessageId} attachmentId: ${attachmentId}`);
+
+  const conversationMessage = await ConversationMessages.findOne({ _id: conversationMessageId });
+
+  if (!conversationMessage) {
+    debugGmail(`Conversation message not found with id: ${conversationMessageId}`);
+    return;
+  }
 };

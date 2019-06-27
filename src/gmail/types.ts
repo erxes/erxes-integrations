@@ -17,6 +17,7 @@ interface IAttachmentParams {
   filename: string;
   size: number;
   mimeType: string;
+  attachmentId: string;
 }
 
 export interface IMailParams {
