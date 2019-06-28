@@ -81,7 +81,6 @@ export const extractEmailFromString = (str: string): string => {
  */
 export const parseMessage = (response: any) => {
   const { id, threadId, payload, labelIds } = response;
-  debugGmail(response);
 
   if (!payload || labelIds.includes('TRASH') || labelIds.includes('DRAFT')) {
     return;
@@ -124,7 +123,6 @@ export const mapHeaders = (headers: any) => {
     return {};
   }
 
-  debugGmail(headers);
   return headers.reduce((result, header) => {
     result[header.name.toLowerCase()] = header.value;
     return result;

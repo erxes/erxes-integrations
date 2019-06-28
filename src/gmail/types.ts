@@ -12,7 +12,7 @@ export interface ICredentials {
   scope: string;
 }
 
-interface IAttachmentParams {
+export interface IAttachmentParams {
   data: string;
   filename: string;
   size: number;
