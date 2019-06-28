@@ -3,12 +3,17 @@ import { getRandomColor } from './util';
 
 // tslint:disable
 const Base = styled.div`
+  padding: 8px;
+  margin-bottom: 8px;
+`;
+
+const Card = styled.div`
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-  width: 50%;
-  height: 50%;
+  width: 80%;
   font-family: Helvetica;
+  font-size: 12px;
 `;
 
 const Container = styled.div`
@@ -62,12 +67,17 @@ const InputWrapper = styled.div`
 
 `;
 
-const Footer = styled.div`
-
+const Button = styled.button`
+  background: #eee;
+  padding: 4px;
+  border-radius: 5px;
+  height: 25px;
+  font-weight: bold;
 `;
 
 export {
   Base,
+  Card,
   Container,
   Header,
   Details,
@@ -78,5 +88,5 @@ export {
   Title,
   Label,
   InputWrapper,
-  Footer
+  Button
 };
