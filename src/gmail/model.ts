@@ -32,7 +32,6 @@ export interface IConversation {
   content: string;
   customerId: string;
   erxesApiId: string;
-  threadId: string;
   createdAt: Date;
 }
 
@@ -45,7 +44,6 @@ export const conversationSchema = new Schema({
   content: String,
   customerId: String,
   erxesApiId: String,
-  threadId: String,
   createdAt: field({ type: Date, index: true, default: new Date() }),
 });
 
@@ -70,6 +68,7 @@ const attachmentSchema = new Schema({
   filename: String,
   size: Number,
   mimeType: String,
+  attachmentId: String,
 });
 
 export const conversationMessageSchema = new Schema({

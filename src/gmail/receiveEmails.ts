@@ -85,11 +85,11 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   // Create or get conversation, message, customer
   // according to received email
   for (const data of parsedMessages) {
-    const { from, threadId, messageId } = data;
-    const userId = extractEmailFromString(from);
+    const { from, reply, messageId } = data;
+    const primaryEmail = extractEmailFromString(from);
 
     // get customer
-    let customer = await Customers.findOne({ userId });
+    let customer = await Customers.findOne({ primaryEmail });
 
     // create customer in main api
     if (!customer) {
@@ -99,9 +99,10 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
         body: {
           action: 'create-customer',
           payload: JSON.stringify({
-            emails: [userId],
+            emails: [primaryEmail],
             firstName: '',
             lastName: '',
+            primaryEmail,
             integrationId: integration.erxesApiId,
           }),
         },
@@ -109,17 +110,30 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
 
       // save on integration db
       customer = await Customers.create({
-        primaryEmail: userId,
+        primaryEmail,
         erxesApiId: apiCustomerResponse._id,
         firstName: '',
         lastName: '',
-        emails: [userId],
+        emails: [primaryEmail],
         integrationId: integration.erxesApiId,
       });
     }
 
-    // get conversation
-    let conversation = await Conversations.findOne({ threadId });
+    // get or create conversation
+    let conversation;
+
+    if (reply) {
+      const dumpMessage = await ConversationMessages.findOne({
+        $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
+      }).sort({ createdAt: -1 });
+
+      // Check conversation exsist
+      if (dumpMessage) {
+        conversation = await Conversations.findOne({
+          _id: dumpMessage.conversationId,
+        });
+      }
+    }
 
     if (!conversation) {
       const apiConversationResponse = await fetchMainApi({
@@ -139,8 +153,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
       conversation = await Conversations.create({
         erxesApiId: apiConversationResponse._id,
         to: email,
-        from: userId,
-        threadId,
+        from: primaryEmail,
       });
     }
 
@@ -166,8 +179,9 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
       data.to = extractEmailFromString(data.to);
 
       conversationMessage = await ConversationMessages.create({
-        conversationId: conversation.erxesApiId,
+        conversationId: conversation._id,
         customerId: customer.erxesApiId,
+        erxesApiId: conversation.erxesApiId,
         ...data,
       });
     }
