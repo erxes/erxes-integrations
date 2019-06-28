@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import styledTS from 'styled-components-ts';
-import { getRandomColor } from './util';
 
 // tslint:disable
 const Base = styled.div`
@@ -14,8 +13,12 @@ const Card = styledTS<{ isCustomer: boolean }>(styled.div)`
   width: 80%;
   font-family: Helvetica;
   font-size: 12px;
-  float: ${props => props.isCustomer ? 'left' : 'right'}
   margin-bottom: 10px;
+  display: block;
+  ${props => props.isCustomer ? 
+    'margin-right: auto; margin-left: 0;' :
+    'margin-left: auto; margin-right: 0;'
+  }
 `;
 
 const Container = styled.div`
