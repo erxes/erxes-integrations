@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 import { IMailParams } from '../../types';
 import { Avatar, Base, Button, Card, Container, Content, Details, Header, InputWrapper, Label } from '../styles';
+import { getRandomColor } from '../util';
 import ReplayMessage from './ReplyMessage';
 
 interface IProps {
@@ -36,29 +37,6 @@ class ShoMessage extends React.Component<IProps, IState> {
 
     this.setState({ messages });
   }
-
-  // onSubmit = () => {
-  //   const { message, send, user, messageType } = this.props;
-  //   const { messageId, headerId, references, threadId } = message;
-  //   const { to, from, cc, bcc, subject, textPlain } = this.state;
-
-  //   const doc = { email: user.email } as any;
-  //   const params = { to, from, cc, bcc, subject, textPlain } as any;
-
-  //   if (messageType === 'new') {
-  //     doc.mailParams = { ...params };
-  //   } else {
-  //     doc.mailParams = {
-  //       ...params,
-  //       messageId,
-  //       headerId,
-  //       references,
-  //       threadId
-  //     }
-  //   }
-
-  //   send(doc);
-  // };
 
   openModal = (message: IMailParams) => {
     this.setState(s => ({
@@ -99,9 +77,9 @@ class ShoMessage extends React.Component<IProps, IState> {
 
     return (
       <Header>
-        <Avatar>{getLetter(name)}</Avatar>
+        <Avatar backgroundColor={getRandomColor()}>{getLetter(name)}</Avatar>
         {this.renderDetails(message)}
-        {this.renderReply(message)}
+        {from !== email && this.renderReply(message)}
       </Header>
     );
   }
@@ -118,9 +96,9 @@ class ShoMessage extends React.Component<IProps, IState> {
     return <Button onClick={this.openModal.bind(this, message)}>Reply</Button>;
   }
 
-  renderCard(index: number, message: IMailParams) {
+  renderCard(index: number, message: IMailParams, currentUser: string) {
     return (
-      <Card key={index}>
+      <Card key={index} isCustomer={message.from !== currentUser}>
         {this.renderHeader(message)}
         {this.renderBody(message)}
       </Card>
@@ -148,9 +126,9 @@ class ShoMessage extends React.Component<IProps, IState> {
   }
 
   render() {
-    const { messages } = this.props;
+    const { messages, email } = this.props;
 
-    const cards = messages.map((msg, indx) => this.renderCard(indx, msg));
+    const cards = messages.map((msg, indx) => this.renderCard(indx, msg, email));
 
     return (
       <Base>

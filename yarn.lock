@@ -6035,6 +6035,11 @@ stubs@^3.0.0:
   resolved "https://registry.yarnpkg.com/stubs/-/stubs-3.0.0.tgz#e8d2ba1fa9c90570303c030b6900f7d5f89abe5b"
   integrity sha1-6NK6H6nJBXAwPAMLaQD31fiavls=
 
+styled-components-ts@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/styled-components-ts/-/styled-components-ts-0.0.15.tgz#873169f8dffc699c3ee40895c06fc304e89fbd9e"
+  integrity sha512-BgGl5/9n7GZuLeLQONHGncfztrUf5qBxgLdA/VjTWGBDNevDy3/m60XFomTVAw6Zm5MFJvVsV7Igghdf1WRErQ==
+
 styled-components@^4.3.2:
   version "4.3.2"
   resolved "https://registry.yarnpkg.com/styled-components/-/styled-components-4.3.2.tgz#4ca81918c812d3006f60ac5fdec7d6b64a9509cc"

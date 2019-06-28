@@ -1,19 +1,21 @@
 import styled from 'styled-components';
+import styledTS from 'styled-components-ts';
 import { getRandomColor } from './util';
 
 // tslint:disable
 const Base = styled.div`
   padding: 8px;
-  margin-bottom: 8px;
 `;
 
-const Card = styled.div`
+const Card = styledTS<{ isCustomer: boolean }>(styled.div)`
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
   width: 80%;
   font-family: Helvetica;
   font-size: 12px;
+  float: ${props => props.isCustomer ? 'left' : 'right'}
+  margin-bottom: 10px;
 `;
 
 const Container = styled.div`
@@ -27,7 +29,7 @@ const Header = styled.div`
   border-bottom: 1px solid rgba(0,0,0,0.2);
 `;
 
-const Avatar = styled.div`
+const Avatar = styledTS<{ backgroundColor: string }>(styled.div)`
   width: 35px
   height: 35px;
   border-radius: 50%;
@@ -35,7 +37,7 @@ const Avatar = styled.div`
   color: #fff;
   line-height: 35px;
   text-align: center;
-  background: ${getRandomColor()}
+  background: ${props => props.backgroundColor || '#000'}
 `;
 
 const Details = styled.div`
