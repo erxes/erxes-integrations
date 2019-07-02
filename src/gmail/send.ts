@@ -31,11 +31,11 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 
   mimeBase.push('Content-Type: multipart/mixed; boundary=' + boundary + nl);
 
-  if (cc) {
+  if (cc && cc.length > 0) {
     mimeBase.push('Cc: ' + cc);
   }
 
-  if (bcc) {
+  if (bcc && bcc.length > 0) {
     mimeBase.push('Bcc: ' + bcc);
   }
 
