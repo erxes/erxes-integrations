@@ -128,20 +128,6 @@ const init = async app => {
 
     return res.json({ status: 200, statusText: 'success' });
   });
-
-  app.get('/gmail/send-email', async (_req, res) => {
-    // TEST send
-    await sendGmail('bfyhdgzj@gmail.com', {
-      to: 'munkhorgil@live.com',
-      textHtml: `<html> <head> </head> <body style="background: green;"> <small> Hello World <small> <b> This is html content </b> </body> </html>`,
-      textPlain: 'testing cc',
-      from: 'bfyhdgzj@gmail.com',
-      subject: 'Test',
-      bcc: 'munkhorgil.m@nmma.co',
-    });
-
-    return res.json('success');
-  });
 };
 
 export default init;
