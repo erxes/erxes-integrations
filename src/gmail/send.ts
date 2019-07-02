@@ -29,6 +29,8 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     mimeBase.push(['References:' + references, 'In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
   }
 
+  mimeBase.push('Content-Type: multipart/mixed; boundary=' + boundary + nl);
+
   if (cc) {
     mimeBase.push('Cc: ' + cc);
   }
@@ -37,15 +39,16 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     mimeBase.push('Bcc: ' + bcc);
   }
 
-  mimeBase.push(
-    [
-      'Content-Type: multipart/mixed; boundary=' + boundary + nl,
-      '--' + boundary,
-      'Content-Type: text/plain; charset=UTF-8',
-      'Content-Transfer-Encoding: 8bit' + nl,
-      textPlain,
-    ].join(nl),
-  );
+  if (textPlain) {
+    mimeBase.push(
+      [
+        '--' + boundary,
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit' + nl,
+        textPlain,
+      ].join(nl),
+    );
+  }
 
   if (textHtml && textHtml.length > 0) {
     mimeBase.push(

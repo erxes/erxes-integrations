@@ -36,9 +36,13 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
     }
 
     const { credentials } = auth;
+    const singleMessage = receivedMessages.length === 1;
 
     // Send batch request for multiple messages
-    response = await sendBatchRequest(credentials.access_token, receivedMessages);
+    response = {
+      messages: !singleMessage && (await sendBatchRequest(credentials.access_token, receivedMessages)),
+      message: singleMessage && (await sendSingleRequest(auth, receivedMessages)),
+    };
   } catch (e) {
     debugGmail(`Error Google: Failed to syncronize gmail with given historyId ${e}`);
   }
@@ -63,17 +67,18 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   const auth = getAuth(credentials);
 
   // Get batched multiple messages or single message
-  const messages = await syncByHistoryId(auth, gmailHistoryId);
+  const { messages, message } = await syncByHistoryId(auth, gmailHistoryId);
 
-  if (!messages) {
+  if (!messages && !message) {
     debugGmail(`Error Google: Could not get message with historyId in sync partially ${gmailHistoryId}`);
     return;
   }
 
   const parsedMessages: any = [];
+  const messagesToParsed = messages ? messages : [message.data];
 
   // Prepare received messages to get a details
-  for (const data of messages) {
+  for (const data of messagesToParsed) {
     parsedMessages.push(parseMessage(data));
   }
 
@@ -81,7 +86,6 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   // according to received email
   for (const data of parsedMessages) {
     const { from, reply, messageId } = data;
-    debugGmail(data);
     const primaryEmail = extractEmailFromString(from);
 
     // get customer
@@ -166,7 +170,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
           payload: JSON.stringify({
             conversationId: conversation.erxesApiId,
             customerId: customer.erxesApiId,
-            content: data.textPlain,
+            content: data.textHtml,
           }),
         },
       });
@@ -228,6 +232,31 @@ const sendBatchRequest = (token: string, messages) => {
       },
     );
   });
+};
+
+/**
+ * Single request to get a full message
+ */
+const sendSingleRequest = async (auth: ICredentials, messagesAdded) => {
+  const [data] = messagesAdded;
+  const { message } = data;
+
+  let response;
+
+  debugGmail(`Request to get a single message`);
+
+  try {
+    response = await gmailClient.messages.get({
+      auth,
+      userId: 'me',
+      id: message.id,
+    });
+  } catch (e) {
+    debugGmail(`Error Google: Request to get a single message failed ${e}`);
+    return;
+  }
+
+  return response;
 };
 
 const parseBatchResponse = (body: string) => {
