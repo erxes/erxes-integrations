@@ -118,7 +118,9 @@ const init = async app => {
     }
 
     try {
-      await sendGmail(account.uid, mailParams);
+      const { uid } = account;
+
+      await sendGmail(uid, { from: uid, ...mailParams });
     } catch (e) {
       debugGmail('Error Google: Failed to send email');
       next(e);
