@@ -3,18 +3,20 @@ import { FETCH, GMAIL } from './constants';
 
 const { DOMAIN } = process.env;
 
+const headers = { 'Content-Type': 'application/json' };
+
 /**
  * Send gmail
  */
 export const sendEmail = params => {
-  return postRequest(`${DOMAIN}/${GMAIL.SEND}`, 'post', params);
+  return postRequest(GMAIL.SEND, params);
 };
 
 /**
  * Get conversation messsages
  */
 export const fetchConversationMessages = params => {
-  return getRequest(`${DOMAIN}/${FETCH.CONVERSATION_MESSAGES}`, params);
+  return getRequest(FETCH.CONVERSATION_MESSAGES, params);
 };
 
 /**
@@ -24,9 +26,9 @@ const getRequest = async (url: string, params: any) => {
   let response;
 
   try {
-    response = await requestify.request(url, {
-      headers: { 'Content-Type': 'application/json' },
+    response = await requestify.request(`${DOMAIN}/${url}`, {
       method: 'GET',
+      headers,
       params,
     });
   } catch (e) {
@@ -40,14 +42,14 @@ const getRequest = async (url: string, params: any) => {
 /**
  * Post request to erxes-integration
  */
-const postRequest = (url: string, method: string, params: any) => {
+const postRequest = (url: string, params: any) => {
   let response;
 
   try {
-    response = requestify.request(url, {
-      headers: { 'Content-Type': 'application/json' },
+    response = requestify.request(`${DOMAIN}/${url}`, {
       body: { data: JSON.stringify(params) },
-      method,
+      method: 'POST',
+      headers,
     });
   } catch (e) {
     console.log(`Post request failed: ${e}`);

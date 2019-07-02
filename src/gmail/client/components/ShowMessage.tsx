@@ -8,11 +8,11 @@ import ReplayMessage from './ReplyMessage';
 interface IProps {
   messageType: string;
   email: string;
-  messages?: IMailParams[];
+  message?: IMailParams;
 };
 
 interface IState {
-  messages: IMailParams[];
+  message: IMailParams;
   showModal: boolean;
   selectedMessage: IMailParams;
 };
@@ -26,16 +26,16 @@ class ShoMessage extends React.Component<IProps, IState> {
     super(props);
 
     this.state = { 
-      messages: [],
+      message: {},
       showModal: false,
       selectedMessage: {} as IMailParams
     };
   }
 
   componentDidMount() {
-    const { messages } = this.props;
+    const { message } = this.props;
 
-    this.setState({ messages });
+    this.setState({ message });
   }
 
   openModal = (message: IMailParams) => {
@@ -87,7 +87,9 @@ class ShoMessage extends React.Component<IProps, IState> {
   renderBody(message: IMailParams) {
     return (
       <Container>
-        <Content>{message.textPlain}</Content>
+        <Content>
+          {message.textHtml}
+        </Content>
       </Container>
     );
   }
@@ -96,9 +98,9 @@ class ShoMessage extends React.Component<IProps, IState> {
     return <Button onClick={this.openModal.bind(this, message)}>Reply</Button>;
   }
 
-  renderCard(index: number, message: IMailParams, currentUser: string) {
+  renderCard(message: IMailParams, currentUser: string) {
     return (
-      <Card key={index} isCustomer={message.from !== currentUser}>
+      <Card isCustomer={message.from !== currentUser}>
         {this.renderHeader(message)}
         {this.renderBody(message)}
       </Card>
@@ -114,7 +116,7 @@ class ShoMessage extends React.Component<IProps, IState> {
     }
 
     return (
-      <Modal show={showModal} onHide={this.onHide}>
+      <Modal show={showModal} onHide={this.onHide} size="sm">
         <Modal.Header closeButton={true}>
           <Modal.Title>Replay message</Modal.Title>
         </Modal.Header>
@@ -126,14 +128,12 @@ class ShoMessage extends React.Component<IProps, IState> {
   }
 
   render() {
-    const { messages, email } = this.props;
-
-    const cards = messages.map((msg, indx) => this.renderCard(indx, msg, email));
+    const { message, email } = this.props;
 
     return (
       <Base>
         {this.renderModal()}
-        {cards}
+        {this.renderCard(message, email)}
       </Base>
     );
   }

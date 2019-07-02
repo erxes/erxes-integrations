@@ -42,10 +42,11 @@ class BaseContainer extends React.Component<{}, IState> {
     const updatedProps = {
       email,
       messageType,
-      messages,
     };
 
-    return <ShowMessage {...updatedProps} />;
+    return messages.map((message, index) => (
+      <ShowMessage key={index} message={message} {...updatedProps} /> 
+    ))
   }
 }
 

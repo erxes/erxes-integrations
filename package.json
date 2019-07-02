@@ -46,6 +46,7 @@
     "gmail-api-create-message-body": "^1.0.0",
     "googleapis": "^40.0.0",
     "meteor-random": "^0.0.3",
+    "moment": "^2.24.0",
     "mongoose": "^5.2.16",
     "node-schedule": "^1.3.2",
     "react": "^16.8.6",

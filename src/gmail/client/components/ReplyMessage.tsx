@@ -3,13 +3,11 @@ import { isEmail, ReactMultiEmail } from 'react-multi-email';
 import { IMailParams } from '../../types';
 import { Avatar, Button, Card, Container, Details, Header, InputWrapper, Label } from '../styles';
 import { sendEmail } from '../util';
-
 interface IProps {
   email: string;
   message?: IMailParams;
   send?: any;
 };
-
 interface IState {
   cc: string[];
   bcc: string[];
@@ -18,7 +16,6 @@ interface IState {
   from: string;
   textPlain: string;
 };
-
 class ReplyMessage extends React.Component<IProps, IState> {
   constructor(props) {
     super(props);

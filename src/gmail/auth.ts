@@ -40,6 +40,7 @@ const getOauthClient = () => {
   return response;
 };
 
+// Google OAuthClient ================
 const oauth2Client = getOauthClient();
 
 /**
@@ -107,7 +108,7 @@ export const getAccessToken = async (code: string) => {
 /*
  * Refresh token and save when access_token expires
  */
-export const refreshAccessToken = async (accountId: string, tokens: any) => {
+export const refreshAccessToken = async (accountId: string, tokens: any): Promise<void> => {
   const account = await Accounts.findOne({ accountId });
 
   if (!account) {

@@ -36,13 +36,9 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
     }
 
     const { credentials } = auth;
-    const singleMessage = receivedMessages.length > 1;
 
     // Send batch request for multiple messages
-    response = {
-      messages: !singleMessage && (await sendBatchRequest(credentials.access_token, receivedMessages)),
-      message: singleMessage && (await sendSingleRequest(auth, receivedMessages)),
-    };
+    response = await sendBatchRequest(credentials.access_token, receivedMessages);
   } catch (e) {
     debugGmail(`Error Google: Failed to syncronize gmail with given historyId ${e}`);
   }
@@ -67,18 +63,17 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   const auth = getAuth(credentials);
 
   // Get batched multiple messages or single message
-  const { messages, message } = await syncByHistoryId(auth, gmailHistoryId);
+  const messages = await syncByHistoryId(auth, gmailHistoryId);
 
-  if (!messages && !message) {
+  if (!messages) {
     debugGmail(`Error Google: Could not get message with historyId in sync partially ${gmailHistoryId}`);
     return;
   }
 
-  const messagesToParse = messages ? messages : [message.data];
   const parsedMessages: any = [];
 
   // Prepare received messages to get a details
-  for (const data of messagesToParse) {
+  for (const data of messages) {
     parsedMessages.push(parseMessage(data));
   }
 
@@ -252,41 +247,4 @@ const parseBatchResponse = (body: string) => {
   }
 
   return result;
-};
-
-/**
- * Single request to get a full message
- */
-const sendSingleRequest = async (auth: ICredentials, messagesAdded) => {
-  const [data] = messagesAdded;
-  const { message } = data;
-
-  debugGmail('IN SINGLE REQUEST');
-  let response;
-
-  debugGmail(`Request to get a single message`);
-
-  try {
-    response = await gmailClient.messages.get({
-      auth,
-      userId: 'me',
-      id: message.id,
-    });
-  } catch (e) {
-    debugGmail(`Error Google: Request to get a single message failed ${e}`);
-    return;
-  }
-
-  return response;
-};
-
-export const getAttachment = async (conversationMessageId: string, attachmentId: string) => {
-  debugGmail(`Get attachment with conversationId: ${conversationMessageId} attachmentId: ${attachmentId}`);
-
-  const conversationMessage = await ConversationMessages.findOne({ _id: conversationMessageId });
-
-  if (!conversationMessage) {
-    debugGmail(`Conversation message not found with id: ${conversationMessageId}`);
-    return;
-  }
 };

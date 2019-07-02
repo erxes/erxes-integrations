@@ -22,9 +22,9 @@ export interface IAttachmentParams {
 
 export interface IMailParams {
   labelIds?: string[];
-  subject: string;
+  subject?: string;
   body?: string;
-  to: string;
+  to?: string;
   cc?: string;
   bcc?: string;
   attachments?: IAttachmentParams[];
