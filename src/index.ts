@@ -3,17 +3,19 @@ import * as cors from 'cors';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as path from 'path';
+
+// load environment variables
+dotenv.config();
+
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
+import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import initGmail from './gmail/controller';
 import { ConversationMessages } from './gmail/model';
 import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
 import { init } from './startup';
-
-// load environment variables
-dotenv.config();
 
 connect();
 
@@ -24,7 +26,7 @@ app.use((req: any, _res, next) => {
   req.rawBody = '';
 
   req.on('data', chunk => {
-    req.rawBody += chunk.toString().replace(/\//g, '\\/');
+    req.rawBody += chunk.toString().replace(/\//g, '/');
   });
 
   next();
@@ -42,6 +44,26 @@ app.post('/integrations/remove', async (req, res) => {
   debugRequest(debugIntegrations, req);
 
   const { integrationId } = req.body;
+
+  const integration = await Integrations.findOne({ erxesApiId: integrationId });
+
+  if (!integration) {
+    return res.status(500).send('Integration not found');
+  }
+
+  const account = await Accounts.findOne({ _id: integration.accountId });
+
+  if (!account) {
+    return res.status(500).send('Account not found');
+  }
+
+  if (integration.kind === 'facebook') {
+    for (const pageId of integration.facebookPageIds) {
+      const pageTokenResponse = await getPageAccessToken(pageId, account.token);
+
+      await unsubscribePage(pageId, pageTokenResponse);
+    }
+  }
 
   await Integrations.deleteOne({ erxesApiId: integrationId });
 

@@ -40,6 +40,7 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
       body: {
         action: 'create-customer',
         payload: JSON.stringify({
+          integrationId: integration.erxesApiId,
           firstName: response.first_name,
           lastName: response.last_name,
           avatar: response.profile_pic,
@@ -97,10 +98,12 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
       action: 'create-conversation-message',
       payload: JSON.stringify({
         content: text,
-        attachments: (attachments || []).map(attachment => ({
-          type: attachment.type,
-          url: attachment.payload ? attachment.payload.url : '',
-        })),
+        attachments: (attachments || [])
+          .filter(att => att.type !== 'fallback')
+          .map(att => ({
+            type: att.type,
+            url: att.payload ? att.payload.url : '',
+          })),
         conversationId: conversation.erxesApiId,
         customerId: customer.erxesApiId,
       }),
