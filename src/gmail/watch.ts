@@ -3,6 +3,7 @@ import { debugGmail } from '../debuggers';
 import { getEnv } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { syncPartially } from './receiveEmails';
+import { ICredentials } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
@@ -142,7 +143,7 @@ export const watchPushNotification = async (accountId: string, credentials: any)
 /**
  * Stop receiving push notifications for the given user mailbox
  */
-export const stopPushNotification = async (email: string, credentials: any) => {
+export const stopPushNotification = async (email: string, credentials: ICredentials) => {
   const auth = getAuth(credentials);
 
   debugGmail(`Google OAuthClient request ho stop push notification for the given user mailbox`);

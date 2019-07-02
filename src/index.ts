@@ -12,7 +12,8 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import initGmail from './gmail/controller';
-import { ConversationMessages } from './gmail/model';
+import { getCredentialsByEmailAccountId } from './gmail/util';
+import { stopPushNotification } from './gmail/watch';
 import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
 import { init } from './startup';
@@ -65,6 +66,12 @@ app.post('/integrations/remove', async (req, res) => {
     }
   }
 
+  if (integration.kind === 'gmail') {
+    const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
+
+    await stopPushNotification(account.uid, credentials);
+  }
+
   await Integrations.deleteOne({ erxesApiId: integrationId });
 
   debugResponse(debugIntegrations, req);
@@ -90,30 +97,6 @@ app.post('/accounts/remove', async (req, res) => {
   debugResponse(debugIntegrations, req);
 
   return res.json({ status: 'removed' });
-});
-
-// Gmail server side rendereing
-app.get('/gmail/render', (req, res) => {
-  debugRequest(debugIntegrations, req);
-
-  const { conversationId, messageType, email } = req.query;
-
-  res.render('gmail', { conversationId, messageType, email });
-});
-
-// Gmail get conversation messages
-app.get('/gmail/get-conversation-messages', async (req, res) => {
-  debugRequest(debugIntegrations, req);
-
-  const { conversationId } = req.query;
-
-  const messages = await ConversationMessages.find({ erxesApiId: conversationId });
-
-  if (!messages || messages.length === 0) {
-    res.json({ status: 'Not found' });
-  }
-
-  return res.json(messages);
 });
 
 // init bots

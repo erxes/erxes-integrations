@@ -7,7 +7,6 @@ import { fetchConversationMessages } from '../util';
 interface IWindow {
   conversationId: string;
   email: string;
-  messageType: string;
 }
 
 declare const window: IWindow;
@@ -32,20 +31,15 @@ class BaseContainer extends React.Component<{}, IState> {
   }
 
   render() {
-    const { messageType, email } = window;
+    const { email } = window;
     const { messages } = this.state;
 
     if (messages.length === 0) {
       return null;
     }
 
-    const updatedProps = {
-      email,
-      messageType,
-    };
-
     return messages.map((message, index) => (
-      <ShowMessage key={index} message={message} {...updatedProps} /> 
+      <ShowMessage key={index} message={message} email={email} /> 
     ))
   }
 }

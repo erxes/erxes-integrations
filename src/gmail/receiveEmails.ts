@@ -81,6 +81,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   // according to received email
   for (const data of parsedMessages) {
     const { from, reply, messageId } = data;
+    debugGmail(data);
     const primaryEmail = extractEmailFromString(from);
 
     // get customer

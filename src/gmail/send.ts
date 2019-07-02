@@ -29,11 +29,11 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     mimeBase.push(['References:' + references, 'In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
   }
 
-  if (cc && cc.length > 0) {
+  if (cc) {
     mimeBase.push('Cc: ' + cc);
   }
 
-  if (bcc && bcc.length > 0) {
+  if (bcc) {
     mimeBase.push('Bcc: ' + bcc);
   }
 

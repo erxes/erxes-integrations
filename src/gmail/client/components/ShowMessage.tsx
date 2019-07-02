@@ -6,7 +6,6 @@ import { getRandomColor } from '../util';
 import ReplayMessage from './ReplyMessage';
 
 interface IProps {
-  messageType: string;
   email: string;
   message?: IMailParams;
 };
