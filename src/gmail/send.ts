@@ -68,7 +68,7 @@ const createMimeMessage = (mailParams: IMailParams): string => {
         'Content-Type: ' + attachment.mimeType + '; name="' + attachment.filename + '"',
         'Content-Disposition: attachment; attachmentname="' + attachment.filename + '"',
         'Content-Transfer-Encoding: base64' + nl,
-        Buffer.from(attachment.data).toString('base64'),
+        attachment.data,
       ];
 
       mimeBase.push(mimeAttachment.join(nl));
@@ -82,6 +82,7 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 
 export const sendGmail = async (email: string, mailParams: IMailParams) => {
   const message = createMimeMessage(mailParams);
+
   const credentials = await getCredentialsByEmailAccountId({ email });
   const { threadId } = mailParams;
 
