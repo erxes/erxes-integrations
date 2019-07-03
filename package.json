@@ -43,7 +43,6 @@
     "ejs": "^2.6.2",
     "express": "^4.16.4",
     "fbgraph": "^1.4.4",
-    "gmail-api-create-message-body": "^1.0.0",
     "googleapis": "^40.0.0",
     "meteor-random": "^0.0.3",
     "moment": "^2.24.0",
