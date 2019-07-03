@@ -1,4 +1,5 @@
 import { PubSub } from '@google-cloud/pubsub';
+import * as fs from 'fs';
 import { debugGmail } from '../debuggers';
 import { getEnv } from '../utils';
 import { getAuth, gmailClient } from './auth';
@@ -23,6 +24,12 @@ export const trackGmail = async () => {
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS || 'Not defined'}
       GOOGLE_GMAIL_SUBSCRIPTION_NAME: ${GOOGLE_GMAIL_SUBSCRIPTION_NAME || 'Not defined'}
     `);
+  }
+
+  const googleCredExists = fs.existsSync(GOOGLE_APPLICATION_CREDENTIALS);
+
+  if (!googleCredExists) {
+    return debugGmail('Error Google: Google credentials file not found');
   }
 
   const pubsubClient: PubSub = new PubSub({
