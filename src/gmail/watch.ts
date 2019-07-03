@@ -11,18 +11,26 @@ const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
 const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_GMAIL_TOPIC' });
 const GOOGLE_APPLICATION_CREDENTIALS = getEnv({ name: 'GOOGLE_APPLICATION_CREDENTIALS' });
 const GOOGLE_GMAIL_SUBSCRIPTION_NAME = getEnv({ name: 'GOOGLE_GMAIL_SUBSCRIPTION_NAME' });
+const GOOGLE_TOPIC_MESSAGE_INSERTED = getEnv({ name: 'GOOGLE_TOPIC_MESSAGE_INSERTED' });
 
 /**
  * Create topic and subscription for gmail
  */
 export const trackGmail = async () => {
-  if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC || !GOOGLE_APPLICATION_CREDENTIALS || !GOOGLE_GMAIL_SUBSCRIPTION_NAME) {
+  if (
+    !GOOGLE_PROJECT_ID ||
+    !GOOGLE_GMAIL_TOPIC ||
+    !GOOGLE_APPLICATION_CREDENTIALS ||
+    !GOOGLE_GMAIL_SUBSCRIPTION_NAME ||
+    !GOOGLE_TOPIC_MESSAGE_INSERTED
+  ) {
     return debugGmail(`
       Error Google: Failed to create google pubsub topic following config missing
       GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID || 'Not defined'}
       GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC || 'Not defined'}
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS || 'Not defined'}
       GOOGLE_GMAIL_SUBSCRIPTION_NAME: ${GOOGLE_GMAIL_SUBSCRIPTION_NAME || 'Not defined'}
+      GOOGLE_TOPIC_MESSAGE_INSERTED: ${GOOGLE_TOPIC_MESSAGE_INSERTED || 'Not defined'}
     `);
   }
 
@@ -36,6 +44,19 @@ export const trackGmail = async () => {
     projectId: GOOGLE_PROJECT_ID,
     keyFilename: GOOGLE_APPLICATION_CREDENTIALS,
   });
+
+  debugGmail(`Pubsub: Check existing conversation gmail email inserted topic`);
+
+  const messageInserted = await pubsubClient.topic(GOOGLE_TOPIC_MESSAGE_INSERTED);
+  const [messageTopicExists] = await messageInserted.exists();
+
+  if (!messageTopicExists) {
+    debugGmail(`Pubsub: Creating gmail message inserted topic`);
+
+    const [messageTopicResponse] = await pubsubClient.createTopic(GOOGLE_TOPIC_MESSAGE_INSERTED);
+
+    debugGmail(messageTopicResponse);
+  }
 
   debugGmail(`Pubsub: Check existing gmail topic in google cloud`);
 
