@@ -35,16 +35,13 @@ class ReplyMessage extends React.Component<IProps, IState> {
   onSubmit = () => {
     const { email, message } = this.props;
     const { headerId, references, threadId } = message;
-    const params = this.state;
 
     const doc = { 
       email,
-      mailParams: {
-        ...params,
-        headerId,
-        references,
-        threadId
-      }
+      ...this.state,
+      headerId,
+      references,
+      threadId
     };
 
     return sendEmail(doc);

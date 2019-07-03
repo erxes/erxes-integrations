@@ -97,14 +97,19 @@ const init = async app => {
     debugRequest(debugGmail, req);
     debugGmail(`Sending gmail ===`);
 
-    const { data, erxesApiId } = req.body;
+    const { data, erxesApiId, email } = req.body;
     const mailParams = JSON.parse(data);
+
+    const selector = {
+      ...(erxesApiId && { erxesApiId }),
+      ...(email && { email }),
+    };
 
     let account;
     let integration;
 
     try {
-      integration = await Integrations.findOne({ erxesApiId });
+      integration = await Integrations.findOne(selector);
     } catch (e) {
       debugGmail('Error Google: Integration not found');
       next(e);

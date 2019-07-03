@@ -43,11 +43,16 @@ const getRequest = async (url: string, params: any) => {
  * Post request to erxes-integration
  */
 const postRequest = (url: string, params: any) => {
+  const { email, ...mailParams } = params;
+
   let response;
 
   try {
     response = requestify.request(`${DOMAIN}/${url}`, {
-      body: { data: JSON.stringify(params) },
+      body: {
+        email,
+        data: JSON.stringify(mailParams),
+      },
       method: 'POST',
       headers,
     });
