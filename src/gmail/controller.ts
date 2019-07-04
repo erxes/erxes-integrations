@@ -1,7 +1,6 @@
 import { debugGmail, debugIntegrations, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
-import { ConversationMessages } from './model';
 import { sendGmail } from './send';
 import { getCredentials } from './util';
 import { watchPushNotification } from './watch';
@@ -71,26 +70,12 @@ const init = async app => {
     return res.json(account.uid);
   });
 
-  app.get('/gmail/get-conversation-messages', async (req, res) => {
-    debugRequest(debugIntegrations, req);
-
-    const { conversationId } = req.query;
-
-    const messages = await ConversationMessages.find({ erxesApiId: conversationId });
-
-    if (!messages || messages.length === 0) {
-      res.json({ status: 'Not found' });
-    }
-
-    return res.json(messages);
-  });
-
   app.get('/gmail/render', (req, res) => {
     debugRequest(debugIntegrations, req);
 
-    const { conversationId, messageType, email } = req.query;
+    const { conversationId, email } = req.query;
 
-    res.render('gmail', { conversationId, messageType, email });
+    res.render('gmail', { conversationId, email });
   });
 
   app.post('/gmail/send', async (req, res, next) => {
@@ -105,21 +90,16 @@ const init = async app => {
       ...(email && { email }),
     };
 
-    let account;
-    let integration;
+    const integration = await Integrations.findOne(selector);
 
-    try {
-      integration = await Integrations.findOne(selector);
-    } catch (e) {
-      debugGmail('Error Google: Integration not found');
-      next(e);
+    if (!integration) {
+      throw new Error('Integration not found');
     }
 
-    try {
-      account = await Accounts.findOne({ _id: integration.accountId });
-    } catch (e) {
-      debugGmail('Error Google: Account not found');
-      next(e);
+    const account = await Accounts.findOne({ _id: integration.accountId });
+
+    if (!account) {
+      throw new Error('Account not found');
     }
 
     try {
@@ -128,7 +108,7 @@ const init = async app => {
       await sendGmail(uid, { from: uid, ...mailParams });
     } catch (e) {
       debugGmail('Error Google: Failed to send email');
-      next(e);
+      return next(e);
     }
 
     return res.json({ status: 200, statusText: 'success' });

@@ -1,8 +1,8 @@
+import gql from 'graphql-tag';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { IConversationMessage } from '../../model';
+import { graphql } from 'react-apollo';
 import ShowMessage from '../components/ShowMessage';
-import { fetchConversationMessages } from '../util';
+import { queries } from '../data';
 
 interface IWindow {
   conversationId: string;
@@ -11,37 +11,25 @@ interface IWindow {
 
 declare const window: IWindow;
 
-interface IState {
-  messages: IConversationMessage[];
-};
-
-class BaseContainer extends React.Component<{}, IState> {
-  constructor(props) {
-    super(props);
-
-    this.state = { messages: [] };
-  }
-
-  async componentDidMount() {
-    const { conversationId } = window;
-
-    const messages = await fetchConversationMessages({ conversationId });
-
-    this.setState({ messages });
-  }
-
+class BaseContainer extends React.Component<any> {
   render() {
-    const { email } = window;
-    const { messages } = this.state;
+    const { conversationMessagesQuery } = this.props;
 
-    if (messages.length === 0) {
+    if (conversationMessagesQuery.loading) {
       return null;
     }
 
+    const messages = conversationMessagesQuery.conversationMessages || [];
+
     return messages.map((message, index) => (
-      <ShowMessage key={index} message={message} email={email} /> 
+      <ShowMessage key={index} message={message} email={window.email} /> 
     ))
   }
 }
 
-ReactDOM.render(<BaseContainer/>, document.getElementById("app"));
+export default graphql(gql(queries.messages), {
+  name: 'conversationMessagesQuery',
+  options: () => ({
+    variables: { conversationId: window.conversationId }
+  })
+})(BaseContainer);

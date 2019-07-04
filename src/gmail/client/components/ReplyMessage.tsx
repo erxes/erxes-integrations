@@ -2,7 +2,7 @@ import * as React from 'react';
 import { isEmail, ReactMultiEmail } from 'react-multi-email';
 import { IMailParams } from '../../types';
 import { Avatar, Button, Card, Container, Details, Header, InputWrapper, Label } from '../styles';
-import { sendEmail } from '../util';
+import { sendEmail } from '../utils';
 interface IProps {
   email: string;
   message?: IMailParams;

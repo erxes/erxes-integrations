@@ -45,18 +45,18 @@ export const trackGmail = async () => {
     keyFilename: GOOGLE_APPLICATION_CREDENTIALS,
   });
 
-  debugGmail(`Pubsub: Check existing conversation gmail email inserted topic`);
+  // debugGmail(`Pubsub: Check existing conversation gmail email inserted topic`);
 
-  const messageInserted = await pubsubClient.topic(GOOGLE_TOPIC_MESSAGE_INSERTED);
-  const [messageTopicExists] = await messageInserted.exists();
+  // const messageInserted = await pubsubClient.topic(GOOGLE_TOPIC_MESSAGE_INSERTED);
+  // const [messageTopicExists] = await messageInserted.exists();
 
-  if (!messageTopicExists) {
-    debugGmail(`Pubsub: Creating gmail message inserted topic`);
+  // if (!messageTopicExists) {
+  //   debugGmail(`Pubsub: Creating gmail message inserted topic`);
 
-    const [messageTopicResponse] = await pubsubClient.createTopic(GOOGLE_TOPIC_MESSAGE_INSERTED);
+  //   const [messageTopicResponse] = await pubsubClient.createTopic(GOOGLE_TOPIC_MESSAGE_INSERTED);
 
-    debugGmail(messageTopicResponse);
-  }
+  //   debugGmail(messageTopicResponse);
+  // }
 
   debugGmail(`Pubsub: Check existing gmail topic in google cloud`);
 

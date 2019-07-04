@@ -1,3 +1,4 @@
+import { ApolloServer, PlaygroundConfig } from 'apollo-server-express';
 import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
 import * as dotenv from 'dotenv';
@@ -12,6 +13,8 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import initGmail from './gmail/controller';
+import resolvers from './gmail/graphql';
+import typeDefs from './gmail/graphql/schema';
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import Accounts from './models/Accounts';
@@ -23,6 +26,32 @@ connect();
 const app = express();
 
 app.use(cors());
+
+const { NODE_ENV, PORT } = process.env;
+
+let playground: PlaygroundConfig = false;
+
+if (NODE_ENV !== 'production') {
+  playground = {
+    settings: {
+      'general.betaUpdates': false,
+      'editor.theme': 'dark',
+      'editor.cursorShape': 'line',
+      'editor.reuseHeaders': true,
+      'tracing.hideTracingResponse': true,
+      'editor.fontSize': 14,
+      'editor.fontFamily': `'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace`,
+      'request.credentials': 'include',
+    },
+  };
+}
+
+const apolloServer = new ApolloServer({
+  typeDefs,
+  resolvers,
+  playground,
+});
+
 app.use((req: any, _res, next) => {
   req.rawBody = '';
 
@@ -111,7 +140,7 @@ app.use((error, _req, res, _next) => {
   res.status(500).send(error.message);
 });
 
-const { PORT } = process.env;
+apolloServer.applyMiddleware({ app, path: '/graphql' });
 
 app.listen(PORT, () => {
   debugInit(`Integrations server is running on port ${PORT}`);

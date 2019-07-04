@@ -2,8 +2,8 @@ import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 import { IMailParams } from '../../types';
 import { Avatar, Base, Button, Card, Container, Content, Details, Header, InputWrapper, Label } from '../styles';
-import { getRandomColor } from '../util';
 import ReplayMessage from './ReplyMessage';
+import { getRandomColor } from './utils';
 
 interface IProps {
   email: string;
