@@ -32,6 +32,7 @@
     ]
   },
   "dependencies": {
+    "@axelspringer/graphql-google-pubsub": "^1.2.1",
     "@google-cloud/pubsub": "^0.29.1",
     "apollo-cache-inmemory": "^1.1.5",
     "apollo-client": "^2.3.7",
@@ -54,7 +55,9 @@
     "fbgraph": "^1.4.4",
     "googleapis": "^40.0.0",
     "graphql": "^14.4.2",
+    "graphql-redis-subscriptions": "^2.1.0",
     "graphql-tag": "^2.10.1",
+    "ioredis": "^4.11.1",
     "meteor-random": "^0.0.3",
     "moment": "^2.24.0",
     "mongoose": "^5.2.16",

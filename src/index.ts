@@ -3,6 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
+import { createServer } from 'http';
 import * as path from 'path';
 
 // load environment variables
@@ -50,6 +51,10 @@ const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   playground,
+  subscriptions: {
+    keepAlive: 10000,
+    path: '/subscriptions',
+  },
 });
 
 app.use((req: any, _res, next) => {
@@ -142,8 +147,14 @@ app.use((error, _req, res, _next) => {
 
 apolloServer.applyMiddleware({ app, path: '/graphql' });
 
-app.listen(PORT, () => {
+// Wrap the Express server
+const httpServer = createServer(app);
+
+apolloServer.installSubscriptionHandlers(httpServer);
+
+httpServer.listen(PORT, () => {
   debugInit(`Integrations server is running on port ${PORT}`);
+  debugInit(`🚀 Subscriptions ready at ws://localhost:${PORT}${apolloServer.subscriptionsPath}`);
 
   // Initialize startup
   init();

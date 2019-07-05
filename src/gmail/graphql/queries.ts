@@ -1,7 +1,9 @@
-import { ConversationMessages } from '../../model';
+import { ConversationMessages } from '../model';
 
-export default {
+const queries = {
   conversationMessages(_root, { conversationId }: { conversationId: string }) {
     return ConversationMessages.find({ erxesApiId: conversationId });
   },
 };
+
+export default { ...queries };

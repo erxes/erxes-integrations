@@ -12,7 +12,7 @@ const httpLink = createHttpLink({
 
 // Subscription config
 export const wsLink = new WebSocketLink({
-  uri: 'ws://localhost:3300/subscriptions',
+  uri: 'ws://localhost:3400/subscriptions',
   options: {
     reconnect: true,
     timeout: 30000,

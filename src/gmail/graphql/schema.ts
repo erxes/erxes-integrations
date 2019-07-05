@@ -1,3 +1,5 @@
+import { gql } from 'apollo-server-express';
+
 const types = `
   scalar Date
 
@@ -38,6 +40,12 @@ const queries = `
   }
 `;
 
-const typeDefs = [types, queries];
+const subscriptions = `
+  type Subscription {
+    messageInserted(_id: String!): ConversationMessage
+  }
+`;
+
+const typeDefs = gql(`${types} ${queries} ${subscriptions}`);
 
 export default typeDefs;

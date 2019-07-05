@@ -3,6 +3,7 @@ import { debugGmail } from '../debuggers';
 import { Integrations } from '../models';
 import { fetchMainApi } from '../utils';
 import { getAuth, gmailClient } from './auth';
+import { graphqlPubsub } from './graphql/pubsub';
 import { ConversationMessages, Conversations, Customers } from './model';
 import { ICredentials } from './types';
 import { extractEmailFromString, parseMessage } from './util';
@@ -178,11 +179,18 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
       data.from = extractEmailFromString(data.from);
       data.to = extractEmailFromString(data.to);
 
-      conversationMessage = await ConversationMessages.create({
+      const newMessage = {
         conversationId: conversation._id,
         customerId: customer.erxesApiId,
         erxesApiId: conversation.erxesApiId,
         ...data,
+      };
+
+      conversationMessage = await ConversationMessages.create(newMessage);
+
+      // Notify new message
+      graphqlPubsub.publish('messageInserted', {
+        messageInserted: { _id: conversationMessage.conversationId, ...newMessage },
       });
     }
   }
