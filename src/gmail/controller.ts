@@ -1,6 +1,7 @@
 import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
+import { ConversationMessages } from './model';
 import { sendGmail } from './send';
 import { getCredentials } from './util';
 import { watchPushNotification } from './watch';
@@ -104,6 +105,24 @@ const init = async app => {
     }
 
     return res.json({ status: 200, statusText: 'success' });
+  });
+
+  app.get('/gmail/get-message', async (req, res, next) => {
+    const erxesApiId = req.query.conversationId;
+
+    if (!erxesApiId) {
+      debugGmail('Conversation id not defined');
+      return next();
+    }
+
+    const message = await ConversationMessages.findOne({ erxesApiId });
+
+    if (!message) {
+      debugGmail('Conversation message not found');
+      return next();
+    }
+
+    return res.json(message);
   });
 };
 
