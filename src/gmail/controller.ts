@@ -1,4 +1,4 @@
-import { debugGmail, debugIntegrations, debugRequest, debugResponse } from '../debuggers';
+import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
 import { sendGmail } from './send';
@@ -68,14 +68,6 @@ const init = async app => {
     }
 
     return res.json(account.uid);
-  });
-
-  app.get('/gmail/render', (req, res) => {
-    debugRequest(debugIntegrations, req);
-
-    const { conversationId, email } = req.query;
-
-    res.render('gmail', { conversationId, email });
   });
 
   app.post('/gmail/send', async (req, res, next) => {

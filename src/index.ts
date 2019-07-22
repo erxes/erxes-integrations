@@ -1,10 +1,6 @@
-import { ApolloServer, PlaygroundConfig } from 'apollo-server-express';
 import * as bodyParser from 'body-parser';
-import * as cors from 'cors';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
-import { createServer } from 'http';
-import * as path from 'path';
 
 // load environment variables
 dotenv.config();
@@ -14,8 +10,6 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import initGmail from './gmail/controller';
-import resolvers from './gmail/graphql';
-import typeDefs from './gmail/graphql/schema';
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import Accounts from './models/Accounts';
@@ -25,37 +19,6 @@ import { init } from './startup';
 connect();
 
 const app = express();
-
-app.use(cors());
-
-const { NODE_ENV, PORT } = process.env;
-
-let playground: PlaygroundConfig = false;
-
-if (NODE_ENV !== 'production') {
-  playground = {
-    settings: {
-      'general.betaUpdates': false,
-      'editor.theme': 'dark',
-      'editor.cursorShape': 'line',
-      'editor.reuseHeaders': true,
-      'tracing.hideTracingResponse': true,
-      'editor.fontSize': 14,
-      'editor.fontFamily': `'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace`,
-      'request.credentials': 'include',
-    },
-  };
-}
-
-const apolloServer = new ApolloServer({
-  typeDefs,
-  resolvers,
-  playground,
-  subscriptions: {
-    keepAlive: 10000,
-    path: '/subscriptions',
-  },
-});
 
 app.use((req: any, _res, next) => {
   req.rawBody = '';
@@ -67,13 +30,8 @@ app.use((req: any, _res, next) => {
   next();
 });
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: '10mb' }));
-
-app.use('/build', express.static(path.join(__dirname, '../dist')));
 
 app.post('/integrations/remove', async (req, res) => {
   debugRequest(debugIntegrations, req);
@@ -145,16 +103,10 @@ app.use((error, _req, res, _next) => {
   res.status(500).send(error.message);
 });
 
-apolloServer.applyMiddleware({ app, path: '/graphql' });
+const { PORT } = process.env;
 
-// Wrap the Express server
-const httpServer = createServer(app);
-
-apolloServer.installSubscriptionHandlers(httpServer);
-
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   debugInit(`Integrations server is running on port ${PORT}`);
-  debugInit(`🚀 Subscriptions ready at ws://localhost:${PORT}${apolloServer.subscriptionsPath}`);
 
   // Initialize startup
   init();
