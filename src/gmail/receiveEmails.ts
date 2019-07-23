@@ -1,11 +1,10 @@
 import * as request from 'request';
 import { debugGmail } from '../debuggers';
 import { Integrations } from '../models';
-import { fetchMainApi } from '../utils';
 import { getAuth, gmailClient } from './auth';
-import { ConversationMessages, Conversations, Customers } from './model';
+import { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer } from './store';
 import { ICredentials } from './types';
-import { extractEmailFromString, parseMessage } from './util';
+import { extractEmailFromString, parseBatchResponse, parseMessage } from './util';
 
 /**
  * Get full message with historyId
@@ -70,131 +69,50 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   const { messages, message } = await syncByHistoryId(auth, gmailHistoryId);
 
   if (!messages && !message) {
-    debugGmail(`Error Google: Could not get message with historyId in sync partially ${gmailHistoryId}`);
-    return;
+    return debugGmail(`
+      Error Google: Could not get message with historyId in sync partially ${gmailHistoryId}
+    `);
   }
 
-  const parsedMessages: any = [];
-  const messagesToParsed = messages ? messages : [message.data];
-
-  // Prepare received messages to get a details
-  for (const data of messagesToParsed) {
-    parsedMessages.push(parseMessage(data));
-  }
-
-  // Create or get conversation, message, customer
-  // according to received email
-  for (const data of parsedMessages) {
-    const { from, reply, messageId } = data;
-    const primaryEmail = extractEmailFromString(from);
-
-    // get customer
-    let customer = await Customers.findOne({ primaryEmail });
-
-    // create customer in main api
-    if (!customer) {
-      const apiCustomerResponse = await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-customer',
-          payload: JSON.stringify({
-            emails: [primaryEmail],
-            firstName: '',
-            lastName: '',
-            primaryEmail,
-            integrationId: integration.erxesApiId,
-          }),
-        },
-      });
-
-      // save on integration db
-      customer = await Customers.create({
-        primaryEmail,
-        erxesApiId: apiCustomerResponse._id,
-        firstName: '',
-        lastName: '',
-        emails: [primaryEmail],
-        integrationId: integration.erxesApiId,
-      });
-    }
-
-    // get or create conversation
-    let conversation;
-
-    if (reply) {
-      const dumpMessage = await ConversationMessages.findOne({
-        $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
-      }).sort({ createdAt: -1 });
-
-      // Check conversation exsist
-      if (dumpMessage) {
-        conversation = await Conversations.findOne({
-          _id: dumpMessage.conversationId,
-        });
-      }
-    }
-
-    if (!conversation) {
-      const apiConversationResponse = await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-conversation',
-          payload: JSON.stringify({
-            customerId: customer.erxesApiId,
-            integrationId: integration.erxesApiId,
-            content: data.subject,
-          }),
-        },
-      });
-
-      // save on integrations db
-      conversation = await Conversations.create({
-        erxesApiId: apiConversationResponse._id,
-        to: email,
-        from: primaryEmail,
-      });
-    }
-
-    // get conversation message
-    let conversationMessage = await ConversationMessages.findOne({ messageId });
-
-    if (!conversationMessage) {
-      // save message on api
-      await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-conversation-message',
-          payload: JSON.stringify({
-            conversationId: conversation.erxesApiId,
-            customerId: customer.erxesApiId,
-            content: data.textHtml,
-          }),
-        },
-      });
-
-      data.from = extractEmailFromString(data.from);
-      data.to = extractEmailFromString(data.to);
-
-      const newMessage = {
-        conversationId: conversation._id,
-        customerId: customer.erxesApiId,
-        erxesApiId: conversation.erxesApiId,
-        ...data,
-      };
-
-      conversationMessage = await ConversationMessages.create(newMessage);
-
-      // TODO: Notify new message
-    }
-  }
+  await processReceivedEmails(messages, message, email, integration.erxesApiId);
 
   // Update current historyId for future message
   integration.gmailHistoryId = startHistoryId;
 
   await integration.save();
+};
+
+const processReceivedEmails = async (messages, message, integrationErxesApiId, email) => {
+  const parsedMessages: any = [];
+  const messagesToParsed = messages ? messages : [message.data];
+
+  for (const data of messagesToParsed) {
+    parsedMessages.push(parseMessage(data));
+  }
+
+  for (const data of parsedMessages) {
+    const { from, reply, messageId, subject } = data;
+    const primaryEmail = extractEmailFromString(from);
+
+    const customer = await createOrGetCustomer(primaryEmail, integrationErxesApiId);
+
+    const conversation = await createOrGetConversation(
+      primaryEmail,
+      reply,
+      integrationErxesApiId,
+      customer.erxesApiId,
+      subject,
+      email,
+    );
+
+    await createOrGetConversationMessage(
+      messageId,
+      conversation.erxesApiId,
+      customer.erxesApiId,
+      data,
+      conversation._id,
+    );
+  }
 };
 
 /**
@@ -261,24 +179,4 @@ const sendSingleRequest = async (auth: ICredentials, messagesAdded) => {
   }
 
   return response;
-};
-
-const parseBatchResponse = (body: string) => {
-  // Not the same delimiter in the response as we specify ourselves in the request,
-  // so we have to extract it.
-  const delimiter = body.substr(0, body.indexOf('\r\n'));
-  const parts = body.split(delimiter);
-  // The first part will always be an empty string. Just remove it.
-  parts.shift();
-  // The last part will be the "--". Just remove it.
-  parts.pop();
-
-  const result: any = [];
-
-  for (const part of parts) {
-    const p = part.substring(part.indexOf('{'), part.lastIndexOf('}') + 1);
-    result.push(JSON.parse(p));
-  }
-
-  return result;
 };

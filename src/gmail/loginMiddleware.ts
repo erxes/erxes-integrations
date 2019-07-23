@@ -34,8 +34,6 @@ const loginMiddleware = async (req, res) => {
   const account = await Accounts.findOne({ uid: data.emailAddress });
   const { access_token } = credentials;
 
-  debugGmail(credentials);
-
   if (account) {
     await Accounts.updateOne({ _id: account._id }, { $set: { token: access_token } });
   } else {

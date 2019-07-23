@@ -184,3 +184,23 @@ const getBodyProperties = (headers: any, part: any, data: any) => {
 
   return data;
 };
+
+export const parseBatchResponse = (body: string) => {
+  // Not the same delimiter in the response as we specify ourselves in the request,
+  // so we have to extract it.
+  const delimiter = body.substr(0, body.indexOf('\r\n'));
+  const parts = body.split(delimiter);
+  // The first part will always be an empty string. Just remove it.
+  parts.shift();
+  // The last part will be the "--". Just remove it.
+  parts.pop();
+
+  const result: any = [];
+
+  for (const part of parts) {
+    const p = part.substring(part.indexOf('{'), part.lastIndexOf('}') + 1);
+    result.push(JSON.parse(p));
+  }
+
+  return result;
+};
