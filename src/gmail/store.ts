@@ -1,6 +1,5 @@
-import { debugGmail } from '../debuggers';
-import { ConversationMessages, Conversations, Customers } from '../facebook/models';
 import { fetchMainApi } from '../utils';
+import { ConversationMessages, Conversations, Customers } from './model';
 import { extractEmailFromString } from './util';
 
 const createOrGetCustomer = async (primaryEmail: string, integrationId: string) => {
@@ -60,43 +59,43 @@ const createOrGetConversation = async (
     if (conversation) {
       return conversation;
     }
-
-    const apiConversationResponse = await fetchMainApi({
-      path: '/integrations-api',
-      method: 'POST',
-      body: {
-        action: 'create-conversation',
-        payload: JSON.stringify({
-          customerId,
-          integrationId,
-          content: subject,
-        }),
-      },
-    });
-
-    debugGmail(conversation);
-
-    // save on integrations db
-    return Conversations.create({
-      erxesApiId: apiConversationResponse._id,
-      to: email,
-      from: primaryEmail,
-    });
   }
+
+  const apiConversationResponse = await fetchMainApi({
+    path: '/integrations-api',
+    method: 'POST',
+    body: {
+      action: 'create-conversation',
+      payload: JSON.stringify({
+        customerId,
+        integrationId,
+        content: subject,
+      }),
+    },
+  });
+
+  // save on integrations db
+  return Conversations.create({
+    erxesApiId: apiConversationResponse._id,
+    to: email,
+    from: primaryEmail,
+  });
 };
 
 const createOrGetConversationMessage = async (
   messageId: string,
-  conversationId: string,
-  customerId: string,
+  conversationErxesApiId: string,
+  customerErxesApiId: string,
   data: any,
-  cId: string,
+  conversationId: string,
 ) => {
   const conversationMessage = await ConversationMessages.findOne({ messageId });
 
   if (conversationMessage) {
     return conversationMessage;
   }
+
+  const { textHtml, textPlain } = data;
 
   // save message on api
   await fetchMainApi({
@@ -105,9 +104,9 @@ const createOrGetConversationMessage = async (
     body: {
       action: 'create-conversation-message',
       payload: JSON.stringify({
-        conversationId,
-        customerId,
-        content: data.textHtml,
+        conversationId: conversationErxesApiId,
+        customerId: customerErxesApiId,
+        content: textHtml || textPlain,
       }),
     },
   });
@@ -115,14 +114,12 @@ const createOrGetConversationMessage = async (
   data.from = extractEmailFromString(data.from);
   data.to = extractEmailFromString(data.to);
 
-  const newMessage = {
-    conversationId: cId,
-    customerId,
-    erxesApiId: conversationId,
+  return ConversationMessages.create({
+    conversationId,
+    customerId: customerErxesApiId,
+    erxesApiId: conversationErxesApiId,
     ...data,
-  };
-
-  return ConversationMessages.create(newMessage);
+  });
 };
 
 export { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer };
