@@ -115,14 +115,14 @@ const init = async app => {
       return next();
     }
 
-    const message = await ConversationMessages.findOne({ erxesApiId });
+    const messages = await ConversationMessages.find({ erxesApiId });
 
-    if (!message) {
+    if (!messages) {
       debugGmail('Conversation message not found');
       return next();
     }
 
-    return res.json(message);
+    return res.json(messages);
   });
 
   app.get('/gmail/cronjob', async (req, res, next) => {

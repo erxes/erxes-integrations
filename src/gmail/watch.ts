@@ -135,7 +135,6 @@ export const watchPushNotification = async (accountId: string, credentials: any)
           'TRASH',
           'CHAT',
           'SPAM',
-          'SENT',
         ],
         labelFilterAction: 'exclude',
         topicName: `projects/${GOOGLE_PROJECT_ID}/topics/${GOOGLE_GMAIL_TOPIC}`,

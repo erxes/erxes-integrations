@@ -86,7 +86,7 @@ const processReceivedEmails = async (messagesResponse, integration, email) => {
   const [firstMessage] = messagesResponse;
   const previousMessageId = firstMessage.messageId;
 
-  messagesResponse.forEach(async (i: number, value) => {
+  messagesResponse.forEach(async (value, i) => {
     const updatedMessage = parseMessage(value);
 
     // prevent message duplication
