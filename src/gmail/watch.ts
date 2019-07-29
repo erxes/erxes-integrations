@@ -1,6 +1,7 @@
 import { PubSub } from '@google-cloud/pubsub';
 import * as fs from 'fs';
 import { debugGmail } from '../debuggers';
+import { Accounts } from '../models';
 import { getEnv } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { syncPartially } from './receiveEmails';
@@ -115,6 +116,7 @@ export const watchPushNotification = async (accountId: string, credentials: any)
     debugGmail(`GOOGLE_GMAIL_TOPIC not defined in ENV`);
   }
 
+  debugGmail(accountId, 'IN watchPushNotification GETAUTH =====');
   const auth = getAuth(credentials, accountId);
 
   let response;
@@ -151,7 +153,8 @@ export const watchPushNotification = async (accountId: string, credentials: any)
  * Stop receiving push notifications for the given user mailbox
  */
 export const stopPushNotification = async (email: string, credentials: ICredentials) => {
-  const auth = getAuth(credentials);
+  const { _id } = await Accounts.findOne({ uid: email });
+  const auth = getAuth(credentials, _id);
 
   debugGmail(`Google OAuthClient request ho stop push notification for the given user mailbox`);
 

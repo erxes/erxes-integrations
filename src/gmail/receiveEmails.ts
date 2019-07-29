@@ -59,11 +59,11 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
     return debugGmail(`Integration not found in syncPartially`);
   }
 
-  const { gmailHistoryId } = integration;
+  const { gmailHistoryId, accountId } = integration;
 
   debugGmail(`Sync partially gmail messages with ${gmailHistoryId}`);
 
-  const auth = getAuth(credentials);
+  const auth = getAuth(credentials, accountId);
 
   // Get batched multiple messages or single message
   const { batchMessages, singleMessage } = await syncByHistoryId(auth, gmailHistoryId);
@@ -152,6 +152,7 @@ const sendBatchRequest = (token: string, messages) => {
 
           return resolve(payloads);
         }
+
         return reject(error);
       },
     );

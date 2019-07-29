@@ -13,11 +13,11 @@ export interface ICredentials {
 }
 
 export interface IAttachmentParams {
-  data: string;
+  url: string;
   filename: string;
   size: number;
   mimeType: string;
-  attachmentId: string;
+  data?: string;
 }
 
 export interface IMailParams {

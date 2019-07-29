@@ -108,11 +108,11 @@ export const getAccessToken = async (code: string) => {
 /*
  * Refresh token and save when access_token expires
  */
-export const refreshAccessToken = async (accountId: string, tokens: any): Promise<void> => {
-  const account = await Accounts.findOne({ accountId });
+export const refreshAccessToken = async (_id: string, tokens: any): Promise<void> => {
+  const account = await Accounts.findOne({ _id });
 
   if (!account) {
-    debugGmail(`Error Google: Account not found id with ${accountId}`);
+    debugGmail(`Error Google: Account not found id with ${_id}`);
     return;
   }
 
