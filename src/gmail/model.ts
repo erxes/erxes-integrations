@@ -24,7 +24,7 @@ export const customerSchema = new Schema({
 export interface ICustomerModel extends Model<ICustomerDocument> {}
 
 // tslint:disable-next-line
-export const Customers = model<ICustomerDocument, ICustomerModel>('customers_google', customerSchema);
+export const Customers = model<ICustomerDocument, ICustomerModel>('customers_gmail', customerSchema);
 
 export interface IConversation {
   to: string;
@@ -50,38 +50,26 @@ export const conversationSchema = new Schema({
 export interface IConversatonModel extends Model<IConversationDocument> {}
 
 // tslint:disable-next-line
-export const Conversations = model<IConversationDocument, IConversatonModel>(
-  'conversations_google',
-  conversationSchema,
-);
+export const Conversations = model<IConversationDocument, IConversatonModel>('conversations_gmail', conversationSchema);
 
 export interface IConversationMessage extends IMailParams {
   conversationId: string;
-  erxesApiId: string;
+  erxesApiMessageId: string;
   createdAt: string;
 }
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
 
-const attachmentSchema = new Schema({
-  data: String,
-  filename: String,
-  size: Number,
-  mimeType: String,
-  attachmentId: String,
-});
-
 export const conversationMessageSchema = new Schema({
   _id: field({ pkey: true }),
   conversationId: String,
-  erxesApiId: String,
+  erxesApiMessageId: String,
   labelIds: [String],
   subject: String,
   body: String,
   to: String,
   cc: String,
   bcc: String,
-  attachments: [attachmentSchema],
   references: String,
   headerId: String,
   from: String,
@@ -97,6 +85,6 @@ export interface IConversatonMessageModel extends Model<IConversationMessageDocu
 
 // tslint:disable-next-line
 export const ConversationMessages = model<IConversationMessageDocument, IConversatonMessageModel>(
-  'conversation_messages_google',
+  'conversation_messages_gmail',
   conversationMessageSchema,
 );

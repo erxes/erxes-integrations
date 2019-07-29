@@ -7,9 +7,7 @@ import { ICredentials } from './types';
  * Gets the current user's Gmail profile
  */
 export const getProfile = async (credentials: ICredentials, email?: string) => {
-  const { _id } = await Accounts.findOne({ uid: email });
-
-  const auth = getAuth(credentials, _id);
+  const auth = getAuth(credentials);
 
   debugGmail(`Gmail get an user profile`);
 

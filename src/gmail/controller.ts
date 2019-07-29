@@ -110,21 +110,23 @@ const init = async app => {
   });
 
   app.get('/gmail/get-message', async (req, res, next) => {
-    const erxesApiId = req.query.conversationId;
+    const { erxesApiMessageId } = req.query;
 
-    if (!erxesApiId) {
-      debugGmail('Conversation id not defined');
+    debugGmail(`Request to get gmailData with: ${erxesApiMessageId}`);
+
+    if (!erxesApiMessageId) {
+      debugGmail('Conversation message id not defined');
       return next();
     }
 
-    const messages = await ConversationMessages.find({ erxesApiId });
+    const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId });
 
-    if (!messages) {
+    if (!conversationMessage) {
       debugGmail('Conversation message not found');
       return next();
     }
 
-    return res.json(messages);
+    return res.json(conversationMessage);
   });
 
   app.get('/gmail/cronjob', async (req, res, next) => {

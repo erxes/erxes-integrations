@@ -45,9 +45,6 @@ const createOrGetConversation = async (
 ) => {
   let conversation;
 
-  // 1. Check exsting conversation
-  // 2.
-
   if (reply) {
     const dumpMessage = await ConversationMessages.findOne({
       $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
@@ -101,7 +98,7 @@ const createOrGetConversationMessage = async (
   const { textHtml, textPlain } = data;
 
   // save message on api
-  await fetchMainApi({
+  const apiMessageResponse = await fetchMainApi({
     path: '/integrations-api',
     method: 'POST',
     body: {
@@ -119,8 +116,8 @@ const createOrGetConversationMessage = async (
 
   return ConversationMessages.create({
     conversationId,
+    erxesApiMessageId: apiMessageResponse._id,
     customerId: customerErxesApiId,
-    erxesApiId: conversationErxesApiId,
     ...data,
   });
 };

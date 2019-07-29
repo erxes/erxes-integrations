@@ -47,9 +47,15 @@ export const trackGmail = async () => {
   const [topicExists] = await topic.exists();
 
   if (!topicExists) {
+    let topicResponse;
+
     debugGmail(`Pubsub: Creating gmail pubsub topic as ${GOOGLE_GMAIL_TOPIC}`);
 
-    const [topicResponse] = await pubsubClient.createTopic(GOOGLE_GMAIL_TOPIC);
+    try {
+      [topicResponse] = await pubsubClient.createTopic(GOOGLE_GMAIL_TOPIC);
+    } catch (e) {
+      return debugGmail(`Failed to create gmail topic: ${e}`);
+    }
 
     topic = topicResponse;
   }
@@ -64,15 +70,19 @@ export const trackGmail = async () => {
 
     const options = { flowControl: { maxBytes: 10000, maxMessages: 5 } };
 
-    topic.createSubscription(GOOGLE_GMAIL_SUBSCRIPTION_NAME, options, (error, newSubscription) => {
-      if (error) {
-        debugGmail(`Pubsub: Failed to create google pubsub topic for gmail ${error}`);
-        return;
-      }
+    try {
+      topic.createSubscription(GOOGLE_GMAIL_SUBSCRIPTION_NAME, options, (error, newSubscription) => {
+        if (error) {
+          debugGmail(`Pubsub: Failed to create google pubsub topic for gmail ${error}`);
+          return;
+        }
 
-      newSubscription.on('message', onMessage);
-      newSubscription.on('error', onError);
-    });
+        newSubscription.on('message', onMessage);
+        newSubscription.on('error', onError);
+      });
+    } catch (e) {
+      debugGmail(`Failed to create subscription: ${e}`);
+    }
 
     return;
   }

@@ -26,8 +26,12 @@ const createMimeMessage = (mailParams: IMailParams, attachments: IAttachmentPara
   ];
 
   // Reply
+  if (references) {
+    mimeBase.push('References:' + references);
+  }
+
   if (headerId) {
-    mimeBase.push(['References:' + references, 'In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
+    mimeBase.push(['In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
   }
 
   if (cc && cc.length > 0) {
