@@ -6,7 +6,6 @@ export interface ICustomer {
   primaryEmail: string;
   firstName?: string;
   lastName?: string;
-  emails?: string[];
   erxesApiId?: string;
 }
 
@@ -14,11 +13,10 @@ export interface ICustomerDocument extends ICustomer, Document {}
 
 export const customerSchema = new Schema({
   _id: field({ pkey: true }),
+  primaryEmail: { type: String, unique: true },
   erxesApiId: String,
   firstName: String,
   lastName: String,
-  emails: [String],
-  primaryEmail: String,
 });
 
 export interface ICustomerModel extends Model<ICustomerDocument> {}
@@ -39,8 +37,8 @@ export interface IConversationDocument extends IConversation, Document {}
 
 export const conversationSchema = new Schema({
   _id: field({ pkey: true }),
-  to: String,
-  from: String,
+  to: { type: String, index: true },
+  from: { type: String, index: true },
   content: String,
   customerId: String,
   erxesApiId: String,
@@ -75,7 +73,7 @@ export const conversationMessageSchema = new Schema({
   from: String,
   threadId: String,
   reply: [String],
-  messageId: String,
+  messageId: { type: String, unique: true },
   textHtml: String,
   textPlain: String,
   createdAt: field({ type: Date, index: true, default: new Date() }),

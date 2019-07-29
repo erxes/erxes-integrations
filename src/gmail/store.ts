@@ -3,36 +3,45 @@ import { ConversationMessages, Conversations, Customers } from './model';
 import { extractEmailFromString } from './util';
 
 const createOrGetCustomer = async (primaryEmail: string, integrationId: string) => {
-  const customer = await Customers.findOne({ primaryEmail });
+  let customer = await Customers.findOne({ primaryEmail });
 
-  if (customer) {
-    return customer;
-  }
-
-  const apiCustomerResponse = await fetchMainApi({
-    path: '/integrations-api',
-    method: 'POST',
-    body: {
-      action: 'create-customer',
-      payload: JSON.stringify({
-        emails: [primaryEmail],
+  if (!customer) {
+    try {
+      customer = await Customers.create({
+        primaryEmail,
         firstName: '',
         lastName: '',
-        primaryEmail,
         integrationId,
-      }),
-    },
-  });
+      });
+    } catch (e) {
+      throw new Error(e.message.includes('duplicate') ? `Concurrent request: customer duplication` : e);
+    }
 
-  // save on integration db
-  return Customers.create({
-    primaryEmail,
-    erxesApiId: apiCustomerResponse._id,
-    firstName: '',
-    lastName: '',
-    emails: [primaryEmail],
-    integrationId,
-  });
+    try {
+      const apiCustomerResponse = await fetchMainApi({
+        path: '/integrations-api',
+        method: 'POST',
+        body: {
+          action: 'create-customer',
+          payload: JSON.stringify({
+            emails: [primaryEmail],
+            firstName: '',
+            lastName: '',
+            primaryEmail,
+            integrationId,
+          }),
+        },
+      });
+
+      customer.erxesApiId = apiCustomerResponse._id;
+      await customer.save();
+    } catch (e) {
+      await Customers.deleteOne({ _id: customer._id });
+      throw new Error(e);
+    }
+  }
+
+  return customer;
 };
 
 const createOrGetConversation = async (
@@ -55,31 +64,42 @@ const createOrGetConversation = async (
         _id: dumpMessage.conversationId,
       });
     }
+  }
 
-    if (conversation) {
-      return conversation;
+  if (!conversation) {
+    try {
+      conversation = await Conversations.create({
+        to: email,
+        from: primaryEmail,
+      });
+    } catch (e) {
+      throw new Error(e.message.includes('duplicate') ? 'Concurrent request: conversation duplication' : e);
+    }
+
+    // save on api
+    try {
+      const apiConversationResponse = await fetchMainApi({
+        path: '/integrations-api',
+        method: 'POST',
+        body: {
+          action: 'create-conversation',
+          payload: JSON.stringify({
+            customerId,
+            integrationId,
+            content: subject,
+          }),
+        },
+      });
+
+      conversation.erxesApiId = apiConversationResponse._id;
+      await conversation.save();
+    } catch (e) {
+      await Conversations.deleteOne({ _id: conversation._id });
+      throw new Error(e);
     }
   }
 
-  const apiConversationResponse = await fetchMainApi({
-    path: '/integrations-api',
-    method: 'POST',
-    body: {
-      action: 'create-conversation',
-      payload: JSON.stringify({
-        customerId,
-        integrationId,
-        content: subject,
-      }),
-    },
-  });
-
-  // save on integrations db
-  return Conversations.create({
-    erxesApiId: apiConversationResponse._id,
-    to: email,
-    from: primaryEmail,
-  });
+  return conversation;
 };
 
 const createOrGetConversationMessage = async (
@@ -91,35 +111,39 @@ const createOrGetConversationMessage = async (
 ) => {
   const conversationMessage = await ConversationMessages.findOne({ messageId });
 
-  if (conversationMessage) {
-    return conversationMessage;
+  if (!conversationMessage) {
+    const { textHtml, textPlain } = data;
+
+    data.from = extractEmailFromString(data.from);
+    data.to = extractEmailFromString(data.to);
+
+    const newConversationMessage = await ConversationMessages.create({
+      conversationId,
+      customerId: customerErxesApiId,
+      ...data,
+    });
+
+    try {
+      const apiMessageResponse = await fetchMainApi({
+        path: '/integrations-api',
+        method: 'POST',
+        body: {
+          action: 'create-conversation-message',
+          payload: JSON.stringify({
+            conversationId: conversationErxesApiId,
+            customerId: customerErxesApiId,
+            content: textHtml || textPlain,
+          }),
+        },
+      });
+
+      newConversationMessage.erxesApiMessageId = apiMessageResponse._id;
+      newConversationMessage.save();
+    } catch (e) {
+      await ConversationMessages.deleteOne({ messageId });
+      throw new Error(e);
+    }
   }
-
-  const { textHtml, textPlain } = data;
-
-  // save message on api
-  const apiMessageResponse = await fetchMainApi({
-    path: '/integrations-api',
-    method: 'POST',
-    body: {
-      action: 'create-conversation-message',
-      payload: JSON.stringify({
-        conversationId: conversationErxesApiId,
-        customerId: customerErxesApiId,
-        content: textHtml || textPlain,
-      }),
-    },
-  });
-
-  data.from = extractEmailFromString(data.from);
-  data.to = extractEmailFromString(data.to);
-
-  return ConversationMessages.create({
-    conversationId,
-    erxesApiMessageId: apiMessageResponse._id,
-    customerId: customerErxesApiId,
-    ...data,
-  });
 };
 
 export { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer };
