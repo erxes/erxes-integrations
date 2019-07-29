@@ -64,7 +64,6 @@ const createMimeMessage = (mailParams: IMailParams, attachments: IAttachmentPara
 
   if (attachments) {
     for (const attachment of attachments) {
-      debugGmail(attachment.mimeType, attachment.filename, attachment.size);
       const mimeAttachment = [
         '--' + boundary,
         'Content-Type: ' + attachment.mimeType,
@@ -120,13 +119,25 @@ export const sendGmail = async (accountId: string, email: string, mailParams: IM
   const message = createMimeMessage(mailParams, attachments);
   const credentials = await getCredentialsByEmailAccountId({ email });
 
-  return composeEmail(credentials, message, accountId, mailParams.threadId);
+  const doc = { credentials, message, accountId, threadId: mailParams.threadId };
+
+  return composeEmail(doc);
 };
 
 /**
  * Request to gmail API to send email
  */
-const composeEmail = async (credentials: ICredentials, message: string, accountId: string, threadId?: string) => {
+const composeEmail = async ({
+  credentials,
+  message,
+  accountId,
+  threadId,
+}: {
+  credentials: ICredentials;
+  message: string;
+  accountId: string;
+  threadId?: string;
+}) => {
   const auth = getAuth(credentials, accountId);
 
   let response;
@@ -145,8 +156,7 @@ const composeEmail = async (credentials: ICredentials, message: string, accountI
   try {
     response = await gmailClient.messages.send(params);
   } catch (e) {
-    debugGmail(`Error Google: Could not send email ${e}`);
-    return;
+    return debugGmail(`Error Google: Could not send email ${e}`);
   }
 
   return response;

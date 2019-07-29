@@ -9,9 +9,12 @@ import { ICredentials } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
-const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_GMAIL_TOPIC' });
-const GOOGLE_APPLICATION_CREDENTIALS = getEnv({ name: 'GOOGLE_APPLICATION_CREDENTIALS' });
-const GOOGLE_GMAIL_SUBSCRIPTION_NAME = getEnv({ name: 'GOOGLE_GMAIL_SUBSCRIPTION_NAME' });
+const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_GMAIL_TOPIC', defaultValue: 'gmail_topic' });
+const GOOGLE_APPLICATION_CREDENTIALS = getEnv({ name: 'GOOGLE_APPLICATION_CREDENTIALS', defaultValue: '' });
+const GOOGLE_GMAIL_SUBSCRIPTION_NAME = getEnv({
+  name: 'GOOGLE_GMAIL_SUBSCRIPTION_NAME',
+  defaultValue: 'gmail_topic_subscription',
+});
 
 /**
  * Create topic and subscription for gmail
@@ -107,7 +110,7 @@ const onMessage = async (message: any) => {
  * and grant gmail publish permission
  * Set up or update a push notification watch on the given user mailbox.
  */
-export const watchPushNotification = async (accountId: string, credentials: any) => {
+export const watchPushNotification = async (accountId: string, credentials: ICredentials) => {
   if (!GOOGLE_PROJECT_ID) {
     debugGmail(`GOOGLE_PROJECT_ID not defined in ENV`);
   }
@@ -116,7 +119,6 @@ export const watchPushNotification = async (accountId: string, credentials: any)
     debugGmail(`GOOGLE_GMAIL_TOPIC not defined in ENV`);
   }
 
-  debugGmail(accountId, 'IN watchPushNotification GETAUTH =====');
   const auth = getAuth(credentials, accountId);
 
   let response;

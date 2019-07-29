@@ -1,6 +1,7 @@
 import * as request from 'request';
 import { debugGmail } from '../debuggers';
 import { Integrations } from '../models';
+import { IIntegration } from '../models/Integrations';
 import { getAuth, gmailClient } from './auth';
 import { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer } from './store';
 import { ICredentials } from './types';
@@ -27,19 +28,18 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
     }
 
     const { history = [] } = data;
-    const receivedMessages: any = [];
+    const receivedMessages = [];
 
     // Collection messages only history type is messagesAdded
     for (const item of history) {
       receivedMessages.push(...item.messagesAdded);
     }
 
-    const { credentials } = auth;
     const singleMessage = receivedMessages.length === 1;
 
     // Send batch request for multiple messages
     response = {
-      batchMessages: !singleMessage && (await sendBatchRequest(credentials.access_token, receivedMessages)),
+      batchMessages: !singleMessage && (await sendBatchRequest(auth, receivedMessages)),
       singleMessage: singleMessage && (await sendSingleRequest(auth, receivedMessages)),
     };
   } catch (e) {
@@ -82,15 +82,19 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   await integration.save();
 };
 
-const processReceivedEmails = async (messagesResponse, integration, email) => {
+/**
+ * Create customer, conversation, message
+ * according to received emails
+ */
+const processReceivedEmails = async (messagesResponse: any, integration: IIntegration, email: string) => {
   const [firstMessage] = messagesResponse;
   const previousMessageId = firstMessage.messageId;
 
-  messagesResponse.forEach(async (value, i) => {
+  messagesResponse.forEach(async (value: any, index: number) => {
     const updatedMessage = parseMessage(value);
 
     // prevent message duplication
-    if (i > 0 && previousMessageId === updatedMessage.messageId) {
+    if (index > 0 && previousMessageId === updatedMessage.messageId) {
       return;
     }
 
@@ -120,8 +124,11 @@ const processReceivedEmails = async (messagesResponse, integration, email) => {
 /**
  * Send multiple request at once
  */
-const sendBatchRequest = (token: string, messages) => {
-  debugGmail('IN BATCH REQUEST');
+const sendBatchRequest = (auth: any, messages: any) => {
+  debugGmail('Sending batch request');
+
+  const { credentials } = auth;
+  const { access_token } = credentials;
   const boundary = 'erxes';
 
   let body = '';
@@ -136,7 +143,7 @@ const sendBatchRequest = (token: string, messages) => {
 
   const headers = {
     'Content-Type': 'multipart/mixed; boundary=' + boundary,
-    Authorization: 'Bearer ' + token,
+    Authorization: 'Bearer ' + access_token,
   };
 
   return new Promise((resolve, reject) => {
@@ -162,8 +169,8 @@ const sendBatchRequest = (token: string, messages) => {
 /**
  * Single request to get a full message
  */
-const sendSingleRequest = async (auth: ICredentials, messagesAdded) => {
-  const [data] = messagesAdded;
+const sendSingleRequest = async (auth: ICredentials, messages: any) => {
+  const [data] = messages;
   const { message } = data;
 
   let response;

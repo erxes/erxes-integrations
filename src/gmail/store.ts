@@ -45,6 +45,9 @@ const createOrGetConversation = async (
 ) => {
   let conversation;
 
+  // 1. Check exsting conversation
+  // 2.
+
   if (reply) {
     const dumpMessage = await ConversationMessages.findOne({
       $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],

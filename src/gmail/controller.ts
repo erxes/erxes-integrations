@@ -83,6 +83,8 @@ const init = async app => {
       ...(email && { email }),
     };
 
+    debugGmail(selector, '===================== controller');
+
     const integration = await Integrations.findOne(selector);
 
     if (!integration) {
@@ -97,8 +99,6 @@ const init = async app => {
 
     try {
       const { uid, _id } = account;
-
-      debugGmail(mailParams);
 
       await sendGmail(_id, uid, { from: uid, ...mailParams });
     } catch (e) {
