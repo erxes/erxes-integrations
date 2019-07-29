@@ -2,6 +2,7 @@ import { debugCrons, debugGmail, debugRequest, debugResponse } from '../debugger
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
 import { ConversationMessages } from './model';
+import { getAttachment } from './receiveEmails';
 import { sendGmail } from './send';
 import { getCredentials } from './util';
 import { watchPushNotification } from './watch';
@@ -75,17 +76,10 @@ const init = async app => {
     debugRequest(debugGmail, req);
     debugGmail(`Sending gmail ===`);
 
-    const { data, erxesApiId, email } = req.body;
+    const { data, erxesApiId } = req.body;
     const mailParams = JSON.parse(data);
 
-    const selector = {
-      ...(erxesApiId && { erxesApiId }),
-      ...(email && { email }),
-    };
-
-    debugGmail(selector, '===================== controller');
-
-    const integration = await Integrations.findOne(selector);
+    const integration = await Integrations.findOne({ erxesApiId });
 
     if (!integration) {
       throw new Error('Integration not found');
@@ -99,8 +93,9 @@ const init = async app => {
 
     try {
       const { uid, _id } = account;
+      const doc = { from: uid, ...mailParams };
 
-      await sendGmail(_id, uid, { from: uid, ...mailParams });
+      await sendGmail(_id, uid, doc);
     } catch (e) {
       debugGmail('Error Google: Failed to send email');
       return next(e);
@@ -119,7 +114,7 @@ const init = async app => {
       return next();
     }
 
-    const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId });
+    const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
 
     if (!conversationMessage) {
       debugGmail('Conversation message not found');
@@ -127,6 +122,41 @@ const init = async app => {
     }
 
     return res.json(conversationMessage);
+  });
+
+  app.get('/gmail/get-attachment', async (req, res, next) => {
+    const { messageId, attachmentId, integrationId, filename } = req.query;
+
+    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+
+    if (!integration) {
+      debugGmail('Integration not found!');
+      return next();
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      debugGmail('Account not found!');
+      return next();
+    }
+
+    const credentials = getCredentials(account);
+
+    const attachment: { filename: string; data: string } = await getAttachment(messageId, attachmentId, credentials);
+
+    attachment.filename = filename;
+
+    if (!attachment) {
+      debugGmail('Attachment not found!');
+      return next();
+    }
+
+    res.attachment(attachment.filename);
+
+    res.write(attachment.data, 'base64');
+
+    res.end();
   });
 
   app.get('/gmail/cronjob', async (req, res, next) => {

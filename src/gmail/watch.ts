@@ -121,12 +121,11 @@ const onMessage = async (message: any) => {
  * Set up or update a push notification watch on the given user mailbox.
  */
 export const watchPushNotification = async (accountId: string, credentials: ICredentials) => {
-  if (!GOOGLE_PROJECT_ID) {
-    debugGmail(`GOOGLE_PROJECT_ID not defined in ENV`);
-  }
-
-  if (!GOOGLE_GMAIL_TOPIC) {
-    debugGmail(`GOOGLE_GMAIL_TOPIC not defined in ENV`);
+  if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC) {
+    debugGmail(
+      `GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID || 'Not defined'}`,
+      `GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC || 'Not defined'}`,
+    );
   }
 
   const auth = getAuth(credentials, accountId);

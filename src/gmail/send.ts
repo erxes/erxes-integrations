@@ -1,7 +1,6 @@
 import { debugGmail } from '../debuggers';
-import { getEnv, sendRequest } from '../utils';
 import { getAuth, gmailClient } from './auth';
-import { IAttachmentParams, ICredentials, IMailParams } from './types';
+import { ICredentials, IMailParams } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
 const encodeBase64 = (subject: string) => {
@@ -12,8 +11,8 @@ const encodeBase64 = (subject: string) => {
  * Create a MIME message that complies with RFC 2822
  * @see {https://tools.ietf.org/html/rfc2822}
  */
-const createMimeMessage = (mailParams: IMailParams, attachments: IAttachmentParams[]): string => {
-  const { bcc, cc, to, textHtml, headerId, references, textPlain, from, subject } = mailParams;
+const createMimeMessage = (mailParams: IMailParams): string => {
+  const { bcc, cc, to, textHtml, headerId, references, textPlain, from, subject, attachments } = mailParams;
 
   const nl = '\n';
   const boundary = '__erxes__';
@@ -74,9 +73,7 @@ const createMimeMessage = (mailParams: IMailParams, attachments: IAttachmentPara
         'Content-Length: ' + attachment.size,
         'Content-Disposition: attachment; filename="' + attachment.filename + '"',
         'Content-Transfer-Encoding: base64' + nl,
-        '',
-        Buffer.from(attachment.data, 'utf8').toString('base64'),
-        '',
+        attachment.data,
       ];
 
       mimeBase.push(mimeAttachment.join(nl));
@@ -89,38 +86,10 @@ const createMimeMessage = (mailParams: IMailParams, attachments: IAttachmentPara
 };
 
 /**
- * Get attachment's buffer
- */
-const getAttachemnts = async (attachments: IAttachmentParams[]) => {
-  const MAIN_API_DOMAIN = getEnv({ name: 'MAIN_API_DOMAIN' });
-  const responses = [];
-
-  for (const attachment of attachments) {
-    const { url, ...args } = attachment;
-    let data;
-
-    try {
-      data = await sendRequest({
-        method: 'GET',
-        url: `${MAIN_API_DOMAIN}/read-file`,
-        params: { key: attachment.url },
-      });
-
-      responses.push({ ...args, data });
-    } catch (e) {
-      debugGmail(`Failed to get attachment data ${e}`);
-    }
-  }
-
-  return responses;
-};
-
-/**
  * Create mime message and compose gmail
  */
 export const sendGmail = async (accountId: string, email: string, mailParams: IMailParams) => {
-  const attachments = await getAttachemnts(mailParams.attachments || []);
-  const message = createMimeMessage(mailParams, attachments);
+  const message = createMimeMessage(mailParams);
   const credentials = await getCredentialsByEmailAccountId({ email });
 
   const doc = { credentials, message, accountId, threadId: mailParams.threadId };

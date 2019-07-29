@@ -3,7 +3,7 @@ import { field } from '../models/utils';
 import { IMailParams } from './types';
 
 export interface ICustomer {
-  primaryEmail: string;
+  email: string;
   firstName?: string;
   lastName?: string;
   erxesApiId?: string;
@@ -13,7 +13,7 @@ export interface ICustomerDocument extends ICustomer, Document {}
 
 export const customerSchema = new Schema({
   _id: field({ pkey: true }),
-  primaryEmail: { type: String, unique: true },
+  email: { type: String, unique: true },
   erxesApiId: String,
   firstName: String,
   lastName: String,
@@ -58,6 +58,14 @@ export interface IConversationMessage extends IMailParams {
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
 
+export const attachmentSchema = new Schema({
+  _id: field({ pkey: true }),
+  filename: String,
+  mimeType: String,
+  size: Number,
+  attachmentId: String,
+});
+
 export const conversationMessageSchema = new Schema({
   _id: field({ pkey: true }),
   conversationId: String,
@@ -76,6 +84,7 @@ export const conversationMessageSchema = new Schema({
   messageId: { type: String, unique: true },
   textHtml: String,
   textPlain: String,
+  attachments: [attachmentSchema],
   createdAt: field({ type: Date, index: true, default: new Date() }),
 });
 

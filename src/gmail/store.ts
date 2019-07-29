@@ -1,14 +1,15 @@
+import { debugGmail } from '../debuggers';
 import { fetchMainApi } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './model';
 import { extractEmailFromString } from './util';
 
-const createOrGetCustomer = async (primaryEmail: string, integrationId: string) => {
-  let customer = await Customers.findOne({ primaryEmail });
+const createOrGetCustomer = async (email: string, integrationId: string) => {
+  let customer = await Customers.findOne({ email });
 
   if (!customer) {
     try {
       customer = await Customers.create({
-        primaryEmail,
+        email,
         firstName: '',
         lastName: '',
         integrationId,
@@ -24,10 +25,10 @@ const createOrGetCustomer = async (primaryEmail: string, integrationId: string) 
         body: {
           action: 'create-customer',
           payload: JSON.stringify({
-            emails: [primaryEmail],
+            emails: [email],
             firstName: '',
             lastName: '',
-            primaryEmail,
+            primaryEmail: email,
             integrationId,
           }),
         },
@@ -45,12 +46,12 @@ const createOrGetCustomer = async (primaryEmail: string, integrationId: string) 
 };
 
 const createOrGetConversation = async (
-  primaryEmail: string,
+  email: string,
   reply: string[],
   integrationId: string,
   customerId: string,
   subject: string,
-  email: string,
+  receivedEmail: string,
 ) => {
   let conversation;
 
@@ -69,8 +70,9 @@ const createOrGetConversation = async (
   if (!conversation) {
     try {
       conversation = await Conversations.create({
-        to: email,
-        from: primaryEmail,
+        to: receivedEmail,
+        from: email,
+        integrationId,
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: conversation duplication' : e);
@@ -106,10 +108,12 @@ const createOrGetConversationMessage = async (
   messageId: string,
   conversationErxesApiId: string,
   customerErxesApiId: string,
-  data: any,
   conversationId: string,
+  data: any,
 ) => {
   const conversationMessage = await ConversationMessages.findOne({ messageId });
+
+  debugGmail(data);
 
   if (!conversationMessage) {
     const { textHtml, textPlain } = data;

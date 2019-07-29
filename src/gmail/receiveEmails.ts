@@ -32,7 +32,13 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
 
     // Collection messages only history type is messagesAdded
     for (const item of history) {
-      receivedMessages.push(...item.messagesAdded);
+      if (item.messagesAdded) {
+        receivedMessages.push(...item.messagesAdded);
+      }
+    }
+
+    if (receivedMessages.length === 0) {
+      return debugGmail('No new messages found');
     }
 
     const singleMessage = receivedMessages.length === 1;
@@ -52,8 +58,8 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
 /**
  * Syncronize gmail with given historyId of mailbox
  */
-export const syncPartially = async (email: string, credentials: ICredentials, startHistoryId: string) => {
-  const integration = await Integrations.findOne({ email });
+export const syncPartially = async (receivedEmail: string, credentials: ICredentials, startHistoryId: string) => {
+  const integration = await Integrations.findOne({ email: receivedEmail });
 
   if (!integration) {
     return debugGmail(`Integration not found in syncPartially`);
@@ -66,7 +72,13 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
   const auth = getAuth(credentials, accountId);
 
   // Get batched multiple messages or single message
-  const { batchMessages, singleMessage } = await syncByHistoryId(auth, gmailHistoryId);
+  const syncResponse = await syncByHistoryId(auth, gmailHistoryId);
+
+  if (!syncResponse) {
+    return null;
+  }
+
+  const { batchMessages, singleMessage } = syncResponse;
 
   if (!batchMessages && !singleMessage) {
     return debugGmail(`Error Google: Could not get message with historyId in sync partially ${gmailHistoryId}`);
@@ -74,7 +86,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
 
   const messagesResponse = batchMessages ? batchMessages : [singleMessage.data];
 
-  await processReceivedEmails(messagesResponse, integration, email);
+  await processReceivedEmails(messagesResponse, integration, receivedEmail);
 
   // Update current historyId for future message
   integration.gmailHistoryId = startHistoryId;
@@ -86,7 +98,7 @@ export const syncPartially = async (email: string, credentials: ICredentials, st
  * Create customer, conversation, message
  * according to received emails
  */
-const processReceivedEmails = async (messagesResponse: any, integration: IIntegration, email: string) => {
+const processReceivedEmails = async (messagesResponse: any, integration: IIntegration, receivedEmail: string) => {
   const [firstMessage] = messagesResponse;
   const previousMessageId = firstMessage.messageId;
 
@@ -99,24 +111,24 @@ const processReceivedEmails = async (messagesResponse: any, integration: IIntegr
     }
 
     const { from, reply, messageId, subject } = updatedMessage;
-    const primaryEmail = extractEmailFromString(from);
+    const email = extractEmailFromString(from);
 
-    const customer = await createOrGetCustomer(primaryEmail, integration.erxesApiId);
+    const customer = await createOrGetCustomer(email, integration.erxesApiId);
     const conversation = await createOrGetConversation(
-      primaryEmail,
+      email,
       reply,
       integration.erxesApiId,
       customer.erxesApiId,
       subject,
-      email,
+      receivedEmail,
     );
 
     await createOrGetConversationMessage(
       messageId,
       conversation.erxesApiId,
       customer.erxesApiId,
-      updatedMessage,
       conversation._id,
+      updatedMessage,
     );
   });
 };
@@ -188,4 +200,29 @@ const sendSingleRequest = async (auth: ICredentials, messages: any) => {
   }
 
   return response;
+};
+
+/**
+ * Get attachment
+ */
+export const getAttachment = async (messageId: string, attachmentId: string, credentials: ICredentials) => {
+  debugGmail('Request to get attachment');
+
+  const auth = getAuth(credentials);
+
+  let response;
+
+  try {
+    response = await gmailClient.messages.attachments.get({
+      auth,
+      id: attachmentId,
+      userId: 'me',
+      messageId,
+    });
+  } catch (e) {
+    debugGmail(`Failed to get attachment: ${e}`);
+  }
+
+  debugGmail(response);
+  return response.data;
 };
