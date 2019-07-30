@@ -111,6 +111,12 @@ const processReceivedEmails = async (messagesResponse: any, integration: IIntegr
     }
 
     const { from, reply, messageId, subject } = updatedMessage;
+
+    // Store only reply emails
+    if (!reply) {
+      return;
+    }
+
     const email = extractEmailFromString(from);
 
     const customer = await createOrGetCustomer(email, integration.erxesApiId);
