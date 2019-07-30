@@ -105,7 +105,7 @@ const init = async app => {
   });
 
   app.get('/gmail/get-message', async (req, res, next) => {
-    const { erxesApiMessageId } = req.query;
+    const { erxesApiMessageId, integrationId } = req.query;
 
     debugGmail(`Request to get gmailData with: ${erxesApiMessageId}`);
 
@@ -114,12 +114,23 @@ const init = async app => {
       return next();
     }
 
+    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+
+    if (!integration) {
+      debugGmail('Integration not found');
+      return next();
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
     const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
 
     if (!conversationMessage) {
       debugGmail('Conversation message not found');
       return next();
     }
+
+    // attach account email for dinstinguish sender
+    conversationMessage.integrationEmail = account.uid;
 
     return res.json(conversationMessage);
   });

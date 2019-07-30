@@ -1,4 +1,3 @@
-import { debugGmail } from '../debuggers';
 import { fetchMainApi } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './model';
 import { extractEmailFromString } from './util';
@@ -113,10 +112,8 @@ const createOrGetConversationMessage = async (
 ) => {
   const conversationMessage = await ConversationMessages.findOne({ messageId });
 
-  debugGmail(data);
-
   if (!conversationMessage) {
-    const { textHtml, textPlain } = data;
+    const { subject } = data;
 
     data.from = extractEmailFromString(data.from);
     data.to = extractEmailFromString(data.to);
@@ -136,7 +133,7 @@ const createOrGetConversationMessage = async (
           payload: JSON.stringify({
             conversationId: conversationErxesApiId,
             customerId: customerErxesApiId,
-            content: textHtml || textPlain,
+            content: subject,
           }),
         },
       });
