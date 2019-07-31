@@ -12,7 +12,7 @@ const encodeBase64 = (subject: string) => {
  * @see {https://tools.ietf.org/html/rfc2822}
  */
 const createMimeMessage = (mailParams: IMailParams): string => {
-  const { bcc, cc, to, textHtml, headerId, references, textPlain, from, subject, attachments } = mailParams;
+  const { bcc, cc, to, textHtml, headerId, references, from, subject, attachments } = mailParams;
 
   const nl = '\n';
   const boundary = '__erxes__';
@@ -22,6 +22,7 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     'To: ' + to, // "user1@email.com, user2@email.com"
     'From: <' + from + '>',
     'Subject: ' + encodeBase64(subject),
+    'Content-Type: multipart/mixed; boundary=' + boundary + nl,
   ];
 
   // Reply
@@ -41,39 +42,26 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     mimeBase.push('Bcc: ' + bcc);
   }
 
-  mimeBase.push('Content-Type: multipart/mixed; boundary=' + boundary + nl);
+  mimeBase.push(
+    [
+      '--' + boundary,
+      'Content-Type: text/html; charset=UTF-8',
+      'MIME-Version: 1.0',
+      'Content-Transfer-Encoding: 7bit',
+      textHtml,
+    ].join(nl),
+  );
 
-  if (textPlain) {
-    mimeBase.push(
-      [
-        '--' + boundary,
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit' + nl,
-        textPlain,
-      ].join(nl),
-    );
-  }
-
-  if (textHtml && textHtml.length > 0) {
-    mimeBase.push(
-      [
-        '--' + boundary,
-        'Content-Type: text/html; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit' + nl,
-        textHtml,
-      ].join(nl),
-    );
-  }
-
-  if (attachments) {
+  if (attachments && attachments.length > 0) {
     for (const attachment of attachments) {
       const mimeAttachment = [
         '--' + boundary,
         'Content-Type: ' + attachment.mimeType,
+        'MIME-Version: 1.0',
         'Content-Length: ' + attachment.size,
         'Content-Disposition: attachment; filename="' + attachment.filename + '"',
         'Content-Transfer-Encoding: base64' + nl,
-        attachment.data,
+        chunkSubstr(attachment.data, 76),
       ];
 
       mimeBase.push(mimeAttachment.join(nl));
@@ -82,7 +70,20 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 
   mimeBase.push('--' + boundary + '--');
 
+  debugGmail(mimeBase.join(nl));
+
   return mimeBase.join(nl);
+};
+
+const chunkSubstr = (str: string, size: number) => {
+  const numChunks = Math.ceil(str.length / size);
+  const chunks = new Array(numChunks);
+
+  for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    chunks[i] = str.substr(o, size);
+  }
+
+  return chunks;
 };
 
 /**

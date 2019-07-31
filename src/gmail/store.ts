@@ -129,7 +129,7 @@ const createOrGetConversationMessage = async (
           payload: JSON.stringify({
             conversationId: conversationErxesApiId,
             customerId: customerErxesApiId,
-            content: data.textPlain || '',
+            content: data.subject,
           }),
         },
       });
