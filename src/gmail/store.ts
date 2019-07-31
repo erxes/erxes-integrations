@@ -111,8 +111,6 @@ const createOrGetConversationMessage = async (
   const conversationMessage = await ConversationMessages.findOne({ messageId });
 
   if (!conversationMessage) {
-    const { subject } = data;
-
     data.from = extractEmailFromString(data.from);
     data.to = extractEmailFromString(data.to);
 
@@ -131,7 +129,7 @@ const createOrGetConversationMessage = async (
           payload: JSON.stringify({
             conversationId: conversationErxesApiId,
             customerId: customerErxesApiId,
-            content: subject,
+            content: data.textPlain || '',
           }),
         },
       });
