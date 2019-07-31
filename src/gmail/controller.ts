@@ -1,4 +1,4 @@
-import { debugCrons, debugGmail, debugRequest, debugResponse } from '../debuggers';
+import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
 import { ConversationMessages } from './models';
@@ -176,54 +176,6 @@ const init = async app => {
     res.write(attachment.data, 'base64');
 
     res.end();
-  });
-
-  app.get('/gmail/cronjob', async (req, res, next) => {
-    debugRequest(debugCrons, req);
-
-    const integrations = await Integrations.aggregate([
-      {
-        $match: { email: { $exists: true } }, // email field indicates the gmail
-      },
-      {
-        $lookup: {
-          from: 'accounts',
-          localField: 'accountId',
-          foreignField: '_id',
-          as: 'accounts',
-        },
-      },
-      {
-        $unwind: '$accounts',
-      },
-      {
-        $project: {
-          access_token: '$accounts.token',
-          refresh_token: '$accounts.tokenSecret',
-          scope: '$accounts.scope',
-          expire_date: '$accounts.expireDate',
-        },
-      },
-    ]);
-
-    if (!integrations) {
-      debugCrons('Gmail Integration not found');
-      return next();
-    }
-
-    for (const { _id, accountId, ...credentials } of integrations) {
-      const response = await watchPushNotification(accountId, credentials);
-      const { historyId, expiration } = response.data;
-
-      if (!historyId || !expiration) {
-        debugGmail('Error Google: Failed to renew push notification in cron job');
-        return;
-      }
-
-      await Integrations.updateOne({ _id }, { $set: { gmailHistoryId: historyId, expiration } });
-    }
-
-    return res.json({ status: 'ok' });
   });
 };
 

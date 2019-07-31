@@ -13,6 +13,7 @@ import initGmail from './gmail/controller';
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import Accounts from './models/Accounts';
+import './messageQueue';
 import Integrations from './models/Integrations';
 import { init } from './startup';
 
