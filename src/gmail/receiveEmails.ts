@@ -112,8 +112,8 @@ const processReceivedEmails = async (messagesResponse: any, integration: IIntegr
 
     const { from, reply, messageId, subject, labelIds } = updatedMessage;
 
-    // Store only reply emails
-    if (!reply && labelIds.indexOf(['INBOX', 'UNREAD']) > -1) {
+    // prevent to store emails by integration
+    if (!reply && labelIds.indexOf('SENT') > -1) {
       return;
     }
 

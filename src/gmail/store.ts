@@ -54,14 +54,16 @@ const createOrGetConversation = async (
 ) => {
   let conversation;
 
-  const dumpMessage = await ConversationMessages.findOne({
-    $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
-  }).sort({ createdAt: -1 });
+  if (reply) {
+    const dumpMessage = await ConversationMessages.findOne({
+      $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
+    }).sort({ createdAt: -1 });
 
-  if (dumpMessage) {
-    conversation = await Conversations.findOne({
-      _id: dumpMessage.conversationId,
-    });
+    if (dumpMessage) {
+      conversation = await Conversations.findOne({
+        _id: dumpMessage.conversationId,
+      });
+    }
   }
 
   if (!conversation) {

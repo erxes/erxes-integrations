@@ -22,7 +22,6 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     'To: ' + to, // "user1@email.com, user2@email.com"
     'From: <' + from + '>',
     'Subject: ' + encodeBase64(subject),
-    'Content-Type: multipart/mixed; boundary=' + boundary + nl,
   ];
 
   // Reply
@@ -42,14 +41,11 @@ const createMimeMessage = (mailParams: IMailParams): string => {
     mimeBase.push('Bcc: ' + bcc);
   }
 
+  mimeBase.push('Content-Type: multipart/mixed; boundary=' + boundary + nl);
   mimeBase.push(
-    [
-      '--' + boundary,
-      'Content-Type: text/html; charset=UTF-8',
-      'MIME-Version: 1.0',
-      'Content-Transfer-Encoding: 7bit',
-      textHtml,
-    ].join(nl),
+    ['--' + boundary, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: 8bit' + nl, textHtml].join(
+      nl,
+    ),
   );
 
   if (attachments && attachments.length > 0) {
@@ -57,7 +53,6 @@ const createMimeMessage = (mailParams: IMailParams): string => {
       const mimeAttachment = [
         '--' + boundary,
         'Content-Type: ' + attachment.mimeType,
-        'MIME-Version: 1.0',
         'Content-Length: ' + attachment.size,
         'Content-Disposition: attachment; filename="' + attachment.filename + '"',
         'Content-Transfer-Encoding: base64' + nl,
