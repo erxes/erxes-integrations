@@ -4,7 +4,7 @@ import { Integrations } from '../models';
 import { IIntegration } from '../models/Integrations';
 import { getAuth, gmailClient } from './auth';
 import { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer } from './store';
-import { ICredentials } from './types';
+import { ICredentials, IGmailAttachment, IMessage, IMessageAdded } from './types';
 import { extractEmailFromString, parseBatchResponse, parseMessage } from './util';
 
 /**
@@ -14,7 +14,7 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
   let response;
 
   try {
-    const historyResponse: any = await gmailClient.history.list({
+    const historyResponse = await gmailClient.history.list({
       auth,
       userId: 'me',
       startHistoryId,
@@ -102,7 +102,7 @@ const processReceivedEmails = async (messagesResponse: any, integration: IIntegr
   const [firstMessage] = messagesResponse;
   const previousMessageId = firstMessage.messageId;
 
-  messagesResponse.forEach(async (value: any, index: number) => {
+  messagesResponse.forEach(async (value: IMessage, index: number) => {
     const updatedMessage = parseMessage(value);
 
     // prevent message duplication
@@ -142,7 +142,7 @@ const processReceivedEmails = async (messagesResponse: any, integration: IIntegr
 /**
  * Send multiple request at once
  */
-const sendBatchRequest = (auth: any, messages: any) => {
+const sendBatchRequest = (auth: any, messages: IMessageAdded[]) => {
   debugGmail('Sending batch request');
 
   const { credentials } = auth;
@@ -187,11 +187,11 @@ const sendBatchRequest = (auth: any, messages: any) => {
 /**
  * Single request to get a full message
  */
-const sendSingleRequest = async (auth: ICredentials, messages: any) => {
+const sendSingleRequest = async (auth: ICredentials, messages: IMessageAdded[]) => {
   const [data] = messages;
   const { message } = data;
 
-  let response;
+  let response: IMessage;
 
   debugGmail(`Request to get a single message`);
 
@@ -212,11 +212,11 @@ const sendSingleRequest = async (auth: ICredentials, messages: any) => {
  * Get attachment
  */
 export const getAttachment = async (messageId: string, attachmentId: string, credentials: ICredentials) => {
-  debugGmail('Request to get attachment');
+  debugGmail('Request to get an attachment');
 
   const auth = getAuth(credentials);
 
-  let response;
+  let response: IGmailAttachment;
 
   try {
     response = await gmailClient.messages.attachments.get({
@@ -229,6 +229,5 @@ export const getAttachment = async (messageId: string, attachmentId: string, cre
     debugGmail(`Failed to get attachment: ${e}`);
   }
 
-  debugGmail(response);
-  return response.data;
+  return response.data || '';
 };

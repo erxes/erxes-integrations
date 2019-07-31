@@ -58,7 +58,7 @@ export const getCredentialsByEmailAccountId = async ({
 export const getCredentials = (credentials: IAccount): ICredentials => ({
   access_token: credentials.token,
   refresh_token: credentials.tokenSecret,
-  expire_date: credentials.expireDate,
+  expiry_date: credentials.expireDate,
   scope: credentials.scope,
 });
 

@@ -5,7 +5,7 @@ import { Accounts } from '../models';
 import { getEnv } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { syncPartially } from './receiveEmails';
-import { ICredentials } from './types';
+import { ICredentials, IPubsubMessage } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
@@ -94,14 +94,14 @@ export const trackGmail = async () => {
 /**
  * Error handler for subscription of gmail
  */
-const onError = (error: any) => {
+const onError = (error: string) => {
   debugGmail(`Error Pubsub: occured in google pubsub subscription of gmail ${error}`);
 };
 
 /**
  * Gmail subscription receive message
  */
-const onMessage = async (message: any) => {
+const onMessage = async (message: IPubsubMessage) => {
   const base64Url = message.data;
   const { emailAddress, historyId } = JSON.parse(base64Url.toString());
 
@@ -167,7 +167,7 @@ export const stopPushNotification = async (email: string, credentials: ICredenti
   const { _id } = await Accounts.findOne({ uid: email });
   const auth = getAuth(credentials, _id);
 
-  debugGmail(`Google OAuthClient request ho stop push notification for the given user mailbox`);
+  debugGmail(`Google OAuthClient request to stop push notification for the given user mailbox`);
 
   try {
     await gmailClient.stop({ auth, userId: email });

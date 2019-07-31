@@ -25,6 +25,14 @@ const init = async app => {
 
     debugGmail(`Creating gmail integration for ${email}`);
 
+    // Check exsting Integration
+    const dumpIntegration = await Integrations.findOne({ kind: 'gmail', accountId, email }).lean();
+
+    if (dumpIntegration) {
+      debugGmail(`Integration already exist with this email: ${email}`);
+      return next();
+    }
+
     const integration = await Integrations.create({
       kind: 'gmail',
       accountId,

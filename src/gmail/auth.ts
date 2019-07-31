@@ -90,7 +90,7 @@ export const getAccessToken = async (code: string) => {
 
   try {
     accessToken = await new Promise((resolve, reject) =>
-      oauth2Client.getToken(code, (err: any, token: any) => {
+      oauth2Client.getToken(code, (err: any, token: ICredentials) => {
         if (err) {
           return reject(err.response.data.error);
         }
@@ -108,7 +108,7 @@ export const getAccessToken = async (code: string) => {
 /*
  * Refresh token and save when access_token expires
  */
-export const refreshAccessToken = async (_id: string, tokens: any): Promise<void> => {
+export const refreshAccessToken = async (_id: string, tokens: ICredentials): Promise<void> => {
   const account = await Accounts.findOne({ _id });
 
   if (!account) {
