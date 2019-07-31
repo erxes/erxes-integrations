@@ -1,7 +1,7 @@
 import { debugCrons, debugGmail, debugRequest, debugResponse } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import loginMiddleware from './loginMiddleware';
-import { ConversationMessages } from './model';
+import { ConversationMessages } from './models';
 import { getAttachment } from './receiveEmails';
 import { sendGmail } from './send';
 import { getCredentials } from './util';

@@ -1,5 +1,5 @@
 import { fetchMainApi } from '../utils';
-import { ConversationMessages, Conversations, Customers } from './model';
+import { ConversationMessages, Conversations, Customers } from './models';
 import { extractEmailFromString } from './util';
 
 const createOrGetCustomer = async (email: string, integrationId: string) => {

@@ -5,6 +5,6 @@ export const init = () => {
   try {
     trackGmail();
   } catch (e) {
-    debugIntegrations(e.toString());
+    debugIntegrations(e.message());
   }
 };

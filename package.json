@@ -33,7 +33,6 @@
     ]
   },
   "dependencies": {
-    "@axelspringer/graphql-google-pubsub": "^1.2.1",
     "@google-cloud/pubsub": "^0.29.1",
     "body-parser": "^1.17.1",
     "botbuilder": "^4.4.0",
@@ -44,13 +43,10 @@
     "express": "^4.16.4",
     "fbgraph": "^1.4.4",
     "googleapis": "^40.0.0",
-    "ioredis": "^4.11.1",
     "meteor-random": "^0.0.3",
     "mongoose": "^5.2.16",
     "node-schedule": "^1.3.2",
-    "request": "^2.88.0",
-    "requestify": "^0.2.5",
-    "sanitize-html": "^1.20.1"
+    "requestify": "^0.2.5"
   },
   "peerOptionalDependencies": {
     "kerberos": "^1.0.0"
@@ -66,8 +62,6 @@
     "@types/mongoose": "^5.2.1",
     "@types/node": "^10.12.18",
     "@types/q": "^1.5.0",
-    "@types/react": "^16.8.22",
-    "@types/react-dom": "^16.8.4",
     "faker": "^4.1.0",
     "husky": "^0.13.4",
     "jest": "22.0.4",
@@ -80,7 +74,6 @@
     "tslint": "^5.8.0",
     "tslint-config-prettier": "^1.1.0",
     "tslint-config-standard": "^7.0.0",
-    "tslint-react": "^4.0.0",
     "typescript": "^2.9.2"
   }
 }
