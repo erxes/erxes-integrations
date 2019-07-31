@@ -70,8 +70,6 @@ const createMimeMessage = (mailParams: IMailParams): string => {
 
   mimeBase.push('--' + boundary + '--');
 
-  debugGmail(mimeBase.join(nl));
-
   return mimeBase.join(nl);
 };
 
