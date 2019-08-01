@@ -12,8 +12,8 @@ import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import initGmail from './gmail/controller';
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
-import Accounts from './models/Accounts';
 import './messageQueue';
+import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
 import { init } from './startup';
 
