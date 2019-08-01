@@ -1,8 +1,8 @@
 import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import { debugBase, debugGmail } from './debuggers';
-import { Integrations } from './models';
 import { watchPushNotification } from './gmail/watch';
+import { Integrations } from './models';
 
 dotenv.config();
 
