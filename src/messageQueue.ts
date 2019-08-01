@@ -71,17 +71,22 @@ const initConsumer = async () => {
     const conn = await amqplib.connect(RABBITMQ_HOST);
     const channel = await conn.createChannel();
 
-    await channel.assertQueue('erxes-api');
+    await channel.assertQueue('erxes-api-queue');
 
-    channel.consume('erxes-api', async msg => {
-      if (msg !== null) {
-        await receiveMessage(JSON.parse(msg.content.toString()));
-        channel.ack(msg);
+    channel.consume('erxes-api-queue', async response => {
+      if (response !== null) {
+        await receiveMessage(parseResponse(response));
+
+        channel.ack(response);
       }
     });
   } catch (e) {
     debugBase(e.message);
   }
+};
+
+const parseResponse = (response: any) => {
+  return JSON.parse(response.content.toString());
 };
 
 initConsumer();
