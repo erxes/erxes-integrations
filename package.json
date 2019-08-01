@@ -46,6 +46,7 @@
     "googleapis": "^40.0.0",
     "meteor-random": "^0.0.3",
     "mongoose": "^5.2.16",
+    "request": "^2.88.0",
     "requestify": "^0.2.5"
   },
   "peerOptionalDependencies": {
