@@ -101,7 +101,7 @@ const init = async app => {
           action: 'create-conversation',
           payload: JSON.stringify({
             customerId: customer.erxesApiId,
-            content: recordURL,
+            content: disp,
             integrationId: integration.erxesApiId,
           }),
         },
@@ -122,7 +122,7 @@ const init = async app => {
     if (!conversationMessage) {
       // save on integrations db
       await ConversationMessages.create({
-        content: recordURL,
+        content: audioElement(recordURL || ''),
         conversationId: conversation._id,
         callId: callID,
       });
