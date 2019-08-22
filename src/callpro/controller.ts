@@ -11,9 +11,9 @@ const init = async app => {
     const { phoneNumber } = JSON.parse(data);
 
     // Check existing Integration
-    const dumpIntegration = await Integrations.findOne({ kind: 'callpro', phoneNumber }).lean();
+    const integration = await Integrations.findOne({ kind: 'callpro', phoneNumber }).lean();
 
-    if (dumpIntegration) {
+    if (integration) {
       return next(`Integration already exists with this phone number: ${phoneNumber}`);
     }
 
