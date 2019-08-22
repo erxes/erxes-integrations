@@ -14,8 +14,7 @@ const init = async app => {
     const dumpIntegration = await Integrations.findOne({ kind: 'callpro', phoneNumber }).lean();
 
     if (dumpIntegration) {
-      debugCallPro(`Integration already exists with this phone number: ${phoneNumber}`);
-      return next();
+      return next(`Integration already exists with this phone number: ${phoneNumber}`);
     }
 
     try {
@@ -26,7 +25,7 @@ const init = async app => {
       });
     } catch (e) {
       debugCallPro(`Failed to create integration: ${e}`);
-      next();
+      next(e);
     }
 
     return res.json({ status: 'ok' });
@@ -136,7 +135,7 @@ const init = async app => {
           body: {
             action: 'create-conversation-message',
             payload: JSON.stringify({
-              content: recordURL,
+              content: audioElement(recordURL || ''),
               conversationId: conversation.erxesApiId,
               customerId: customer.erxesApiId,
             }),
@@ -150,6 +149,10 @@ const init = async app => {
 
     res.send('success');
   });
+};
+
+const audioElement = (src: string) => {
+  return `<audio controls name="media" src="${src}"/>`;
 };
 
 export default init;

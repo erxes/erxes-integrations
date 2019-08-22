@@ -38,10 +38,8 @@ export const conversationSchema = new Schema({
   state: String,
   senderPhoneNumber: { type: String, index: true },
   recipientPhoneNumber: { type: String, index: true },
-  callId: String,
+  callId: { type: String, unique: true },
 });
-
-conversationSchema.index({ senderPhoneNumber: 1, recipientPhoneNumber: 1 }, { unique: true });
 
 export interface IConversationModel extends Model<IConversationDocument> {}
 
