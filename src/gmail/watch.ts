@@ -139,7 +139,7 @@ export const watchPushNotification = async (accountId: string, credentials: ICre
       auth,
       userId: 'me',
       requestBody: {
-        labelIds: ['INBOX', 'CATEGORY_PRIMARY'],
+        labelIds: ['INBOX', 'CATEGORY_PERSONAL'],
         labelFilterAction: 'include',
         topicName: `projects/${GOOGLE_PROJECT_ID}/topics/${GOOGLE_GMAIL_TOPIC}`,
       },
