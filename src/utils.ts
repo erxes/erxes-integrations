@@ -10,12 +10,15 @@ import {
   Conversations as FacebookConversations,
   Customers as FacebookCustomers,
 } from './facebook/models';
+import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import {
   ConversationMessages as GmailConversationMessages,
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
-import { Integrations } from './models';
+import { getCredentialsByEmailAccountId } from './gmail/util';
+import { stopPushNotification } from './gmail/watch';
+import { Accounts, Integrations } from './models';
 
 interface IRequestParams {
   url?: string;
@@ -94,11 +97,31 @@ export const getEnv = ({ name, defaultValue }: { name: string; defaultValue?: st
   return value || '';
 };
 
-export const removeIntegration = async (integrationId: string, erxesApiId: string, kind: string) => {
-  const selector = { integrationId };
+/**
+ * Remove integration by integrationId(erxesApiId) or accountId
+ */
+export const removeIntegration = async (id: string) => {
+  const integration = await Integrations.findOne({
+    $or: [{ erxesApiId: id }, { accountId: id }],
+  });
 
-  if (kind === 'facebook') {
+  if (!integration) {
+    throw new Error('Integration not found');
+  }
+
+  const { kind, _id, accountId } = integration;
+  const account = await Accounts.findOne({ _id: accountId });
+
+  const selector = { integrationId: _id };
+
+  if (kind === 'facebook' && account) {
     debugFacebook('Removing facebook entries');
+
+    for (const pageId of integration.facebookPageIds) {
+      const pageTokenResponse = await getPageAccessToken(pageId, account.token);
+
+      await unsubscribePage(pageId, pageTokenResponse);
+    }
 
     const conversationIds = await FacebookConversations.find(selector).distinct('_id');
 
@@ -107,10 +130,13 @@ export const removeIntegration = async (integrationId: string, erxesApiId: strin
     await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  if (kind === 'gmail') {
+  if (kind === 'gmail' && account) {
     debugGmail('Removing gmail entries');
 
+    const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
+
+    await stopPushNotification(account.uid, credentials);
 
     await GmailCustomers.deleteMany(selector);
     await GmailConversations.deleteMany(selector);
@@ -127,5 +153,5 @@ export const removeIntegration = async (integrationId: string, erxesApiId: strin
     await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  await Integrations.deleteOne({ erxesApiId });
+  return Integrations.deleteOne({ _id });
 };
