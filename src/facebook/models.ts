@@ -67,6 +67,56 @@ export const conversationMessageSchema = new Schema({
 
 export interface IConversationMessageModel extends Model<IConversationMessageDocument> {}
 
+export interface IPost {
+  postId: string;
+  recipientId: string;
+  content: string;
+  erxesApiId?: string;
+  attachments: string[];
+  timestamp: Date;
+}
+
+export interface IPostDocument extends IPost, Document {}
+
+export const postSchema = new Schema({
+  _id: field({ pkey: true }),
+  postId: { type: String, index: true },
+  recipientId: { type: String, index: true },
+  content: String,
+  attachments: [String],
+  erxesApiId: String,
+  timestamp: Date,
+});
+
+postSchema.index({ recipientId: 1, postId: 1 }, { unique: true });
+
+export interface IPostModel extends Model<IPostDocument> {}
+
+export interface IComment {
+  mid: string;
+  conversationId: string;
+  content: string;
+  attachments: string[];
+}
+
+export interface ICommentDocument extends IComment, Document {}
+
+export const commentShema = new Schema({
+  _id: field({ pkey: true }),
+  commentId: { type: String, index: true },
+  postId: { type: String, index: true },
+  recipientId: { type: String, index: true },
+  senderId: { type: String, index: true },
+  attachments: [String],
+  content: String,
+  erxesApiId: String,
+  timestamp: Date,
+});
+
+commentShema.index({ recipientId: 1, postId: 1, senderId: 1, commentId: 1 }, { unique: true });
+
+export interface ICommentModel extends Model<ICommentDocument> {}
+
 // tslint:disable-next-line
 export const Customers = model<ICustomerDocument, ICustomerModel>('customers_facebook', customerSchema);
 
@@ -81,3 +131,7 @@ export const ConversationMessages = model<IConversationMessageDocument, IConvers
   'conversation_messages_facebook',
   conversationMessageSchema,
 );
+
+export const Posts = model<IPostDocument, IPostModel>('posts_facebook', postSchema);
+
+export const Comments = model<ICommentDocument, ICommentModel>('comments_facebook', commentShema);

@@ -5,7 +5,10 @@ import Integrations from '../models/Integrations';
 import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Conversations } from './models';
+import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
+import receivePost from './receivePost';
+
 import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
 
 const init = async app => {
@@ -193,49 +196,77 @@ const init = async app => {
     }
   });
 
-  app.post('/facebook/receive', (req, res, next) => {
-    adapter
-      .processActivity(req, res, async context => {
-        const { activity } = context;
+  app.post('/facebook/receive', async (req, res, next) => {
+    res.send('succes');
+    const data = req.body;
+    if (data.object === 'page') {
+      for (const entry of data.entry) {
+        const pageId = entry.id;
+        // check receiving page is in integration's page list
 
-        if (activity.type === 'message') {
-          debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
+        const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
 
-          const pageId = activity.recipient.id;
-
-          const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
-
-          if (!integration) {
-            debugFacebook(`Integration not found with pageId: ${pageId}`);
-            return next();
-          }
-
-          const account = await Accounts.findOne({ _id: integration.accountId });
-
-          if (!account) {
-            debugFacebook(`Account not found with _id: ${integration.accountId}`);
-            return next();
-          }
-
-          try {
-            accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
-          } catch (e) {
-            debugFacebook(`Error occurred while getting page access token: ${e.message}`);
-            return next();
-          }
-
-          await receiveMessage(adapter, activity);
-
-          debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
+        if (!integration) {
+          debugFacebook(`Integration not found with pageId: ${pageId}`);
+          return next();
         }
 
-        next();
-      })
+        const account = await Accounts.findOne({ _id: integration.accountId });
 
-      .catch(e => {
-        debugFacebook(`Error occurred while processing activity: ${e.message}`);
-        next();
-      });
+        if (!account) {
+          debugFacebook(`Account not found with _id: ${integration.accountId}`);
+          return next();
+        }
+
+        try {
+          accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
+        } catch (e) {
+          debugFacebook(`Error occurred while getting page access token: ${e.message}`);
+          return next();
+        }
+
+        if (entry.messaging) {
+          adapter
+            .processActivity(req, res, async context => {
+              const { activity } = context;
+
+              if (activity) {
+                debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
+
+                await receiveMessage(adapter, activity);
+
+                debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
+              }
+
+              next();
+            })
+
+            .catch(e => {
+              debugFacebook(`Error occurred while processing activity: ${e.message}`);
+              next();
+            });
+        }
+
+        // receive new feed
+        if (entry.changes) {
+          for (const event of entry.changes) {
+            debugFacebook(`Received webhook activity ${JSON.stringify(event.value)}`);
+
+            if (event.item === 'comment') {
+              await receiveComment(entry);
+            }
+
+            if (event.item === 'post') {
+              await receivePost(entry);
+            } else {
+              next();
+            }
+
+            debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
+          }
+        }
+      }
+    }
   });
 };
 
