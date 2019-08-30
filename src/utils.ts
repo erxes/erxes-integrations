@@ -1,5 +1,20 @@
 import * as requestify from 'requestify';
-import { debugBase, debugExternalRequests } from './debuggers';
+import {
+  ConversationMessages as CallProConversationMessages,
+  Conversations as CallProConversations,
+  Customers as CallProCustomers,
+} from './callpro/models';
+import { debugBase, debugExternalRequests, debugFacebook, debugGmail } from './debuggers';
+import {
+  ConversationMessages as FacebookConversationMessages,
+  Conversations as FacebookConversations,
+  Customers as FacebookCustomers,
+} from './facebook/models';
+import {
+  ConversationMessages as GmailConversationMessages,
+  Conversations as GmailConversations,
+  Customers as GmailCustomers,
+} from './gmail/models';
 
 interface IRequestParams {
   url?: string;
@@ -76,4 +91,42 @@ export const getEnv = ({ name, defaultValue }: { name: string; defaultValue?: st
   }
 
   return value || '';
+};
+
+/**
+ * Remove collections
+ */
+export const removeCollections = async (integrationId: string, kind: string) => {
+  const selector = { integrationId };
+
+  if (kind === 'facebook') {
+    debugFacebook('Removing facebook collections');
+
+    const conversationIds = await FacebookConversations.find(selector).distinct('_id');
+
+    await FacebookCustomers.deleteMany(selector);
+    await FacebookConversations.deleteMany(selector);
+
+    return await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'gmail') {
+    debugGmail('Removing gmail collections');
+
+    const conversationIds = await GmailConversations.find(selector).distinct('_id');
+
+    await GmailCustomers.deleteMany(selector);
+    await GmailConversations.deleteMany(selector);
+
+    return await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'callpro') {
+    const conversationIds = await CallProConversations.find(selector).distinct('_id');
+
+    await CallProCustomers.deleteMany(selector);
+    await CallProConversations.deleteMany(selector);
+
+    return await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
 };

@@ -1,21 +1,6 @@
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
-import {
-  ConversationMessages as CallProConversationMessages,
-  Conversations as CallProConversations,
-  Customers as CallProCustomers,
-} from './callpro/models';
-import {
-  ConversationMessages as FacebookConversationMessages,
-  Conversations as FacebookConversations,
-  Customers as FacebookCustomers,
-} from './facebook/models';
-import {
-  ConversationMessages as GmailConversationMessages,
-  Conversations as GmailConversations,
-  Customers as GmailCustomers,
-} from './gmail/models';
 
 // load environment variables
 dotenv.config();
@@ -32,6 +17,7 @@ import './messageQueue';
 import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
 import { init } from './startup';
+import { removeCollections } from './utils';
 
 connect();
 
@@ -63,7 +49,6 @@ app.post('/integrations/remove', async (req, res) => {
   }
 
   const account = await Accounts.findOne({ _id: integration.accountId });
-  const selector = { integrationId: integration._id };
 
   if (integration.kind === 'facebook' && account) {
     for (const pageId of integration.facebookPageIds) {
@@ -71,31 +56,15 @@ app.post('/integrations/remove', async (req, res) => {
 
       await unsubscribePage(pageId, pageTokenResponse);
     }
-    const conversationIds = await FacebookConversations.find(selector).distinct('_id');
-
-    await FacebookCustomers.deleteMany(selector);
-    await FacebookConversations.deleteMany(selector);
-    await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   if (integration.kind === 'gmail' && account) {
     const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
-    const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
     await stopPushNotification(account.uid, credentials);
-
-    await GmailCustomers.deleteMany(selector);
-    await GmailConversations.deleteMany(selector);
-    await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  if (integration.kind === 'callpro') {
-    const conversationIds = await CallProConversations.find(selector).distinct('_id');
-
-    await CallProCustomers.deleteMany({ integrationId: integration._id });
-    await CallProConversations.deleteMany(selector);
-    await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
-  }
+  await removeCollections(integration._id, integration.kind);
 
   await Integrations.deleteOne({ erxesApiId: integrationId });
 
