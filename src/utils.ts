@@ -104,8 +104,7 @@ export const removeIntegration = async (integrationId: string, erxesApiId: strin
 
     await FacebookCustomers.deleteMany(selector);
     await FacebookConversations.deleteMany(selector);
-
-    return await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   if (kind === 'gmail') {
@@ -115,8 +114,7 @@ export const removeIntegration = async (integrationId: string, erxesApiId: strin
 
     await GmailCustomers.deleteMany(selector);
     await GmailConversations.deleteMany(selector);
-
-    return await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   if (kind === 'callpro') {
@@ -126,8 +124,7 @@ export const removeIntegration = async (integrationId: string, erxesApiId: strin
 
     await CallProCustomers.deleteMany(selector);
     await CallProConversations.deleteMany(selector);
-
-    return await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   await Integrations.deleteOne({ erxesApiId });
