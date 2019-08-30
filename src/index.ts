@@ -17,7 +17,7 @@ import './messageQueue';
 import Accounts from './models/Accounts';
 import Integrations from './models/Integrations';
 import { init } from './startup';
-import { removeCollections } from './utils';
+import { removeIntegration } from './utils';
 
 connect();
 
@@ -64,9 +64,7 @@ app.post('/integrations/remove', async (req, res) => {
     await stopPushNotification(account.uid, credentials);
   }
 
-  await removeCollections(integration._id, integration.kind);
-
-  await Integrations.deleteOne({ erxesApiId: integrationId });
+  await removeIntegration(integration._id, integrationId, integration.kind);
 
   debugResponse(debugIntegrations, req);
 

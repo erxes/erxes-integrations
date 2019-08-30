@@ -4,7 +4,7 @@ import {
   Conversations as CallProConversations,
   Customers as CallProCustomers,
 } from './callpro/models';
-import { debugBase, debugExternalRequests, debugFacebook, debugGmail } from './debuggers';
+import { debugBase, debugCallPro, debugExternalRequests, debugFacebook, debugGmail } from './debuggers';
 import {
   ConversationMessages as FacebookConversationMessages,
   Conversations as FacebookConversations,
@@ -15,6 +15,7 @@ import {
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
+import { Integrations } from './models';
 
 interface IRequestParams {
   url?: string;
@@ -93,14 +94,11 @@ export const getEnv = ({ name, defaultValue }: { name: string; defaultValue?: st
   return value || '';
 };
 
-/**
- * Remove collections
- */
-export const removeCollections = async (integrationId: string, kind: string) => {
+export const removeIntegration = async (integrationId: string, erxesApiId: string, kind: string) => {
   const selector = { integrationId };
 
   if (kind === 'facebook') {
-    debugFacebook('Removing facebook collections');
+    debugFacebook('Removing facebook entries');
 
     const conversationIds = await FacebookConversations.find(selector).distinct('_id');
 
@@ -111,7 +109,7 @@ export const removeCollections = async (integrationId: string, kind: string) => 
   }
 
   if (kind === 'gmail') {
-    debugGmail('Removing gmail collections');
+    debugGmail('Removing gmail entries');
 
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
@@ -122,6 +120,8 @@ export const removeCollections = async (integrationId: string, kind: string) => 
   }
 
   if (kind === 'callpro') {
+    debugCallPro('Removing callpro entries');
+
     const conversationIds = await CallProConversations.find(selector).distinct('_id');
 
     await CallProCustomers.deleteMany(selector);
@@ -129,4 +129,6 @@ export const removeCollections = async (integrationId: string, kind: string) => 
 
     return await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
+
+  await Integrations.deleteOne({ erxesApiId });
 };
