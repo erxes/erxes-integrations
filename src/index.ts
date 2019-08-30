@@ -10,10 +10,10 @@ import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
+import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
 import { init } from './startup';
-import { removeIntegration } from './utils';
 
 connect();
 
@@ -65,8 +65,8 @@ app.post('/accounts/remove', async (req, res) => {
   const { _id } = req.body;
 
   try {
-    await Accounts.deleteOne({ _id });
     await removeIntegration(_id);
+    await Accounts.deleteOne({ _id });
   } catch (e) {
     return res.json({ status: e.message });
   }
