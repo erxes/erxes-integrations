@@ -9,6 +9,7 @@ import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
 
+import { FACEBOOK_POST_TYPES } from './constants';
 import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
 
 const init = async app => {
@@ -225,6 +226,8 @@ const init = async app => {
           return next();
         }
 
+        // receive chat
+
         if (entry.messaging) {
           adapter
             .processActivity(req, res, async context => {
@@ -247,17 +250,18 @@ const init = async app => {
             });
         }
 
-        // receive new feed
+        // receive post and comment
+
         if (entry.changes) {
           for (const event of entry.changes) {
             debugFacebook(`Received webhook activity ${JSON.stringify(event.value)}`);
 
-            if (event.item === 'comment') {
-              await receiveComment(entry);
+            if (event.value.item === 'comment') {
+              await receiveComment(event.value, entry.id);
             }
 
-            if (event.item === 'post') {
-              await receivePost(entry);
+            if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
+              await receivePost(event.value, entry.id);
             } else {
               next();
             }
@@ -268,6 +272,37 @@ const init = async app => {
       }
     }
   });
+
+  // app.get('/facebook/get-post', async (req, res, next) => {
+  //   const { erxesApiMessageId, integrationId } = req.query;
+
+  //   debugFacebook(`Request to get gmailData with: ${erxesApiMessageId}`);
+
+  //   if (!erxesApiMessageId) {
+  //     debugFacebook('Conversation message id not defined');
+  //     return next();
+  //   }
+
+  //   const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+
+  //   if (!integration) {
+  //     debugFacebook('Integration not found');
+  //     return next();
+  //   }
+
+  //   const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+  //   const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
+
+  //   if (!conversationMessage) {
+  //     debugFacebook('Conversation message not found');
+  //     return next();
+  //   }
+
+  //   // attach account email for dinstinguish sender
+  //   conversationMessage.integrationEmail = account.uid;
+
+  //   return res.json(conversationMessage);
+  // });
 };
 
 export default init;

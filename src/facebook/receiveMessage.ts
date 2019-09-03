@@ -3,20 +3,7 @@ import { FacebookAdapter } from 'botbuilder-adapter-facebook';
 import Integrations from '../models/Integrations';
 import { fetchMainApi } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './models';
-
-interface IChannelData {
-  sender: { id: string };
-  recipient: { id: string };
-  timestamp: number;
-  text?: string;
-  attachments?: Array<{
-    type: string;
-    payload: { url: string };
-  }>;
-  message: {
-    mid: string;
-  };
-}
+import { IChannelData } from './types';
 
 const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
   const { recipient, sender, timestamp, text, attachments, message } = activity.channelData as IChannelData;
@@ -34,9 +21,9 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
   // create customer
   if (!customer) {
     const api = await adapter.getAPI(activity);
+
     const response = await api.callAPI(`/${userId}`, 'GET', {});
 
-    // save on integrations db
     try {
       customer = await Customers.create({
         userId,

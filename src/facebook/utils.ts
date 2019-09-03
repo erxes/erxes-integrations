@@ -1,4 +1,5 @@
 import * as graph from 'fbgraph';
+import { debugFacebook } from '../debuggers';
 
 export const graphRequest = {
   base(method: string, path?: any, accessToken?: any, ...otherParams) {
@@ -52,4 +53,18 @@ export const subscribePage = async (pageId, pageToken): Promise<{ success: true 
 
 export const unsubscribePage = async (pageId, pageToken): Promise<{ success: true } | any> => {
   return graphRequest.delete(`${pageId}/subscribed_apps`, pageToken);
+};
+
+export const getFacebookUser = async (pageId: string, fbUserId: string, userAccessToken: string) => {
+  let pageAccessToken;
+
+  try {
+    pageAccessToken = await getPageAccessToken(pageId, userAccessToken);
+  } catch (e) {
+    debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+  }
+
+  const pageToken = pageAccessToken;
+
+  return await graphRequest.get(`/${fbUserId}`, pageToken);
 };

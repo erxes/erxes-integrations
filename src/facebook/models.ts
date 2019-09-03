@@ -70,6 +70,7 @@ export interface IConversationMessageModel extends Model<IConversationMessageDoc
 export interface IPost {
   postId: string;
   recipientId: string;
+  senderId: string;
   content: string;
   erxesApiId?: string;
   attachments: string[];
@@ -82,6 +83,7 @@ export const postSchema = new Schema({
   _id: field({ pkey: true }),
   postId: { type: String, index: true },
   recipientId: { type: String, index: true },
+  senderId: String,
   content: String,
   attachments: [String],
   erxesApiId: String,
