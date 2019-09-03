@@ -168,6 +168,45 @@ const init = async app => {
     }
   });
 
+  // if (conversation.facebookData.kind === FACEBOOK_DATA_KINDS.FEED) {
+  //   // Post id
+  //   let id = conversation.facebookData.postId;
+
+  //   // Reply to comment
+  //   if (commentId) {
+  //     id = commentId;
+  //   }
+
+  //   if (text) {
+  //     msgObj.message = text;
+  //   }
+
+  //   // Attaching attachment url
+  //   if (attachment) {
+  //     msgObj.attachment_url = attachment.url;
+  //   }
+
+  //   // post reply
+  //   const res: any = await graphRequest.post(`${id}/comments`, response.access_token, {
+  //     ...msgObj,
+  //   });
+
+  //   const facebookData: IMsgFacebook = {
+  //     commentId: res.id,
+  //   };
+
+  //   if (commentId) {
+  //     facebookData.parentId = commentId;
+  //   }
+
+  //   if (attachment) {
+  //     facebookData.link = attachment.url;
+  //   }
+
+  //   // save commentId and parentId in message object
+  //   await ConversationMessages.updateOne({ _id: message._id }, { $set: { facebookData } });
+  // }
+
   const { FACEBOOK_VERIFY_TOKEN, FACEBOOK_APP_SECRET } = process.env;
 
   if (!FACEBOOK_VERIFY_TOKEN || !FACEBOOK_APP_SECRET) {
