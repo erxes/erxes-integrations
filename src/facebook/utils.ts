@@ -45,6 +45,14 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
   return response.access_token;
 };
 
+export const getPageAccessTokenFromMap = (pageId: string, pageTokens: [{ [key: string]: string }]): string => {
+  for (const pageToken of pageTokens) {
+    if (Object.keys(pageToken)[0] === pageId) {
+      return pageToken[pageId];
+    }
+  }
+};
+
 export const subscribePage = async (pageId, pageToken): Promise<{ success: true } | any> => {
   return graphRequest.post(`${pageId}/subscribed_apps`, pageToken, {
     subscribed_fields: ['conversations', 'messages', 'feed'],

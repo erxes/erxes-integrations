@@ -2,11 +2,10 @@ import { FacebookAdapter } from 'botbuilder-adapter-facebook';
 import { debugBase, debugFacebook, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
-import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Conversations } from './models';
 import receiveMessage from './receiveMessage';
-import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
+import { getPageAccessToken, getPageAccessTokenFromMap, getPageList, graphRequest, subscribePage } from './utils';
 
 const init = async app => {
   app.get('/fblogin', loginMiddleware);
@@ -31,44 +30,29 @@ const init = async app => {
       facebookPageIds,
     });
 
-    const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
-    const DOMAIN = getEnv({ name: 'DOMAIN' });
+    const facebookPageTokensMap: any = {};
 
-    debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
-
-    if (ENDPOINT_URL) {
-      // send domain to core endpoints
+    for (const pageId of facebookPageIds) {
       try {
-        await sendRequest({
-          url: ENDPOINT_URL,
-          method: 'POST',
-          body: {
-            domain: DOMAIN,
-            facebookPageIds,
-          },
-        });
-      } catch (e) {
-        await Integrations.remove({ _id: integration._id });
-        return next(e);
-      }
+        const pageAccessToken = await getPageAccessToken(pageId, account.token);
 
-      for (const pageId of facebookPageIds) {
+        facebookPageTokensMap[pageId] = pageAccessToken;
+
         try {
-          const pageAccessToken = await getPageAccessToken(pageId, account.token);
-
-          try {
-            await subscribePage(pageId, pageAccessToken);
-            debugFacebook(`Successfully subscribed page ${pageId}`);
-          } catch (e) {
-            debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
-            return next(e);
-          }
+          await subscribePage(pageId, pageAccessToken);
+          debugFacebook(`Successfully subscribed page ${pageId}`);
         } catch (e) {
-          debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+          debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
           return next(e);
         }
+      } catch (e) {
+        debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+        return next(e);
       }
     }
+
+    integration.facebookPageTokensMap = facebookPageTokensMap;
+    integration.save();
 
     debugResponse(debugFacebook, req);
 
@@ -126,10 +110,12 @@ const init = async app => {
       return next(new Error('Conversation not found'));
     }
 
+    const { facebookPageTokensMap } = integration;
+
     let pageAccessToken;
 
     try {
-      pageAccessToken = await getPageAccessToken(conversation.recipientId, account.token);
+      pageAccessToken = getPageAccessTokenFromMap(conversation.recipientId, facebookPageTokensMap);
     } catch (e) {
       debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
       return next(e);
@@ -154,8 +140,12 @@ const init = async app => {
       },
     };
 
+    let response;
+
     try {
-      const response = await graphRequest.post('me/messages', pageAccessToken, data);
+      setTimeout(async () => {
+        response = await graphRequest.post('me/messages', pageAccessToken, data);
+      }, 200);
       debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
       return res.json(response);
     } catch (e) {
@@ -217,8 +207,10 @@ const init = async app => {
             return next();
           }
 
+          const { facebookPageTokensMap } = integration;
+
           try {
-            accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
+            accessTokensByPageId[pageId] = getPageAccessTokenFromMap(pageId, facebookPageTokensMap);
           } catch (e) {
             debugFacebook(`Error occurred while getting page access token: ${e.message}`);
             return next();
