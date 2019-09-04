@@ -203,7 +203,7 @@ const init = async app => {
       return next(e);
     }
 
-    let attachment;
+    let attachment = {} as any;
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -214,22 +214,12 @@ const init = async app => {
       };
     }
 
-    const data = {} as any;
+    const id = commentId ? commentId : postId;
 
-    let id = postId;
-
-    if (commentId) {
-      id = commentId;
-    }
-
-    if (content) {
-      data.message = content;
-    }
-
-    // Attaching attachment url
-    if (attachment) {
-      data.attachment_url = attachment.url;
-    }
+    const data = {
+      message: content,
+      attachment_url: attachment.url,
+    };
 
     try {
       const response = await graphRequest.post(`${id}/comments`, pageAccessToken, {
