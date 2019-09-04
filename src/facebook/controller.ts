@@ -52,7 +52,8 @@ const init = async app => {
     }
 
     integration.facebookPageTokensMap = facebookPageTokensMap;
-    integration.save();
+
+    await integration.save();
 
     debugResponse(debugFacebook, req);
 
@@ -111,11 +112,12 @@ const init = async app => {
     }
 
     const { facebookPageTokensMap } = integration;
+    const { recipientId } = conversation;
 
     let pageAccessToken;
 
     try {
-      pageAccessToken = getPageAccessTokenFromMap(conversation.recipientId, facebookPageTokensMap);
+      pageAccessToken = getPageAccessTokenFromMap(recipientId, facebookPageTokensMap);
     } catch (e) {
       debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
       return next(e);
@@ -150,6 +152,18 @@ const init = async app => {
       return res.json(response);
     } catch (e) {
       debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
+
+      // Access token has expired
+      if (e.code === 190) {
+        // Update expired token for selected page
+        const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
+        const expiredTokenIndex = facebookPageTokensMap.findIndex(p => p[recipientId] === pageAccessToken);
+
+        facebookPageTokensMap[expiredTokenIndex][recipientId] = newPageAccessToken;
+
+        await integration.updateOne({ facebookPageTokensMap });
+      }
+
       return next(new Error(e));
     }
   });
