@@ -141,6 +141,12 @@ const init = async app => {
 
     try {
       pageAccessToken = getPageAccessTokenFromMap(recipientId, facebookPageTokensMap);
+
+      if (!pageAccessToken) {
+        pageAccessToken = await getPageAccessToken(recipientId, account.token);
+
+        await integration.updateOne({ facebookPageTokensMap: [{ [recipientId]: pageAccessToken }] });
+      }
     } catch (e) {
       debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
       return next(e);
@@ -243,6 +249,12 @@ const init = async app => {
 
           try {
             accessTokensByPageId[pageId] = getPageAccessTokenFromMap(pageId, facebookPageTokensMap);
+
+            if (!accessTokensByPageId[pageId]) {
+              accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
+
+              await integration.updateOne({ facebookPageTokensMap: [{ [pageId]: accessTokensByPageId[pageId] }] });
+            }
           } catch (e) {
             debugFacebook(`Error occurred while getting page access token: ${e.message}`);
             return next();
