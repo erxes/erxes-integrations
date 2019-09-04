@@ -175,7 +175,7 @@ const init = async app => {
       if (e.includes('Invalid OAuth')) {
         // Update expired token for selected page
         const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
-        const expiredTokenIndex = facebookPageTokensMap.findIndex(p => p[recipientId] === pageAccessToken);
+        const expiredTokenIndex = facebookPageTokensMap.findIndex(page => page[recipientId] === pageAccessToken);
 
         facebookPageTokensMap[expiredTokenIndex][recipientId] = newPageAccessToken;
 
