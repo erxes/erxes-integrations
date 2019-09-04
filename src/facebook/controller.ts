@@ -142,19 +142,14 @@ const init = async app => {
       },
     };
 
-    let response;
-
     try {
-      setTimeout(async () => {
-        response = await graphRequest.post('me/messages', pageAccessToken, data);
-      }, 200);
+      const response = await graphRequest.post('me/messages', pageAccessToken, data);
       debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
       return res.json(response);
     } catch (e) {
       debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
-
       // Access token has expired
-      if (e.code === 190) {
+      if (e.includes('Invalid OAuth')) {
         // Update expired token for selected page
         const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
         const expiredTokenIndex = facebookPageTokensMap.findIndex(p => p[recipientId] === pageAccessToken);
