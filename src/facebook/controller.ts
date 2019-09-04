@@ -4,7 +4,7 @@ import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
 import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
-import { Conversations } from './models';
+import { Conversations, Posts } from './models';
 import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
@@ -168,44 +168,80 @@ const init = async app => {
     }
   });
 
-  // if (conversation.facebookData.kind === FACEBOOK_DATA_KINDS.FEED) {
-  //   // Post id
-  //   let id = conversation.facebookData.postId;
+  app.post('/facebook/reply-post', async (req, res, next) => {
+    debugRequest(debugFacebook, req);
 
-  //   // Reply to comment
-  //   if (commentId) {
-  //     id = commentId;
-  //   }
+    const { integrationId, postId, commentId, content, attachments } = req.body;
 
-  //   if (text) {
-  //     msgObj.message = text;
-  //   }
+    const integration = await Integrations.findOne({ erxesApiId: integrationId });
 
-  //   // Attaching attachment url
-  //   if (attachment) {
-  //     msgObj.attachment_url = attachment.url;
-  //   }
+    if (!integration) {
+      debugFacebook('Integration not found');
+      return next(new Error('Integration not found'));
+    }
 
-  //   // post reply
-  //   const res: any = await graphRequest.post(`${id}/comments`, response.access_token, {
-  //     ...msgObj,
-  //   });
+    const account = await Accounts.findOne({ _id: integration.accountId });
 
-  //   const facebookData: IMsgFacebook = {
-  //     commentId: res.id,
-  //   };
+    if (!account) {
+      debugFacebook('Account not found');
+      return next(new Error('Account not found'));
+    }
 
-  //   if (commentId) {
-  //     facebookData.parentId = commentId;
-  //   }
+    const post = await Posts.findOne({ erxesApiId: postId });
 
-  //   if (attachment) {
-  //     facebookData.link = attachment.url;
-  //   }
+    if (!post) {
+      debugFacebook('Post not found');
+      return next(new Error('Post not found'));
+    }
 
-  //   // save commentId and parentId in message object
-  //   await ConversationMessages.updateOne({ _id: message._id }, { $set: { facebookData } });
-  // }
+    let pageAccessToken;
+
+    try {
+      pageAccessToken = await getPageAccessToken(post.recipientId, account.token);
+    } catch (e) {
+      debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+      return next(e);
+    }
+
+    let attachment;
+
+    if (attachments && attachments.length > 0) {
+      attachment = {
+        type: 'file',
+        payload: {
+          url: attachments[0].url,
+        },
+      };
+    }
+
+    const data = {} as any;
+
+    let id = postId;
+
+    if (commentId) {
+      id = commentId;
+    }
+
+    if (content) {
+      data.message = content;
+    }
+
+    // Attaching attachment url
+    if (attachment) {
+      data.attachment_url = attachment.url;
+    }
+
+    try {
+      const response = await graphRequest.post(`${id}/comments`, pageAccessToken, {
+        ...data,
+      });
+      debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
+      return res.json(response);
+    } catch (e) {
+      debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
+      return next(new Error(e));
+    }
+  });
 
   const { FACEBOOK_VERIFY_TOKEN, FACEBOOK_APP_SECRET } = process.env;
 
