@@ -77,8 +77,19 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
   return doc;
 };
 
-export const createOrGetPost = async (postParams: IPostParams, pageId: string, userId: string) => {
+export const createOrGetPost = async (
+  postParams: IPostParams,
+  pageId: string,
+  userId: string,
+  customerErxesApiId: string,
+) => {
   let post = await Posts.findOne({ postId: postParams.post_id });
+
+  const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+
+  if (!integration) {
+    return;
+  }
 
   if (!post) {
     const doc = generatePostDoc(postParams, pageId, userId);
@@ -86,6 +97,29 @@ export const createOrGetPost = async (postParams: IPostParams, pageId: string, u
     try {
       post = await Posts.create(doc);
     } catch (e) {
+      throw new Error(e);
+    }
+
+    // create conversation in api
+
+    try {
+      const apiConversationResponse = await fetchMainApi({
+        path: '/integrations-api',
+        method: 'POST',
+        body: {
+          action: 'create-conversation',
+          payload: JSON.stringify({
+            customerId: customerErxesApiId,
+            integrationId: integration.erxesApiId,
+            content: post.content,
+          }),
+        },
+      });
+
+      post.erxesApiId = apiConversationResponse._id;
+      await post.save();
+    } catch (e) {
+      await Posts.deleteOne({ _id: post._id });
       throw new Error(e);
     }
   }
@@ -125,14 +159,14 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
   let customer = await Customers.findOne({ userId });
 
   // create customer
-  if (!customer && userId !== pageId) {
+  if (!customer) {
     const fbUser = await getFacebookUser(pageId, userId, account.token);
 
     // save on integrations db
     try {
       customer = await Customers.create({
         userId,
-        firstName: fbUser.first_name,
+        firstName: fbUser.first_name || fbUser.name,
         lastName: fbUser.last_name,
         profilePic: fbUser.profile_pic,
       });
@@ -149,7 +183,7 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
           action: 'create-or-update-customer',
           payload: JSON.stringify({
             integrationId: integration.erxesApiId,
-            firstName: fbUser.first_name,
+            firstName: fbUser.first_name || fbUser.name,
             lastName: fbUser.last_name,
             avatar: fbUser.profile_pic,
           }),
@@ -163,4 +197,5 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
       throw new Error(e);
     }
   }
+  return customer;
 };

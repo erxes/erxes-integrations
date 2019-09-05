@@ -338,36 +338,32 @@ const init = async app => {
     }
   });
 
-  // app.get('/facebook/get-post', async (req, res, next) => {
-  //   const { erxesApiMessageId, integrationId } = req.query;
+  app.get('/facebook/get-post', async (req, res, next) => {
+    const { erxesApiId, integrationId } = req.query;
 
-  //   debugFacebook(`Request to get gmailData with: ${erxesApiMessageId}`);
+    debugFacebook(`Request to get postData with: ${erxesApiId}`);
 
-  //   if (!erxesApiMessageId) {
-  //     debugFacebook('Conversation message id not defined');
-  //     return next();
-  //   }
+    if (!erxesApiId) {
+      debugFacebook('Post is not defined');
+      return next();
+    }
 
-  //   const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
-  //   if (!integration) {
-  //     debugFacebook('Integration not found');
-  //     return next();
-  //   }
+    if (!integration) {
+      debugFacebook('Integration not found');
+      return next();
+    }
 
-  //   const account = await Accounts.findOne({ _id: integration.accountId }).lean();
-  //   const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
+    const post = await Posts.findOne({ erxesApiId }).lean();
 
-  //   if (!conversationMessage) {
-  //     debugFacebook('Conversation message not found');
-  //     return next();
-  //   }
+    if (!post) {
+      debugFacebook('Post  not found');
+      return next();
+    }
 
-  //   // attach account email for dinstinguish sender
-  //   conversationMessage.integrationEmail = account.uid;
-
-  //   return res.json(conversationMessage);
-  // });
+    return res.json(post);
+  });
 };
 
 export default init;
