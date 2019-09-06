@@ -68,3 +68,11 @@ export const getFacebookUser = async (pageId: string, fbUserId: string, userAcce
 
   return await graphRequest.get(`/${fbUserId}`, pageToken);
 };
+export const getFacebookUserProfilePic = async (fbId: string) => {
+  try {
+    const response: any = await graphRequest.get(`/${fbId}/picture?height=600`);
+    return response.image ? response.location : '';
+  } catch (e) {
+    return null;
+  }
+};

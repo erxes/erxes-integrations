@@ -3,7 +3,7 @@ import { ICommentParams, IPostParams } from './types';
 
 import { Accounts, Integrations } from '../models';
 import { fetchMainApi } from '../utils';
-import { getFacebookUser } from './utils';
+import { getFacebookUser, getFacebookUserProfilePic } from './utils';
 
 export const generatePostDoc = (postParams: IPostParams, pageId: string, userId: string) => {
   const { post_id, video_id, link, photo_id, photos, created_time, message } = postParams;
@@ -46,17 +46,13 @@ export const generatePostDoc = (postParams: IPostParams, pageId: string, userId:
 export const generateCommentDoc = (commentParams: ICommentParams, pageId: string, userId: string) => {
   const { photo, video, post_id, parent_id, comment_id, created_time, message } = commentParams;
 
-  const doc = {} as any;
-
-  doc.postId = post_id;
-
-  doc.commentId = comment_id;
-
-  doc.recipientId = pageId;
-
-  doc.senderId = userId;
-
-  doc.content = message || '...';
+  const doc = {
+    postId: post_id,
+    commentId: comment_id,
+    recipientId: pageId,
+    senderId: userId,
+    content: message || '...',
+  } as any;
 
   if (post_id !== parent_id) {
     doc.parentId = parent_id;
@@ -168,7 +164,7 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
         userId,
         firstName: fbUser.first_name || fbUser.name,
         lastName: fbUser.last_name,
-        profilePic: fbUser.profile_pic,
+        profilePic: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
@@ -185,7 +181,7 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
             integrationId: integration.erxesApiId,
             firstName: fbUser.first_name || fbUser.name,
             lastName: fbUser.last_name,
-            avatar: fbUser.profile_pic,
+            avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
           }),
         },
       });
