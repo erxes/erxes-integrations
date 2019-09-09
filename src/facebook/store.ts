@@ -8,15 +8,12 @@ import { getFacebookUser, getFacebookUserProfilePic } from './utils';
 export const generatePostDoc = (postParams: IPostParams, pageId: string, userId: string) => {
   const { post_id, video_id, link, photo_id, photos, created_time, message } = postParams;
 
-  const doc = {} as any;
-
-  doc.postId = post_id;
-
-  doc.content = message || '...';
-
-  doc.recipientId = pageId;
-
-  doc.senderId = userId;
+  const doc = {
+    postId: post_id,
+    content: message || '...',
+    recipientId: pageId,
+    senderId: userId,
+  } as any;
 
   if (link) {
     // Posted video

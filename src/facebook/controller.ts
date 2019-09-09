@@ -9,6 +9,7 @@ import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
 
+import { getEnv, sendRequest } from '../utils';
 import { FACEBOOK_POST_TYPES } from './constants';
 import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
 
@@ -28,33 +29,49 @@ const init = async app => {
       debugFacebook('Account not found');
       return next(new Error('Account not found'));
     }
-
-    await Integrations.create({
+    const integration = await Integrations.create({
       kind,
       accountId,
       erxesApiId: integrationId,
       facebookPageIds,
     });
 
-    // const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
-    // const DOMAIN = getEnv({ name: 'DOMAIN' });
+    const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
+    const DOMAIN = getEnv({ name: 'DOMAIN' });
 
-    // debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
+    debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
 
-    for (const pageId of facebookPageIds) {
+    if (ENDPOINT_URL) {
+      // send domain to core endpoints
       try {
-        const pageAccessToken = await getPageAccessToken(pageId, account.token);
+        await sendRequest({
+          url: ENDPOINT_URL,
+          method: 'POST',
+          body: {
+            domain: DOMAIN,
+            facebookPageIds,
+          },
+        });
+      } catch (e) {
+        await Integrations.remove({ _id: integration._id });
+        return next(e);
+      }
 
+      for (const pageId of facebookPageIds) {
         try {
-          await subscribePage(pageId, pageAccessToken);
-          debugFacebook(`Successfully subscribed page ${pageId}`);
+          const pageAccessToken = await getPageAccessToken(pageId, account.token);
+
+          try {
+            await subscribePage(pageId, pageAccessToken);
+            debugFacebook(`Successfully subscribed page ${pageId}`);
+          } catch (e) {
+            debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
+            return next(e);
+          }
         } catch (e) {
-          debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
+          debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
           return next(e);
         }
-      } catch (e) {
-        debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
-        return next(e);
       }
     }
 
@@ -260,6 +277,28 @@ const init = async app => {
               const { activity } = await context;
               if (activity) {
                 debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
+                const pageId = activity.recipient.id;
+
+                const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+
+                if (!integration) {
+                  debugFacebook(`Integration not found with pageId: ${pageId}`);
+                  return next();
+                }
+
+                const account = await Accounts.findOne({ _id: integration.accountId });
+
+                if (!account) {
+                  debugFacebook(`Account not found with _id: ${integration.accountId}`);
+                  return next();
+                }
+
+                try {
+                  accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
+                } catch (e) {
+                  debugFacebook(`Error occurred while getting page access token: ${e.message}`);
+                  return next();
+                }
 
                 await receiveMessage(adapter, activity);
 
@@ -321,7 +360,9 @@ const init = async app => {
       debugFacebook('Post  not found');
       next();
     }
-    const commentCount = await Comments.countDocuments({ postId: post.postId });
+    const commentCount = await Comments.countDocuments({
+      $and: [{ postId: post.postId }, { parentId: { $exists: false } }],
+    });
 
     post.commentCount = commentCount;
 
@@ -329,14 +370,19 @@ const init = async app => {
   });
 
   app.get('/facebook/get-comments', async (req, res) => {
-    const { postId, limit, commentId } = req.query;
+    const { postId, commentId } = req.query;
 
     debugFacebook(`Request to get comments with: ${postId}`);
 
     const query: any = { postId };
 
-    if (commentId) {
-      query.commentId = commentId;
+    let limit = req.query.limit;
+
+    if (commentId !== 'undefined') {
+      query.parentId = commentId;
+      limit = 9999;
+    } else {
+      query.parentId = { $exists: false };
     }
 
     const result = await Comments.aggregate([
