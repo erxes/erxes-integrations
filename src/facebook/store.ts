@@ -67,7 +67,7 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
   }
 
   if (created_time) {
-    doc.createdTime = (created_time * 1000).toString();
+    doc.timestamp = (created_time * 1000).toString();
   }
 
   return doc;
@@ -81,7 +81,9 @@ export const createOrGetPost = async (
 ) => {
   let post = await Posts.findOne({ postId: postParams.post_id });
 
-  const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+  const integration = await Integrations.findOne({
+    $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
+  });
 
   if (!integration) {
     return;
@@ -140,7 +142,9 @@ export const createOrGetComment = async (commentParams: ICommentParams, pageId: 
 };
 
 export const createOrGetCustomer = async (pageId: string, userId: string) => {
-  const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+  const integration = await Integrations.findOne({
+    $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
+  });
 
   if (!integration) {
     return;
@@ -164,7 +168,7 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
         userId,
         firstName: fbUser.first_name || fbUser.name,
         lastName: fbUser.last_name,
-        profilePic: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
+        avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);

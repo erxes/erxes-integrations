@@ -7,7 +7,9 @@ import { IChannelData } from './types';
 
 const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
   const { recipient, sender, timestamp, text, attachments, message } = activity.channelData as IChannelData;
-  const integration = await Integrations.findOne({ facebookPageIds: { $in: [recipient.id] } });
+  const integration = await Integrations.findOne({
+    $and: [{ facebookPageIds: { $in: [recipient.id] } }, { kind: 'facebook-messenger' }],
+  });
 
   if (!integration) {
     return;
@@ -29,7 +31,7 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
         userId,
         firstName: response.first_name,
         lastName: response.last_name,
-        profilePic: response.profile_pic,
+        avatar: response.profile_pic,
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);

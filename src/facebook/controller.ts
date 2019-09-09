@@ -4,7 +4,7 @@ import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
 import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
-import { Conversations, Posts } from './models';
+import { Comments, Conversations, Posts } from './models';
 import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
@@ -18,7 +18,8 @@ const init = async app => {
   app.post('/facebook/create-integration', async (req, res, next) => {
     debugRequest(debugFacebook, req);
 
-    const { accountId, integrationId, data } = req.body;
+    const { accountId, integrationId, data, kind } = req.body;
+
     const facebookPageIds = JSON.parse(data).pageIds;
 
     const account = await Accounts.findOne({ _id: accountId });
@@ -29,7 +30,7 @@ const init = async app => {
     }
 
     const integration = await Integrations.create({
-      kind: 'facebook',
+      kind,
       accountId,
       erxesApiId: integrationId,
       facebookPageIds,
@@ -171,7 +172,7 @@ const init = async app => {
   app.post('/facebook/reply-post', async (req, res, next) => {
     debugRequest(debugFacebook, req);
 
-    const { integrationId, postId, commentId, content, attachments } = req.body;
+    const { integrationId, conversationId, content, attachments } = req.body;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId });
 
@@ -187,11 +188,12 @@ const init = async app => {
       return next(new Error('Account not found'));
     }
 
-    const post = await Posts.findOne({ erxesApiId: postId });
+    const post = await Posts.findOne({ erxesApiId: conversationId });
+    const comment = await Comments.findOne({ erxesApiId: conversationId });
 
     if (!post) {
-      debugFacebook('Post not found');
-      return next(new Error('Post not found'));
+      debugFacebook('Conversation not found');
+      return next(new Error('Conversation not found'));
     }
 
     let pageAccessToken;
@@ -214,12 +216,12 @@ const init = async app => {
       };
     }
 
-    const id = commentId ? commentId : postId;
-
     const data = {
       message: content,
       attachment_url: attachment.url,
     };
+
+    const id = post ? post.postId : comment.commentId;
 
     try {
       const response = await graphRequest.post(`${id}/comments`, pageAccessToken, {
@@ -267,30 +269,6 @@ const init = async app => {
     const data = req.body;
     if (data.object === 'page') {
       for (const entry of data.entry) {
-        const pageId = entry.id;
-        // check receiving page is in integration's page list
-
-        const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
-
-        if (!integration) {
-          debugFacebook(`Integration not found with pageId: ${pageId}`);
-          return next();
-        }
-
-        const account = await Accounts.findOne({ _id: integration.accountId });
-
-        if (!account) {
-          debugFacebook(`Account not found with _id: ${integration.accountId}`);
-          return next();
-        }
-
-        try {
-          accessTokensByPageId[pageId] = await getPageAccessToken(pageId, account.token);
-        } catch (e) {
-          debugFacebook(`Error occurred while getting page access token: ${e.message}`);
-          return next();
-        }
-
         // receive chat
 
         if (entry.messaging) {
@@ -345,24 +323,77 @@ const init = async app => {
 
     if (!erxesApiId) {
       debugFacebook('Post is not defined');
-      return next();
+      next();
     }
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
     if (!integration) {
       debugFacebook('Integration not found');
-      return next();
+      next();
     }
 
     const post = await Posts.findOne({ erxesApiId }).lean();
 
     if (!post) {
       debugFacebook('Post  not found');
-      return next();
+      next();
     }
+    const commentCount = await Comments.countDocuments({ postId: post.postId });
+
+    post.commentCount = commentCount;
 
     return res.json(post);
+  });
+
+  app.get('/facebook/get-comments', async (req, res) => {
+    const { postId, limit, commentId } = req.query;
+
+    debugFacebook(`Request to get comments with: ${postId}`);
+
+    const query: any = { postId };
+
+    if (commentId) {
+      query.commentId = commentId;
+    }
+
+    const result = await Comments.aggregate([
+      {
+        $match: query,
+      },
+      {
+        $lookup: {
+          from: 'customers_facebooks',
+          localField: 'senderId',
+          foreignField: 'userId',
+          as: 'customer',
+        },
+      },
+      {
+        $unwind: {
+          path: '$customer',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'comments_facebooks',
+          localField: 'commentId',
+          foreignField: 'parentId',
+          as: 'replies',
+        },
+      },
+      {
+        $addFields: {
+          commentCount: { $size: '$replies' },
+        },
+      },
+
+      { $sort: { timestamp: -1 } },
+      { $limit: parseInt(limit || 4, 10) },
+    ]);
+
+    return res.json(result.reverse());
   });
 };
 

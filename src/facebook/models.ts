@@ -8,7 +8,7 @@ export interface ICustomer {
   erxesApiId?: string;
   firstName: string;
   lastName: string;
-  profilePic: string;
+  avatar: string;
 }
 
 export interface ICustomerDocument extends ICustomer, Document {}
@@ -19,7 +19,7 @@ export const customerSchema = new Schema({
   erxesApiId: String,
   firstName: String,
   lastName: String,
-  profilePic: String,
+  avatar: String,
 });
 
 export interface ICustomerModel extends Model<ICustomerDocument> {}
@@ -95,10 +95,15 @@ postSchema.index({ recipientId: 1, postId: 1 }, { unique: true });
 export interface IPostModel extends Model<IPostDocument> {}
 
 export interface IComment {
-  mid: string;
-  conversationId: string;
-  content: string;
+  commentId: string;
+  postId: string;
+  recipientId: string;
+  parentId: string;
+  senderId: string;
   attachments: string[];
+  content: string;
+  erxesApiId: string;
+  timestamp: Date;
 }
 
 export interface ICommentDocument extends IComment, Document {}
@@ -109,6 +114,7 @@ export const commentShema = new Schema({
   postId: { type: String, index: true },
   recipientId: { type: String, index: true },
   senderId: { type: String, index: true },
+  parentId: String,
   attachments: [String],
   content: String,
   erxesApiId: String,

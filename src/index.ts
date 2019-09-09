@@ -49,7 +49,15 @@ app.post('/integrations/remove', async (req, res) => {
 
   const account = await Accounts.findOne({ _id: integration.accountId });
 
-  if (integration.kind === 'facebook' && account) {
+  if (integration.kind === 'facebook-messenger' && account) {
+    for (const pageId of integration.facebookPageIds) {
+      const pageTokenResponse = await getPageAccessToken(pageId, account.token);
+
+      await unsubscribePage(pageId, pageTokenResponse);
+    }
+  }
+
+  if (integration.kind === 'facebook-post' && account) {
     for (const pageId of integration.facebookPageIds) {
       const pageTokenResponse = await getPageAccessToken(pageId, account.token);
 
