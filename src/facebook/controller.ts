@@ -52,7 +52,7 @@ const init = async app => {
         return next(e);
       }
 
-      const facebookPageTokensMap: any = {};
+      const facebookPageTokensMap: { [key: string]: string } = {};
 
       for (const pageId of facebookPageIds) {
         try {
