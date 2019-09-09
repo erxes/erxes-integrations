@@ -51,32 +51,32 @@ const init = async app => {
         await Integrations.remove({ _id: integration._id });
         return next(e);
       }
+    }
 
-      const facebookPageTokensMap: { [key: string]: string } = {};
+    const facebookPageTokensMap: { [key: string]: string } = {};
 
-      for (const pageId of facebookPageIds) {
+    for (const pageId of facebookPageIds) {
+      try {
+        const pageAccessToken = await getPageAccessToken(pageId, account.token);
+
+        facebookPageTokensMap[pageId] = pageAccessToken;
+
         try {
-          const pageAccessToken = await getPageAccessToken(pageId, account.token);
-
-          facebookPageTokensMap[pageId] = pageAccessToken;
-
-          try {
-            await subscribePage(pageId, pageAccessToken);
-            debugFacebook(`Successfully subscribed page ${pageId}`);
-          } catch (e) {
-            debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
-            return next(e);
-          }
+          await subscribePage(pageId, pageAccessToken);
+          debugFacebook(`Successfully subscribed page ${pageId}`);
         } catch (e) {
-          debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+          debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
           return next(e);
         }
+      } catch (e) {
+        debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+        return next(e);
       }
-
-      integration.facebookPageTokensMap = facebookPageTokensMap;
-
-      await integration.save();
     }
+
+    integration.facebookPageTokensMap = facebookPageTokensMap;
+
+    await integration.save();
 
     debugResponse(debugFacebook, req);
 
