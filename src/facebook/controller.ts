@@ -416,6 +416,11 @@ const init = async app => {
           commentCount: { $size: '$replies' },
         },
       },
+      {
+        $addFields: {
+          avatar: 'profilePic',
+        },
+      },
 
       { $sort: { timestamp: -1 } },
       { $limit: parseInt(limit || 4, 10) },

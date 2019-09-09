@@ -32,7 +32,7 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
         userId,
         firstName: response.first_name,
         lastName: response.last_name,
-        avatar: response.profile_pic,
+        profilePic: response.profile_pic,
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
@@ -119,8 +119,6 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
       timestamp,
       content: text,
     });
-
-    console.log(conversation);
 
     // save message on api
     try {

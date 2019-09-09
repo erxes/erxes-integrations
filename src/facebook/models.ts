@@ -8,7 +8,7 @@ export interface ICustomer {
   erxesApiId?: string;
   firstName: string;
   lastName: string;
-  avatar: string;
+  profilePic: string;
 }
 
 export interface ICustomerDocument extends ICustomer, Document {}
@@ -19,7 +19,7 @@ export const customerSchema = new Schema({
   erxesApiId: String,
   firstName: String,
   lastName: String,
-  avatar: String,
+  profilePic: String,
 });
 
 export interface ICustomerModel extends Model<ICustomerDocument> {}

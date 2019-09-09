@@ -165,7 +165,7 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
         userId,
         firstName: fbUser.first_name || fbUser.name,
         lastName: fbUser.last_name,
-        avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
+        profilePic: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
       });
     } catch (e) {
       throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
