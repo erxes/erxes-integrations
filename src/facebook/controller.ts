@@ -2,7 +2,7 @@ import { FacebookAdapter } from 'botbuilder-adapter-facebook';
 import { debugBase, debugFacebook, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
-import { getEnv, sendRequest } from '../utils';
+// import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Comments, Conversations, Posts } from './models';
 import receiveComment from './receiveComment';
@@ -29,49 +29,32 @@ const init = async app => {
       return next(new Error('Account not found'));
     }
 
-    const integration = await Integrations.create({
+    await Integrations.create({
       kind,
       accountId,
       erxesApiId: integrationId,
       facebookPageIds,
     });
 
-    const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
-    const DOMAIN = getEnv({ name: 'DOMAIN' });
+    // const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
+    // const DOMAIN = getEnv({ name: 'DOMAIN' });
 
-    debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
+    // debugFacebook(`ENDPOINT_URL ${ENDPOINT_URL}`);
 
-    if (ENDPOINT_URL) {
-      // send domain to core endpoints
+    for (const pageId of facebookPageIds) {
       try {
-        await sendRequest({
-          url: ENDPOINT_URL,
-          method: 'POST',
-          body: {
-            domain: DOMAIN,
-            facebookPageIds,
-          },
-        });
-      } catch (e) {
-        await Integrations.remove({ _id: integration._id });
-        return next(e);
-      }
+        const pageAccessToken = await getPageAccessToken(pageId, account.token);
 
-      for (const pageId of facebookPageIds) {
         try {
-          const pageAccessToken = await getPageAccessToken(pageId, account.token);
-
-          try {
-            await subscribePage(pageId, pageAccessToken);
-            debugFacebook(`Successfully subscribed page ${pageId}`);
-          } catch (e) {
-            debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
-            return next(e);
-          }
+          await subscribePage(pageId, pageAccessToken);
+          debugFacebook(`Successfully subscribed page ${pageId}`);
         } catch (e) {
-          debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+          debugFacebook(`Error ocurred while trying to subscribe page ${e.message || e}`);
           return next(e);
         }
+      } catch (e) {
+        debugFacebook(`Error ocurred while trying to get page access token with ${e.message || e}`);
+        return next(e);
       }
     }
 
@@ -274,8 +257,7 @@ const init = async app => {
         if (entry.messaging) {
           adapter
             .processActivity(req, res, async context => {
-              const { activity } = context;
-
+              const { activity } = await context;
               if (activity) {
                 debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
 

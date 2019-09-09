@@ -12,7 +12,6 @@ export const graphRequest = {
         if (error) {
           return reject(error.message);
         }
-
         return resolve(response);
       });
     });

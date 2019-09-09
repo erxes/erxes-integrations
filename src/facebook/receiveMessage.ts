@@ -7,6 +7,7 @@ import { IChannelData } from './types';
 
 const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
   const { recipient, sender, timestamp, text, attachments, message } = activity.channelData as IChannelData;
+
   const integration = await Integrations.findOne({
     $and: [{ facebookPageIds: { $in: [recipient.id] } }, { kind: 'facebook-messenger' }],
   });
@@ -97,6 +98,7 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
       });
 
       conversation.erxesApiId = apiConversationResponse._id;
+
       await conversation.save();
     } catch (e) {
       await Conversations.deleteOne({ _id: conversation._id });
@@ -117,6 +119,8 @@ const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
       timestamp,
       content: text,
     });
+
+    console.log(conversation);
 
     // save message on api
     try {
