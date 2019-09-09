@@ -2,14 +2,13 @@ import { FacebookAdapter } from 'botbuilder-adapter-facebook';
 import { debugBase, debugFacebook, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
-// import { getEnv, sendRequest } from '../utils';
+import { getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Comments, Conversations, Posts } from './models';
 import receiveComment from './receiveComment';
 import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
 
-import { getEnv, sendRequest } from '../utils';
 import { FACEBOOK_POST_TYPES } from './constants';
 import { getPageAccessToken, getPageList, graphRequest, subscribePage } from './utils';
 
@@ -418,7 +417,7 @@ const init = async app => {
       },
       {
         $addFields: {
-          avatar: 'profilePic',
+          'customer.avatar': '$customer.profilePic',
         },
       },
 
