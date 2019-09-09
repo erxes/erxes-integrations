@@ -45,16 +45,8 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
   return response.access_token;
 };
 
-export const getPageAccessTokenFromMap = (pageId: string, pageTokens: [{ [key: string]: string }]): string => {
-  if (!pageTokens) {
-    return;
-  }
-
-  for (const pageToken of pageTokens) {
-    if (Object.keys(pageToken)[0] === pageId) {
-      return pageToken[pageId];
-    }
-  }
+export const getPageAccessTokenFromMap = (pageId: string, pageTokens: { [key: string]: string }): string => {
+  return (pageTokens || {})[pageId] || null;
 };
 
 export const subscribePage = async (pageId, pageToken): Promise<{ success: true } | any> => {
