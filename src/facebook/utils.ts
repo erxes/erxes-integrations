@@ -44,6 +44,10 @@ export const getPageAccessToken = async (pageId: string, userAccessToken: string
   return response.access_token;
 };
 
+export const getPageAccessTokenFromMap = (pageId: string, pageTokens: { [key: string]: string }): string => {
+  return (pageTokens || {})[pageId] || null;
+};
+
 export const subscribePage = async (pageId, pageToken): Promise<{ success: true } | any> => {
   return graphRequest.post(`${pageId}/subscribed_apps`, pageToken, {
     subscribed_fields: ['conversations', 'messages', 'feed'],
@@ -51,7 +55,10 @@ export const subscribePage = async (pageId, pageToken): Promise<{ success: true 
 };
 
 export const unsubscribePage = async (pageId, pageToken): Promise<{ success: true } | any> => {
-  return graphRequest.delete(`${pageId}/subscribed_apps`, pageToken);
+  return graphRequest
+    .delete(`${pageId}/subscribed_apps`, pageToken)
+    .then(res => res)
+    .catch(e => debugFacebook(e));
 };
 
 export const getFacebookUser = async (pageId: string, fbUserId: string, userAccessToken: string) => {
