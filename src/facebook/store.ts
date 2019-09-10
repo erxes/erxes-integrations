@@ -3,13 +3,13 @@ import { ICommentParams, IPostParams } from './types';
 
 import { Accounts, Integrations } from '../models';
 import { fetchMainApi } from '../utils';
-import { getFacebookUser, getFacebookUserProfilePic } from './utils';
+import { getFacebookUser, getFacebookUserProfilePic, restorePost } from './utils';
 
 export const generatePostDoc = (postParams: IPostParams, pageId: string, userId: string) => {
-  const { post_id, video_id, link, photo_id, photos, created_time, message } = postParams;
+  const { post_id, id, video_id, link, photo_id, photos, created_time, message } = postParams;
 
   const doc = {
-    postId: post_id,
+    postId: post_id || id,
     content: message || '...',
     recipientId: pageId,
     senderId: userId,
@@ -34,7 +34,7 @@ export const generatePostDoc = (postParams: IPostParams, pageId: string, userId:
   }
 
   if (created_time) {
-    doc.timestamp = (created_time * 1000).toString();
+    doc.timestamp = created_time;
   }
 
   return doc;
@@ -96,7 +96,6 @@ export const createOrGetPost = async (
     }
 
     // create conversation in api
-
     try {
       const apiConversationResponse = await fetchMainApi({
         path: '/integrations-api',
@@ -122,10 +121,39 @@ export const createOrGetPost = async (
   return post;
 };
 
-export const createOrGetComment = async (commentParams: ICommentParams, pageId: string, userId: string) => {
+export const createOrGetComment = async (
+  commentParams: ICommentParams,
+  pageId: string,
+  userId: string,
+  customerErxesApiId: string,
+) => {
   let comment = await Comments.findOne({ commentId: commentParams.comment_id });
 
+  const integration = await Integrations.findOne({
+    $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
+  });
+
+  if (!integration) {
+    return;
+  }
+
+  const account = await Accounts.findOne({ _id: integration.accountId });
+
+  if (!account) {
+    throw new Error('Account not found');
+  }
+
+  const postId = commentParams.post_id;
+
   if (!comment) {
+    const post = await Posts.findOne({ postId });
+
+    if (!post) {
+      const postResponse = await restorePost(postId, pageId, account.token);
+
+      await createOrGetPost(postResponse, pageId, userId, customerErxesApiId);
+    }
+
     const doc = generateCommentDoc(commentParams, pageId, userId);
 
     try {

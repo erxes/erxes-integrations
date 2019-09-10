@@ -11,14 +11,14 @@ const loginMiddleware = (req, res) => {
     FACEBOOK_PERMISSIONS = 'manage_pages, pages_show_list, pages_messaging',
   } = process.env;
 
-  const DOMAIN = getEnv({ name: 'DOMAIN' });
+  // const DOMAIN = getEnv({ name: 'DOMAIN' });
   const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
 
   const conf = {
     client_id: FACEBOOK_APP_ID,
     client_secret: FACEBOOK_APP_SECRET,
     scope: FACEBOOK_PERMISSIONS,
-    redirect_uri: `${DOMAIN}/fblogin`,
+    redirect_uri: `https://b0226ec9.ngrok.io/fblogin`,
   };
 
   debugRequest(debugFacebook, req);

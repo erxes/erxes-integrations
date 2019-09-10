@@ -1,4 +1,5 @@
 export interface IPostParams {
+  id?: string;
   created_time?: number;
   post_id?: string;
   video_id?: string;

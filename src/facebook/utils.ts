@@ -82,3 +82,16 @@ export const getFacebookUserProfilePic = async (fbId: string) => {
     return null;
   }
 };
+
+export const restorePost = async (postId: string, pageId: string, userAccessToken: string) => {
+  let pageAccessToken;
+
+  try {
+    pageAccessToken = await getPageAccessToken(pageId, userAccessToken);
+  } catch (e) {
+    debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+  }
+
+  const fields = `/${postId}?fields=caption,description,link,picture,source,message,from,created_time,comments.summary(true)`;
+  return graphRequest.get(fields, pageAccessToken);
+};

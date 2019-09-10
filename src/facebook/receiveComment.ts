@@ -4,9 +4,9 @@ import { ICommentParams } from './types';
 const receiveComment = async (params: ICommentParams, pageId: string) => {
   const userId = params.from.id;
 
-  await createOrGetCustomer(pageId, userId);
+  const customer = await createOrGetCustomer(pageId, userId);
 
-  return await createOrGetComment(params, pageId, userId);
+  return await createOrGetComment(params, pageId, userId, customer.erxesApiId);
 };
 
 export default receiveComment;
