@@ -116,8 +116,8 @@ export const commentShema = new Schema({
   _id: field({ pkey: true }),
   commentId: { type: String, index: true },
   postId: { type: String, index: true },
-  recipientId: { type: String, index: true },
-  senderId: { type: String, index: true },
+  recipientId: String,
+  senderId: String,
   parentId: String,
   attachments: [String],
   content: String,
@@ -125,7 +125,7 @@ export const commentShema = new Schema({
   timestamp: Date,
 });
 
-commentShema.index({ recipientId: 1, postId: 1, senderId: 1, commentId: 1 }, { unique: true });
+commentShema.index({ postId: 1, commentId: 1 }, { unique: true });
 
 export interface ICommentModel extends Model<ICommentDocument> {}
 

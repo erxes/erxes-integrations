@@ -1,5 +1,6 @@
 import * as graph from 'fbgraph';
 import { debugFacebook } from '../debuggers';
+import { Accounts, Integrations } from '../models';
 
 export const graphRequest = {
   base(method: string, path?: any, accessToken?: any, ...otherParams) {
@@ -74,6 +75,7 @@ export const getFacebookUser = async (pageId: string, fbUserId: string, userAcce
 
   return await graphRequest.get(`/${fbUserId}`, pageToken);
 };
+
 export const getFacebookUserProfilePic = async (fbId: string) => {
   try {
     const response: any = await graphRequest.get(`/${fbId}/picture?height=600`);
@@ -94,4 +96,41 @@ export const restorePost = async (postId: string, pageId: string, userAccessToke
 
   const fields = `/${postId}?fields=caption,description,link,picture,source,message,from,created_time,comments.summary(true)`;
   return graphRequest.get(fields, pageAccessToken);
+};
+
+export const sendReply = async (url: string, data: any, recipientId: string, integrationId: string) => {
+  const integration = await Integrations.getIntegration({ erxesApiId: integrationId });
+
+  const account = await Accounts.getAccount({ _id: integration.accountId });
+
+  const { facebookPageTokensMap } = integration;
+
+  let pageAccessToken;
+
+  try {
+    pageAccessToken = getPageAccessTokenFromMap(recipientId, facebookPageTokensMap);
+  } catch (e) {
+    debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+    return e;
+  }
+
+  try {
+    const response = await graphRequest.post(`${url}`, pageAccessToken, {
+      ...data,
+    });
+    debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
+    return response;
+  } catch (e) {
+    debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
+    if (e.includes('Invalid OAuth')) {
+      // Update expired token for selected page
+      const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
+
+      facebookPageTokensMap[recipientId] = newPageAccessToken;
+
+      await integration.updateOne({ facebookPageTokensMap });
+    }
+
+    throw new Error(e);
+  }
 };

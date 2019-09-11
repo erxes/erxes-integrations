@@ -13,18 +13,20 @@ export const generatePostDoc = (postParams: IPostParams, pageId: string, userId:
     content: message || '...',
     recipientId: pageId,
     senderId: userId,
-  } as any;
+    attachments: null,
+    timestamp: null,
+  };
 
   if (link) {
     // Posted video
     if (video_id) {
-      doc.attachments = link;
+      doc.attachments = [link];
 
       // Posted photo
     } else if (photo_id) {
-      doc.attachments = link;
+      doc.attachments = [link];
     } else {
-      doc.attachments = link;
+      doc.attachments = [link];
     }
   }
 
@@ -49,18 +51,21 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
     recipientId: pageId,
     senderId: userId,
     content: message || '...',
-  } as any;
+    parentId: null,
+    attachments: null,
+    timestamp: null,
+  };
 
   if (post_id !== parent_id) {
     doc.parentId = parent_id;
   }
 
   if (photo) {
-    doc.attachments = photo;
+    doc.attachments = [photo];
   }
 
   if (video) {
-    doc.attachments = video;
+    doc.attachments = [video];
   }
 
   if (created_time) {
@@ -78,22 +83,14 @@ export const createOrGetPost = async (
 ) => {
   let post = await Posts.findOne({ postId: postParams.post_id });
 
-  const integration = await Integrations.findOne({
+  const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });
-
-  if (!integration) {
-    return;
-  }
 
   if (!post) {
     const doc = generatePostDoc(postParams, pageId, userId);
 
-    try {
-      post = await Posts.create(doc);
-    } catch (e) {
-      throw new Error(e);
-    }
+    post = await Posts.create(doc);
 
     // create conversation in api
     try {
@@ -124,19 +121,11 @@ export const createOrGetPost = async (
 export const createOrGetComment = async (commentParams: ICommentParams, pageId: string, userId: string) => {
   let comment = await Comments.findOne({ commentId: commentParams.comment_id });
 
-  const integration = await Integrations.findOne({
+  const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });
 
-  if (!integration) {
-    return;
-  }
-
-  const account = await Accounts.findOne({ _id: integration.accountId });
-
-  if (!account) {
-    throw new Error('Account not found');
-  }
+  Accounts.getAccount({ _id: integration.accountId });
 
   if (!comment) {
     const doc = generateCommentDoc(commentParams, pageId, userId);
@@ -152,19 +141,11 @@ export const createOrGetComment = async (commentParams: ICommentParams, pageId: 
 };
 
 export const createOrGetCustomer = async (pageId: string, userId: string) => {
-  const integration = await Integrations.findOne({
+  const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });
 
-  if (!integration) {
-    return;
-  }
-
-  const account = await Accounts.findOne({ _id: integration.accountId });
-
-  if (!account) {
-    throw new Error('Account not found');
-  }
+  const account = await Accounts.getAccount({ _id: integration.accountId });
 
   let customer = await Customers.findOne({ userId });
   // create customer

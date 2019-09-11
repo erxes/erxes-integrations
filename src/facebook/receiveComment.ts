@@ -8,19 +8,11 @@ const receiveComment = async (params: ICommentParams, pageId: string) => {
   const userId = params.from.id;
   const postId = params.post_id;
 
-  const integration = await Integrations.findOne({
+  const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });
 
-  if (!integration) {
-    return;
-  }
-
-  const account = await Accounts.findOne({ _id: integration.accountId });
-
-  if (!account) {
-    throw new Error('Account not found');
-  }
+  const account = await Accounts.getAccount({ _id: integration.accountId });
 
   await createOrGetCustomer(pageId, userId);
 

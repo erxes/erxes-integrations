@@ -10,7 +10,7 @@ import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
 
 import { FACEBOOK_POST_TYPES } from './constants';
-import { getPageAccessToken, getPageAccessTokenFromMap, getPageList, graphRequest, subscribePage } from './utils';
+import { getPageAccessToken, getPageAccessTokenFromMap, getPageList, sendReply, subscribePage } from './utils';
 
 const init = async app => {
   app.get('/fblogin', loginMiddleware);
@@ -22,12 +22,8 @@ const init = async app => {
 
     const facebookPageIds = JSON.parse(data).pageIds;
 
-    const account = await Accounts.findOne({ _id: accountId });
+    const account = await Accounts.getAccount({ _id: accountId });
 
-    if (!account) {
-      debugFacebook('Account not found');
-      return next(new Error('Account not found'));
-    }
     const integration = await Integrations.create({
       kind,
       accountId,
@@ -90,11 +86,7 @@ const init = async app => {
   app.get('/facebook/get-pages', async (req, res, next) => {
     debugRequest(debugFacebook, req);
 
-    const account = await Accounts.findOne({ _id: req.query.accountId });
-
-    if (!account) {
-      return next(new Error('Account not found'));
-    }
+    const account = await Accounts.getAccount(req.query.accountId);
 
     const accessToken = account.token;
 
@@ -117,20 +109,6 @@ const init = async app => {
 
     const { integrationId, conversationId, content, attachments } = req.body;
 
-    const integration = await Integrations.findOne({ erxesApiId: integrationId });
-
-    if (!integration) {
-      debugFacebook('Integration not found');
-      return next(new Error('Integration not found'));
-    }
-
-    const account = await Accounts.findOne({ _id: integration.accountId });
-
-    if (!account) {
-      debugFacebook('Account not found');
-      return next(new Error('Account not found'));
-    }
-
     const conversation = await Conversations.findOne({ erxesApiId: conversationId });
 
     if (!conversation) {
@@ -138,17 +116,7 @@ const init = async app => {
       return next(new Error('Conversation not found'));
     }
 
-    const { facebookPageTokensMap } = integration;
     const { recipientId } = conversation;
-
-    let pageAccessToken;
-
-    try {
-      pageAccessToken = getPageAccessTokenFromMap(recipientId, facebookPageTokensMap);
-    } catch (e) {
-      debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
-      return next(e);
-    }
 
     let attachment;
 
@@ -168,23 +136,12 @@ const init = async app => {
         attachment,
       },
     };
+    const url = 'me/messages';
 
     try {
-      const response = await graphRequest.post('me/messages', pageAccessToken, data);
-      debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
-      return res.json(response);
+      const response = await sendReply(url, data, recipientId, integrationId);
+      res.json(response);
     } catch (e) {
-      debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
-      // Access token has expired
-      if (e.includes('Invalid OAuth')) {
-        // Update expired token for selected page
-        const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
-
-        facebookPageTokensMap[recipientId] = newPageAccessToken;
-
-        await integration.updateOne({ facebookPageTokensMap });
-      }
-
       return next(new Error(e));
     }
   });
@@ -194,38 +151,15 @@ const init = async app => {
 
     const { integrationId, conversationId, content, attachments } = req.body;
 
-    const integration = await Integrations.findOne({ erxesApiId: integrationId });
-
-    if (!integration) {
-      debugFacebook('Integration not found');
-      return next(new Error('Integration not found'));
-    }
-
-    const account = await Accounts.findOne({ _id: integration.accountId });
-
-    if (!account) {
-      debugFacebook('Account not found');
-      return next(new Error('Account not found'));
-    }
-
     let post = await Posts.findOne({ erxesApiId: conversationId });
+
     const comment = await Comments.findOne({ commentId: conversationId });
 
     if (!post) {
       post = await Posts.findOne({ postId: comment.postId });
     }
 
-    const { facebookPageTokensMap } = integration;
     const { recipientId } = post;
-
-    let pageAccessToken;
-
-    try {
-      pageAccessToken = getPageAccessTokenFromMap(recipientId, facebookPageTokensMap);
-    } catch (e) {
-      debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
-      return next(e);
-    }
 
     let attachment = {} as any;
 
@@ -245,23 +179,12 @@ const init = async app => {
 
     const id = comment ? comment.commentId : post.postId;
 
+    const url = `${id}/comments`;
+
     try {
-      const response = await graphRequest.post(`${id}/comments`, pageAccessToken, {
-        ...data,
-      });
-      debugFacebook(`Successfully sent data to facebook ${JSON.stringify(data)}`);
-      return res.json(response);
+      const response = await sendReply(url, data, recipientId, integrationId);
+      res.json(response);
     } catch (e) {
-      debugFacebook(`Error ocurred while trying to send post request to facebook ${e} data: ${JSON.stringify(data)}`);
-      if (e.includes('Invalid OAuth')) {
-        // Update expired token for selected page
-        const newPageAccessToken = await getPageAccessToken(recipientId, account.token);
-
-        facebookPageTokensMap[recipientId] = newPageAccessToken;
-
-        await integration.updateOne({ facebookPageTokensMap });
-      }
-
       return next(new Error(e));
     }
   });
@@ -296,75 +219,65 @@ const init = async app => {
   });
 
   app.post('/facebook/receive', async (req, res, next) => {
-    res.send('succes');
     const data = req.body;
+
     if (data.object === 'page') {
-      for (const entry of data.entry) {
-        // receive chat
+      return;
+    }
 
-        if (entry.messaging) {
-          adapter
-            .processActivity(req, res, async context => {
-              const { activity } = await context;
-              if (activity) {
-                debugFacebook(`Received webhook activity ${JSON.stringify(activity)}`);
-                const pageId = activity.recipient.id;
+    debugFacebook(`Received webhook data ${JSON.stringify(data)}`);
 
-                const integration = await Integrations.findOne({ facebookPageIds: { $in: [pageId] } });
+    for (const entry of data.entry) {
+      // receive chat
+      if (entry.messaging) {
+        adapter
+          .processActivity(req, res, async context => {
+            const { activity } = await context;
 
-                if (!integration) {
-                  debugFacebook(`Integration not found with pageId: ${pageId}`);
-                  return next();
-                }
-
-                const account = await Accounts.findOne({ _id: integration.accountId });
-
-                if (!account) {
-                  debugFacebook(`Account not found with _id: ${integration.accountId}`);
-                  return next();
-                }
-
-                const { facebookPageTokensMap } = integration;
-
-                try {
-                  accessTokensByPageId[pageId] = getPageAccessTokenFromMap(pageId, facebookPageTokensMap);
-                } catch (e) {
-                  debugFacebook(`Error occurred while getting page access token: ${e.message}`);
-                  return next();
-                }
-
-                await receiveMessage(adapter, activity);
-
-                debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
-              }
-
-              next();
-            })
-
-            .catch(e => {
-              debugFacebook(`Error occurred while processing activity: ${e.message}`);
-              next();
-            });
-        }
-
-        // receive post and comment
-
-        if (entry.changes) {
-          for (const event of entry.changes) {
-            debugFacebook(`Received webhook activity ${JSON.stringify(event.value)}`);
-
-            if (event.value.item === 'comment') {
-              await receiveComment(event.value, entry.id);
-            }
-
-            if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
-              await receivePost(event.value, entry.id);
-            } else {
+            if (!activity) {
               next();
             }
 
-            debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
+            const pageId = activity.recipient.id;
+
+            const integration = await Integrations.getIntegration({ facebookPageIds: { $in: [pageId] } });
+
+            await Accounts.getAccount({ _id: integration.accountId });
+
+            const { facebookPageTokensMap } = integration;
+
+            try {
+              accessTokensByPageId[pageId] = getPageAccessTokenFromMap(pageId, facebookPageTokensMap);
+            } catch (e) {
+              debugFacebook(`Error occurred while getting page access token: ${e.message}`);
+              return next();
+            }
+
+            await receiveMessage(adapter, activity);
+
+            debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
+          })
+
+          .catch(e => {
+            debugFacebook(`Error occurred while processing activity: ${e.message}`);
+            next();
+          });
+      }
+
+      // receive post and comment
+      if (entry.changes) {
+        for (const event of entry.changes) {
+          if (event.value.item === 'comment') {
+            await receiveComment(event.value, entry.id);
           }
+
+          if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
+            await receivePost(event.value, entry.id);
+          } else {
+            next();
+          }
+
+          debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
         }
       }
     }
@@ -375,12 +288,7 @@ const init = async app => {
 
     debugFacebook(`Request to get postData with: ${erxesApiId}`);
 
-    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
-
-    if (!integration) {
-      debugFacebook('Integration not found');
-      next();
-    }
+    await Integrations.getIntegration({ erxesApiId: integrationId });
 
     const post = await Posts.findOne({ erxesApiId }).lean();
 
@@ -388,6 +296,7 @@ const init = async app => {
       debugFacebook('Post  not found');
       next();
     }
+
     const commentCount = await Comments.countDocuments({
       $and: [{ postId: post.postId }, { parentId: { $exists: false } }],
     });

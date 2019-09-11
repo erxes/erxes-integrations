@@ -8,13 +8,9 @@ import { IChannelData } from './types';
 const receiveMessage = async (adapter: FacebookAdapter, activity: Activity) => {
   const { recipient, sender, timestamp, text, attachments, message } = activity.channelData as IChannelData;
 
-  const integration = await Integrations.findOne({
+  const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: [recipient.id] } }, { kind: 'facebook-messenger' }],
   });
-
-  if (!integration) {
-    return;
-  }
 
   const userId = sender.id;
 
