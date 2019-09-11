@@ -14,13 +14,11 @@ const loginMiddleware = (req, res) => {
   const DOMAIN = getEnv({ name: 'DOMAIN' });
   const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
 
-  console.log(DOMAIN);
-
   const conf = {
     client_id: FACEBOOK_APP_ID,
     client_secret: FACEBOOK_APP_SECRET,
     scope: FACEBOOK_PERMISSIONS,
-    redirect_uri: DOMAIN,
+    redirect_uri: `${DOMAIN}/fblogin`,
   };
 
   debugRequest(debugFacebook, req);
