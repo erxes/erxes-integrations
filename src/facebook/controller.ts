@@ -113,7 +113,7 @@ const init = async app => {
 
     const { recipientId } = conversation;
 
-    let attachment;
+    let attachment: { url?: string; type: string; payload: { url: string } };
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -131,10 +131,9 @@ const init = async app => {
         attachment,
       },
     };
-    const url = 'me/messages';
 
     try {
-      const response = await sendReply(url, data, recipientId, integrationId);
+      const response = await sendReply('me/messages', data, recipientId, integrationId);
       res.json(response);
     } catch (e) {
       return next(new Error(e));
@@ -170,10 +169,8 @@ const init = async app => {
 
     const id = comment ? comment.commentId : post.postId;
 
-    const url = `${id}/comments`;
-
     try {
-      const response = await sendReply(url, data, recipientId, integrationId);
+      const response = await sendReply(`${id}/comments`, data, recipientId, integrationId);
       res.json(response);
     } catch (e) {
       return next(new Error(e));
@@ -212,7 +209,7 @@ const init = async app => {
   app.post('/facebook/receive', async (req, res, next) => {
     const data = req.body;
 
-    if (data.object === 'page') {
+    if (data.object !== 'page') {
       return;
     }
 
