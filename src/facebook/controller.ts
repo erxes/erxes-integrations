@@ -152,7 +152,7 @@ const init = async app => {
 
     const { recipientId } = post;
 
-    let attachment = {} as any;
+    let attachment: { url?: string; type: string; payload: { url: string } };
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -302,7 +302,7 @@ const init = async app => {
 
     debugFacebook(`Request to get comments with: ${postId}`);
 
-    const query: any = { postId };
+    const query: { postId: string; parentId?: any } = { postId };
 
     let limit = req.query.limit;
 
