@@ -144,6 +144,8 @@ export const ConversationMessages = model<IConversationMessageDocument, IConvers
   conversationMessageSchema,
 );
 
+// tslint:disable-next-line
 export const Posts = model<IPostDocument, IPostModel>('posts_facebook', postSchema);
 
+// tslint:disable-next-line
 export const Comments = model<ICommentDocument, ICommentModel>('comments_facebook', commentShema);
