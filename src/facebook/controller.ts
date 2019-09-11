@@ -113,7 +113,7 @@ const init = async app => {
 
     const { recipientId } = conversation;
 
-    let attachment: { url?: string; type: string; payload: { url: string } };
+    let attachment = {} as { url?: string; type: string; payload: { url: string } };
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -151,7 +151,7 @@ const init = async app => {
 
     const { recipientId } = post;
 
-    let attachment: { url?: string; type: string; payload: { url: string } };
+    let attachment = {} as { url?: string; type: string; payload: { url: string } };
 
     if (attachments && attachments.length > 0) {
       attachment = {

@@ -23,9 +23,19 @@ const receiveComment = async (params: ICommentParams, pageId: string) => {
 
     const restoredPostId = postResponse.from.id;
 
+    const restoredComments = postResponse.comments.data;
+
+    for (const comment of restoredComments) {
+      comment.post_id = params.post_id;
+      comment.comment_id = comment.id;
+
+      await getOrCreateCustomer(pageId, comment.id);
+      await getOrCreateComment(comment, pageId, userId);
+    }
+
     const customer = await getOrCreateCustomer(pageId, restoredPostId);
 
-    await getOrCreatePost(postResponse, pageId, userId, customer.erxesApiId);
+    return await getOrCreatePost(postResponse, pageId, userId, customer.erxesApiId);
   }
 
   return await getOrCreateComment(params, pageId, userId);

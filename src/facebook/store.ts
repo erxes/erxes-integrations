@@ -69,7 +69,7 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
   }
 
   if (created_time) {
-    doc.timestamp = (created_time * 1000).toString();
+    doc.timestamp = created_time;
   }
 
   return doc;
