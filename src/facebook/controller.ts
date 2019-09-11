@@ -48,7 +48,7 @@ const init = async app => {
           },
         });
       } catch (e) {
-        await Integrations.remove({ _id: integration._id });
+        await Integrations.deleteOne({ _id: integration._id });
         return next(e);
       }
     }
@@ -86,7 +86,7 @@ const init = async app => {
   app.get('/facebook/get-pages', async (req, res, next) => {
     debugRequest(debugFacebook, req);
 
-    const account = await Accounts.getAccount(req.query.accountId);
+    const account = await Accounts.getAccount({ _id: req.query.accountId });
 
     const accessToken = account.token;
 
@@ -307,7 +307,7 @@ const init = async app => {
       query.parentId = commentId;
       limit = 9999;
     } else {
-      query.parentId = { $exists: false };
+      query.parentId = null;
     }
 
     const result = await Comments.aggregate([

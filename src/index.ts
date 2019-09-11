@@ -66,7 +66,7 @@ app.post('/accounts/remove', async (req, res) => {
 
   try {
     await removeIntegration(_id);
-    await Accounts.remove({ _id });
+    await Accounts.deleteOne({ _id });
   } catch (e) {
     return res.json({ status: e.message });
   }

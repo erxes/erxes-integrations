@@ -87,32 +87,34 @@ export const getOrCreatePost = async (
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });
 
-  if (!post) {
-    const doc = generatePostDoc(postParams, pageId, userId);
+  if (post) {
+    return post;
+  }
 
-    post = await Posts.create(doc);
+  const doc = generatePostDoc(postParams, pageId, userId);
 
-    // create conversation in api
-    try {
-      const apiConversationResponse = await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-conversation',
-          payload: JSON.stringify({
-            customerId: customerErxesApiId,
-            integrationId: integration.erxesApiId,
-            content: post.content,
-          }),
-        },
-      });
+  post = await Posts.create(doc);
 
-      post.erxesApiId = apiConversationResponse._id;
-      await post.save();
-    } catch (e) {
-      await Posts.deleteOne({ _id: post._id });
-      throw new Error(e);
-    }
+  // create conversation in api
+  try {
+    const apiConversationResponse = await fetchMainApi({
+      path: '/integrations-api',
+      method: 'POST',
+      body: {
+        action: 'create-conversation',
+        payload: JSON.stringify({
+          customerId: customerErxesApiId,
+          integrationId: integration.erxesApiId,
+          content: post.content,
+        }),
+      },
+    });
+
+    post.erxesApiId = apiConversationResponse._id;
+    await post.save();
+  } catch (e) {
+    await Posts.deleteOne({ _id: post._id });
+    throw new Error(e);
   }
 
   return post;
@@ -144,44 +146,48 @@ export const getOrCreateCustomer = async (pageId: string, userId: string) => {
   const account = await Accounts.getAccount({ _id: integration.accountId });
 
   let customer = await Customers.findOne({ userId });
-  // create customer
-  if (!customer) {
-    const fbUser = await getFacebookUser(pageId, userId, account.token);
 
-    // save on integrations db
-    try {
-      customer = await Customers.create({
-        userId,
-        firstName: fbUser.first_name || fbUser.name,
-        lastName: fbUser.last_name,
-        profilePic: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
-      });
-    } catch (e) {
-      throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
-    }
-
-    // save on api
-    try {
-      const apiCustomerResponse = await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-or-update-customer',
-          payload: JSON.stringify({
-            integrationId: integration.erxesApiId,
-            firstName: fbUser.first_name || fbUser.name,
-            lastName: fbUser.last_name,
-            avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
-          }),
-        },
-      });
-
-      customer.erxesApiId = apiCustomerResponse._id;
-      await customer.save();
-    } catch (e) {
-      await Customers.deleteOne({ _id: customer._id });
-      throw new Error(e);
-    }
+  if (customer) {
+    return customer;
   }
+  // create customer
+  const fbUser = await getFacebookUser(pageId, userId, account.token);
+
+  // save on integrations db
+  try {
+    customer = await Customers.create({
+      userId,
+      firstName: fbUser.first_name || fbUser.name,
+      lastName: fbUser.last_name,
+      integrationId: integration.erxesApiId,
+      profilePic: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
+    });
+  } catch (e) {
+    throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
+  }
+
+  // save on api
+  try {
+    const apiCustomerResponse = await fetchMainApi({
+      path: '/integrations-api',
+      method: 'POST',
+      body: {
+        action: 'create-or-update-customer',
+        payload: JSON.stringify({
+          integrationId: integration.erxesApiId,
+          firstName: fbUser.first_name || fbUser.name,
+          lastName: fbUser.last_name,
+          avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
+        }),
+      },
+    });
+
+    customer.erxesApiId = apiCustomerResponse._id;
+    await customer.save();
+  } catch (e) {
+    await Customers.deleteOne({ _id: customer._id });
+    throw new Error(e);
+  }
+
   return customer;
 };
