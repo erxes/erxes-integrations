@@ -29,8 +29,10 @@ const receiveComment = async (params: ICommentParams, pageId: string) => {
       comment.post_id = params.post_id;
       comment.comment_id = comment.id;
 
-      await getOrCreateCustomer(pageId, comment.id);
-      await getOrCreateComment(comment, pageId, userId);
+      const restoredUserId = comment.from.id;
+
+      await getOrCreateCustomer(pageId, restoredUserId);
+      await getOrCreateComment(comment, pageId, restoredUserId);
     }
 
     const customer = await getOrCreateCustomer(pageId, restoredPostId);
