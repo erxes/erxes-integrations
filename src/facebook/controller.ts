@@ -113,7 +113,7 @@ const init = async app => {
 
     const { recipientId } = conversation;
 
-    let attachment = {} as { url?: string; type: string; payload: { url: string } };
+    let attachment: { url?: string; type?: string; payload?: { url: string } } = {};
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -151,7 +151,7 @@ const init = async app => {
 
     const { recipientId } = post;
 
-    let attachment = {} as { url?: string; type: string; payload: { url: string } };
+    let attachment: { url?: string; type?: string; payload?: { url: string } } = {};
 
     if (attachments && attachments.length > 0) {
       attachment = {
@@ -271,7 +271,7 @@ const init = async app => {
     }
   });
 
-  app.get('/facebook/get-post', async (req, res, next) => {
+  app.get('/facebook/get-post', async (req, res) => {
     const { erxesApiId, integrationId } = req.query;
 
     debugFacebook(`Request to get postData with: ${erxesApiId}`);
