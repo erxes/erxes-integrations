@@ -147,7 +147,7 @@ const init = async app => {
 
     const comment = await Comments.findOne({ commentId: conversationId });
 
-    const post = await Posts.findOne({ $or: [{ erxesApiId: conversationId }, { commentId: comment.postId }] });
+    const post = await Posts.findOne({ $or: [{ erxesApiId: conversationId }, { postId: comment.postId }] });
 
     const { recipientId } = post;
 
