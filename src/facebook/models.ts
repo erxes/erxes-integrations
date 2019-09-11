@@ -52,7 +52,7 @@ export const conversationSchema = new Schema({
 conversationSchema.index({ senderId: 1, recipientId: 1 }, { unique: true });
 
 export interface IConversationModel extends Model<IConversationDocument> {
-  getConversation(selector): Promise<IPostDocument>;
+  getConversation(selector): Promise<IConversationDocument>;
 }
 
 export const loadConversationClass = () => {
@@ -117,13 +117,17 @@ export const postSchema = new Schema({
 postSchema.index({ recipientId: 1, postId: 1 }, { unique: true });
 
 export interface IPostModel extends Model<IPostDocument> {
-  getPost(selector): Promise<IPostDocument>;
+  getPost(selector: any, isLean?: boolean): Promise<IPostDocument>;
 }
 
 export const loadPostClass = () => {
   class Post {
-    public static async getPost(selector) {
-      const post = await Posts.findOne(selector);
+    public static async getPost(selector: any, isLean: boolean) {
+      let post = await Posts.findOne(selector);
+
+      if (isLean) {
+        post = await Posts.findOne(selector).lean();
+      }
 
       if (!post) {
         throw new Error('Post not found');

@@ -278,20 +278,16 @@ const init = async app => {
 
     await Integrations.getIntegration({ erxesApiId: integrationId });
 
-    const post = await Posts.findOne({ erxesApiId }).lean();
-
-    if (!post) {
-      debugFacebook('Post  not found');
-      next();
-    }
+    const post = await Posts.getPost({ erxesApiId }, true);
 
     const commentCount = await Comments.countDocuments({
       $and: [{ postId: post.postId }, { parentId: { $exists: false } }],
     });
 
-    post.commentCount = commentCount;
-
-    return res.json(post);
+    return res.json({
+      ...post,
+      commentCount,
+    });
   });
 
   app.get('/facebook/get-comments', async (req, res) => {
@@ -299,7 +295,7 @@ const init = async app => {
 
     debugFacebook(`Request to get comments with: ${postId}`);
 
-    const query: { postId: string; parentId?: any } = { postId };
+    const query: { postId: string; parentId?: string } = { postId };
 
     let limit = req.query.limit;
 
