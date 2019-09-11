@@ -1,6 +1,6 @@
 import { Accounts, Integrations } from '../models';
 import { Posts } from './models';
-import { createOrGetComment, createOrGetCustomer, createOrGetPost } from './store';
+import { getOrCreateComment, getOrCreateCustomer, getOrCreatePost } from './store';
 import { ICommentParams } from './types';
 import { restorePost } from './utils';
 
@@ -14,7 +14,7 @@ const receiveComment = async (params: ICommentParams, pageId: string) => {
 
   const account = await Accounts.getAccount({ _id: integration.accountId });
 
-  await createOrGetCustomer(pageId, userId);
+  await getOrCreateCustomer(pageId, userId);
 
   const post = await Posts.findOne({ postId });
 
@@ -23,12 +23,12 @@ const receiveComment = async (params: ICommentParams, pageId: string) => {
 
     const restoredPostId = postResponse.from.id;
 
-    const customer = await createOrGetCustomer(pageId, restoredPostId);
+    const customer = await getOrCreateCustomer(pageId, restoredPostId);
 
-    await createOrGetPost(postResponse, pageId, userId, customer.erxesApiId);
+    await getOrCreatePost(postResponse, pageId, userId, customer.erxesApiId);
   }
 
-  return await createOrGetComment(params, pageId, userId);
+  return await getOrCreateComment(params, pageId, userId);
 };
 
 export default receiveComment;

@@ -51,7 +51,27 @@ export const conversationSchema = new Schema({
 
 conversationSchema.index({ senderId: 1, recipientId: 1 }, { unique: true });
 
-export interface IConversationModel extends Model<IConversationDocument> {}
+export interface IConversationModel extends Model<IConversationDocument> {
+  getConversation(selector): Promise<IPostDocument>;
+}
+
+export const loadConversationClass = () => {
+  class Conversation {
+    public static async getConversation(selector) {
+      const conversation = await Conversations.findOne(selector);
+
+      if (!conversation) {
+        throw new Error('Conversation not found');
+      }
+
+      return conversation;
+    }
+  }
+
+  conversationSchema.loadClass(Conversation);
+
+  return conversationSchema;
+};
 
 // conversation message ===========================
 export interface IConversationMessage {
@@ -96,7 +116,27 @@ export const postSchema = new Schema({
 
 postSchema.index({ recipientId: 1, postId: 1 }, { unique: true });
 
-export interface IPostModel extends Model<IPostDocument> {}
+export interface IPostModel extends Model<IPostDocument> {
+  getPost(selector): Promise<IPostDocument>;
+}
+
+export const loadPostClass = () => {
+  class Post {
+    public static async getPost(selector) {
+      const post = await Posts.findOne(selector);
+
+      if (!post) {
+        throw new Error('Post not found');
+      }
+
+      return post;
+    }
+  }
+
+  postSchema.loadClass(Post);
+
+  return postSchema;
+};
 
 export interface IComment {
   commentId: string;
@@ -127,8 +167,33 @@ export const commentShema = new Schema({
 
 commentShema.index({ postId: 1, commentId: 1 }, { unique: true });
 
-export interface ICommentModel extends Model<ICommentDocument> {}
+export interface ICommentModel extends Model<ICommentDocument> {
+  getComment(selector): Promise<ICommentDocument>;
+}
 
+export const loadCommentClass = () => {
+  class Comment {
+    public static async getComment(selector) {
+      const comment = await Comments.findOne(selector);
+
+      if (!comment) {
+        throw new Error('Comment not found');
+      }
+
+      return comment;
+    }
+  }
+
+  commentShema.loadClass(Comment);
+
+  return commentShema;
+};
+
+loadCommentClass();
+
+loadConversationClass();
+
+loadPostClass();
 // tslint:disable-next-line
 export const Customers = model<ICustomerDocument, ICustomerModel>('customers_facebook', customerSchema);
 

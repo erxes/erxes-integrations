@@ -75,7 +75,7 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
   return doc;
 };
 
-export const createOrGetPost = async (
+export const getOrCreatePost = async (
   postParams: IPostParams,
   pageId: string,
   userId: string,
@@ -118,7 +118,7 @@ export const createOrGetPost = async (
   return post;
 };
 
-export const createOrGetComment = async (commentParams: ICommentParams, pageId: string, userId: string) => {
+export const getOrCreateComment = async (commentParams: ICommentParams, pageId: string, userId: string) => {
   let comment = await Comments.findOne({ commentId: commentParams.comment_id });
 
   const integration = await Integrations.getIntegration({
@@ -140,7 +140,7 @@ export const createOrGetComment = async (commentParams: ICommentParams, pageId: 
   return comment;
 };
 
-export const createOrGetCustomer = async (pageId: string, userId: string) => {
+export const getOrCreateCustomer = async (pageId: string, userId: string) => {
   const integration = await Integrations.getIntegration({
     $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-post' }],
   });

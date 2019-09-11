@@ -1,5 +1,5 @@
 import { Integrations } from '../models';
-import { createOrGetCustomer, createOrGetPost } from './store';
+import { getOrCreateCustomer, getOrCreatePost } from './store';
 import { IPostParams } from './types';
 
 const receivePost = async (params: IPostParams, pageId: string) => {
@@ -13,9 +13,9 @@ const receivePost = async (params: IPostParams, pageId: string) => {
 
   const userId = params.from.id;
 
-  const customer = await createOrGetCustomer(pageId, userId);
+  const customer = await getOrCreateCustomer(pageId, userId);
 
-  await createOrGetPost(params, pageId, userId, customer.erxesApiId);
+  await getOrCreatePost(params, pageId, userId, customer.erxesApiId);
 };
 
 export default receivePost;

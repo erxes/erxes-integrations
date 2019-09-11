@@ -109,12 +109,7 @@ const init = async app => {
 
     const { integrationId, conversationId, content, attachments } = req.body;
 
-    const conversation = await Conversations.findOne({ erxesApiId: conversationId });
-
-    if (!conversation) {
-      debugFacebook('Conversation not found');
-      return next(new Error('Conversation not found'));
-    }
+    const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
     const { recipientId } = conversation;
 
@@ -151,13 +146,9 @@ const init = async app => {
 
     const { integrationId, conversationId, content, attachments } = req.body;
 
-    let post = await Posts.findOne({ erxesApiId: conversationId });
-
     const comment = await Comments.findOne({ commentId: conversationId });
 
-    if (!post) {
-      post = await Posts.findOne({ postId: comment.postId });
-    }
+    const post = await Posts.findOne({ $or: [{ erxesApiId: conversationId }, { commentId: conversationId }] });
 
     const { recipientId } = post;
 
