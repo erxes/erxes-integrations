@@ -3,7 +3,7 @@ import { ICommentParams, IPostParams } from './types';
 
 import { Accounts, Integrations } from '../models';
 import { fetchMainApi } from '../utils';
-import { getFacebookUser, getFacebookUserProfilePic, restorePost } from './utils';
+import { getFacebookUser, getFacebookUserProfilePic } from './utils';
 
 export const generatePostDoc = (postParams: IPostParams, pageId: string, userId: string) => {
   const { post_id, id, video_id, link, photo_id, photos, created_time, message } = postParams;
@@ -121,12 +121,7 @@ export const createOrGetPost = async (
   return post;
 };
 
-export const createOrGetComment = async (
-  commentParams: ICommentParams,
-  pageId: string,
-  userId: string,
-  customerErxesApiId: string,
-) => {
+export const createOrGetComment = async (commentParams: ICommentParams, pageId: string, userId: string) => {
   let comment = await Comments.findOne({ commentId: commentParams.comment_id });
 
   const integration = await Integrations.findOne({
@@ -143,17 +138,7 @@ export const createOrGetComment = async (
     throw new Error('Account not found');
   }
 
-  const postId = commentParams.post_id;
-
   if (!comment) {
-    const post = await Posts.findOne({ postId });
-
-    if (!post) {
-      const postResponse = await restorePost(postId, pageId, account.token);
-
-      await createOrGetPost(postResponse, pageId, userId, customerErxesApiId);
-    }
-
     const doc = generateCommentDoc(commentParams, pageId, userId);
 
     try {
@@ -182,7 +167,6 @@ export const createOrGetCustomer = async (pageId: string, userId: string) => {
   }
 
   let customer = await Customers.findOne({ userId });
-
   // create customer
   if (!customer) {
     const fbUser = await getFacebookUser(pageId, userId, account.token);
