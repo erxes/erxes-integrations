@@ -208,12 +208,11 @@ const init = async app => {
       return next(new Error('Account not found'));
     }
 
-    const post = await Posts.findOne({ erxesApiId: conversationId });
-    const comment = await Comments.findOne({ erxesApiId: conversationId });
+    let post = await Posts.findOne({ erxesApiId: conversationId });
+    const comment = await Comments.findOne({ commentId: conversationId });
 
     if (!post) {
-      debugFacebook('Post not found');
-      return next(new Error('Post not found'));
+      post = await Posts.findOne({ postId: comment.postId });
     }
 
     const { facebookPageTokensMap } = integration;
@@ -244,7 +243,7 @@ const init = async app => {
       attachment_url: attachment.url,
     };
 
-    const id = post ? post.postId : comment.commentId;
+    const id = comment ? comment.commentId : post.postId;
 
     try {
       const response = await graphRequest.post(`${id}/comments`, pageAccessToken, {
@@ -434,6 +433,20 @@ const init = async app => {
       },
       {
         $lookup: {
+          from: 'posts_facebooks',
+          localField: 'postId',
+          foreignField: 'postId',
+          as: 'post',
+        },
+      },
+      {
+        $unwind: {
+          path: '$post',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
           from: 'comments_facebooks',
           localField: 'commentId',
           foreignField: 'parentId',
@@ -443,11 +456,8 @@ const init = async app => {
       {
         $addFields: {
           commentCount: { $size: '$replies' },
-        },
-      },
-      {
-        $addFields: {
           'customer.avatar': '$customer.profilePic',
+          conversationId: '$post.erxesApiId',
         },
       },
 
