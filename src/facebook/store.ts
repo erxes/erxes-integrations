@@ -135,7 +135,19 @@ export const getOrCreateComment = async (commentParams: ICommentParams, pageId: 
 
   const doc = generateCommentDoc(commentParams, pageId, userId);
 
-  return Comments.create(doc);
+  await Comments.create(doc);
+
+  try {
+    fetchMainApi({
+      path: '/integrations-api',
+      method: 'POST',
+      body: {
+        action: 'external-integration-entry-added',
+      },
+    });
+  } catch (e) {
+    throw new Error(e);
+  }
 };
 
 export const getOrCreateCustomer = async (pageId: string, userId: string) => {
