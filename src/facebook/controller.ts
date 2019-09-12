@@ -243,11 +243,7 @@ const init = async app => {
               return next();
             }
 
-            try {
-              await receiveMessage(activity);
-            } catch (e) {
-              return next();
-            }
+            await receiveMessage(activity);
 
             debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
           })

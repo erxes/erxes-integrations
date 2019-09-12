@@ -77,17 +77,13 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
     doc.attachments = [video];
   }
 
-  console.log('crea', created_time);
   if (created_time) {
-    console.log(created_time);
     doc.timestamp = (created_time * 1000).toString();
   }
-  console.log('xaxaxaa', restoredCommentCreatedAt);
+
   if (restoredCommentCreatedAt) {
-    console.log('xaaaaaxa', restoredCommentCreatedAt);
     doc.timestamp = restoredCommentCreatedAt;
   }
-  console.log(doc);
 
   return doc;
 };
@@ -118,7 +114,7 @@ export const getOrCreatePost = async (
       path: '/integrations-api',
       method: 'POST',
       body: {
-        action: 'create-conversation',
+        action: 'create-or-update-conversation',
         payload: JSON.stringify({
           customerId: customerErxesApiId,
           integrationId: integration.erxesApiId,
@@ -155,7 +151,7 @@ export const getOrCreateComment = async (commentParams: ICommentParams, pageId: 
   await Comments.create(doc);
 
   try {
-    return fetchMainApi({
+    fetchMainApi({
       path: '/integrations-api',
       method: 'POST',
       body: {
@@ -207,6 +203,7 @@ export const getOrCreateCustomer = async (pageId: string, userId: string) => {
           firstName: fbUser.first_name || fbUser.name,
           lastName: fbUser.last_name,
           avatar: fbUser.profile_pic || (await getFacebookUserProfilePic(userId)),
+          isUser: true,
         }),
       },
     });

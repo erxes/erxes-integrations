@@ -46,7 +46,7 @@ const receiveMessage = async (activity: Activity) => {
         path: '/integrations-api',
         method: 'POST',
         body: {
-          action: 'create-conversation',
+          action: 'create-or-update-conversation',
           payload: JSON.stringify({
             customerId: customer.erxesApiId,
             integrationId: integration.erxesApiId,
