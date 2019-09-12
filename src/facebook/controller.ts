@@ -260,18 +260,18 @@ const init = async app => {
           if (event.value.item === 'comment') {
             try {
               await receiveComment(event.value, entry.id);
-              res.end('succes');
+              res.end('success');
             } catch (e) {
-              return next(e);
+              return next(new Error(e));
             }
           }
 
           if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
             try {
               await receivePost(event.value, entry.id);
-              res.end('succes');
+              res.end('success');
             } catch (e) {
-              return next(e);
+              return next(new Error(e));
             }
           } else {
             next();
