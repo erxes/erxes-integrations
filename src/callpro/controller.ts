@@ -97,21 +97,25 @@ const init = async app => {
 
     // Check state of call and update
     if (conversation.state !== disp) {
-      conversation.state = disp;
-      conversation.save();
+      await Conversations.updateOne({ callId: callID }, { $set: { state: disp } });
 
-      // update on api
-      await fetchMainApi({
-        path: '/intragtions-api',
-        method: 'POST',
-        body: {
-          action: 'create-or-update-conversation',
-          content: disp,
-          integrationId: integration.erxesApiId,
-        },
-      });
+      try {
+        await fetchMainApi({
+          path: '/integrations-api',
+          method: 'POST',
+          body: {
+            action: 'create-or-update-conversation',
+            payload: JSON.stringify({
+              content: disp,
+              conversationId: conversation.erxesApiId,
+            }),
+          },
+        });
+      } catch (e) {
+        throw new Error(e.message);
+      }
 
-      return;
+      return res.send('success');
     }
 
     // save on api
