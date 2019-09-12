@@ -95,13 +95,32 @@ const init = async app => {
       }
     }
 
+    // Check state of call and update
+    if (conversation.state !== disp) {
+      conversation.state = disp;
+      conversation.save();
+
+      // update on api
+      await fetchMainApi({
+        path: '/intragtions-api',
+        method: 'POST',
+        body: {
+          action: 'create-or-update-conversation',
+          content: disp,
+          integrationId: integration.erxesApiId,
+        },
+      });
+
+      return;
+    }
+
     // save on api
     try {
       const apiConversationResponse = await fetchMainApi({
         path: '/integrations-api',
         method: 'POST',
         body: {
-          action: 'create-conversation',
+          action: 'create-or-update-conversation',
           payload: JSON.stringify({
             customerId: customer.erxesApiId,
             content: disp,
