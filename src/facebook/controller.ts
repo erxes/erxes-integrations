@@ -262,7 +262,7 @@ const init = async app => {
               await receiveComment(event.value, entry.id);
               res.end('succes');
             } catch (e) {
-              return next();
+              return next(e);
             }
           }
 
@@ -271,7 +271,7 @@ const init = async app => {
               await receivePost(event.value, entry.id);
               res.end('succes');
             } catch (e) {
-              return next();
+              return next(e);
             }
           } else {
             next();
