@@ -243,7 +243,11 @@ const init = async app => {
               return next();
             }
 
-            await receiveMessage(adapter, activity);
+            try {
+              await receiveMessage(activity);
+            } catch (e) {
+              return next();
+            }
 
             debugFacebook(`Successfully saved activity ${JSON.stringify(activity)}`);
           })
@@ -258,11 +262,21 @@ const init = async app => {
       if (entry.changes) {
         for (const event of entry.changes) {
           if (event.value.item === 'comment') {
-            await receiveComment(event.value, entry.id);
+            try {
+              await receiveComment(event.value, entry.id);
+              res.end('succes');
+            } catch (e) {
+              return next();
+            }
           }
 
           if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
-            await receivePost(event.value, entry.id);
+            try {
+              await receivePost(event.value, entry.id);
+              res.end('succes');
+            } catch (e) {
+              return next();
+            }
           } else {
             next();
           }

@@ -43,7 +43,16 @@ export const generatePostDoc = (postParams: IPostParams, pageId: string, userId:
 };
 
 export const generateCommentDoc = (commentParams: ICommentParams, pageId: string, userId: string) => {
-  const { photo, video, post_id, parent_id, comment_id, created_time, message } = commentParams;
+  const {
+    photo,
+    video,
+    post_id,
+    parent_id,
+    comment_id,
+    created_time,
+    message,
+    restoredCommentCreatedAt,
+  } = commentParams;
 
   const doc = {
     postId: post_id,
@@ -68,9 +77,17 @@ export const generateCommentDoc = (commentParams: ICommentParams, pageId: string
     doc.attachments = [video];
   }
 
+  console.log('crea', created_time);
   if (created_time) {
-    doc.timestamp = created_time;
+    console.log(created_time);
+    doc.timestamp = (created_time * 1000).toString();
   }
+  console.log('xaxaxaa', restoredCommentCreatedAt);
+  if (restoredCommentCreatedAt) {
+    console.log('xaaaaaxa', restoredCommentCreatedAt);
+    doc.timestamp = restoredCommentCreatedAt;
+  }
+  console.log(doc);
 
   return doc;
 };
@@ -138,7 +155,7 @@ export const getOrCreateComment = async (commentParams: ICommentParams, pageId: 
   await Comments.create(doc);
 
   try {
-    fetchMainApi({
+    return fetchMainApi({
       path: '/integrations-api',
       method: 'POST',
       body: {
