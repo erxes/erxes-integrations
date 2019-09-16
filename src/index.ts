@@ -13,6 +13,7 @@ import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
+import initNylas from './nylas/controller';
 import { init } from './startup';
 
 connect();
@@ -84,6 +85,9 @@ initGmail(app);
 
 // init callpro
 initCallPro(app);
+
+// init nylas
+initNylas(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
