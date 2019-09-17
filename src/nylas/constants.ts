@@ -1,11 +1,21 @@
+import * as dotenv from 'dotenv';
+
+// load config
+dotenv.config();
+
+const { MAIN_APP_DOMAIN } = process.env;
+
 // Google
 export const GOOGLE_OAUTH_TOKEN_VALIDATION_URL = 'https://www.googleapis.com/oauth2/v2/tokeninfo';
 export const GOOGLE_OAUTH_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth?';
 export const GOOGLE_OAUTH_ACCESS_TOKEN_URL = 'https://www.googleapis.com/oauth2/v4/token';
 
 // Nylas
-export const WEBHOOK_CALLBACK_URL = 'https://fd2a3643.ngrok.io/nylas/webhook';
 export const NYLAS_API_URL = 'https://api.nylas.com';
+export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
+export const CONNECT_AUTHROIZE_URL = NYLAS_API_URL + '/connect/authorize';
+export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
+export const WEBHOOK_CALLBACK_URL = '';
 
 export const EMAIL_SCOPES = [
   'email.modify',

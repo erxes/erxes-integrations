@@ -1,28 +1,33 @@
 import * as dotenv from 'dotenv';
 import * as querystring from 'querystring';
 import { debugNylas, debugRequest, debugResponse } from '../debuggers';
-import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
-import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES, NYLAS_API_URL } from './constants';
+import {
+  AUTHORIZED_REDIRECT_URL,
+  CONNECT_AUTHROIZE_URL,
+  CONNECT_TOKEN_URL,
+  GOOGLE_OAUTH_ACCESS_TOKEN_URL,
+  GOOGLE_OAUTH_AUTH_URL,
+  GOOGLE_SCOPES,
+} from './constants';
+import { createAccount } from './store';
 import { checkCredentials } from './utils';
 
 // loading config
 dotenv.config();
 
-const { DOMAIN, MAIN_APP_DOMAIN, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
-
-const authorizedRedirectUrl = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
-const connectAuthroizeUrl = NYLAS_API_URL + '/connect/authorize';
-const connectTokenUrl = NYLAS_API_URL + '/connect/token';
+const { DOMAIN, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
 
 const googleMiddleware = async (req, res) => {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
-
   if (!checkCredentials()) {
     debugNylas('Nylas not configured, check your env');
 
     return res.send('not configured');
+  }
+
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    return debugNylas('Missing google config check your env');
   }
 
   debugRequest(debugNylas, req);
@@ -70,12 +75,6 @@ const googleMiddleware = async (req, res) => {
 };
 
 const googleToNylasMiddleware = async (req, res) => {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
-
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return debugNylas('Missing google config check your env');
-  }
-
   const { google_access_token, google_refresh_token } = req.session;
 
   if (!google_access_token) {
@@ -85,24 +84,24 @@ const googleToNylasMiddleware = async (req, res) => {
   const email = await getEmailFromAccessToken(google_access_token);
 
   const settings = {
+    google_refresh_token,
     google_client_id: GOOGLE_CLIENT_ID,
     google_client_secret: GOOGLE_CLIENT_SECRET,
-    google_refresh_token,
   };
 
   const data = {
-    client_id: NYLAS_CLIENT_ID,
     name: 'erxes',
     email_address: email,
     provider: 'gmail',
     settings,
+    client_id: NYLAS_CLIENT_ID,
   };
 
   const token = await connectToNylas(data);
 
   await createAccount(email, token, 'gmail');
 
-  return res.redirect(authorizedRedirectUrl);
+  return res.redirect(AUTHORIZED_REDIRECT_URL);
 };
 
 // Exchange ================
@@ -132,35 +131,9 @@ const exchangeMiddleware = async (req, res) => {
 
     await createAccount(email, token, 'exchange');
 
-    res.redirect(authorizedRedirectUrl);
+    res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.message);
-  }
-};
-
-/**
- * Create account with nylas accessToken
- * @param {String} email
- * @param {String} kind
- * @param {String} accessToken
- */
-const createAccount = async (email: string, accessToken: string, kind: string) => {
-  debugNylas('Creating account for kind: ' + kind);
-
-  if (!email || !accessToken) {
-    return debugNylas('Missing email or accesToken');
-  }
-
-  const account = await Accounts.findOne({ email });
-
-  if (account) {
-    await Accounts.updateOne({ email }, { $set: { token: accessToken } });
-  } else {
-    await Accounts.create({
-      kind,
-      name: email,
-      email,
-    });
   }
 };
 
@@ -171,15 +144,11 @@ const createAccount = async (email: string, accessToken: string, kind: string) =
  * @returns {Promise} accessToken
  */
 const connectToNylas = async params => {
-  const code = await getNylasCode(params);
-
-  const data = {
-    code,
+  return getNylasAccessToken({
+    code: await getNylasCode(params),
     client_id: NYLAS_CLIENT_ID,
     client_secret: NYLAS_CLIENT_SECRET,
-  };
-
-  return getNylasAccessToken(data);
+  });
 };
 
 /**
@@ -189,7 +158,7 @@ const connectToNylas = async params => {
  */
 const getNylasCode = async data => {
   const { code } = await sendRequest({
-    url: connectAuthroizeUrl,
+    url: CONNECT_AUTHROIZE_URL,
     method: 'post',
     body: data,
   });
@@ -204,7 +173,7 @@ const getNylasCode = async data => {
  */
 const getNylasAccessToken = async data => {
   const { token } = await sendRequest({
-    url: connectTokenUrl,
+    url: CONNECT_TOKEN_URL,
     method: 'post',
     body: data,
   });
