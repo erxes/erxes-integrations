@@ -115,12 +115,14 @@ const exchangeMiddleware = async (req, res) => {
 
   debugRequest(debugNylas, req);
 
-  const settings = { username: 'munkhorgil@live.com', password: '$udouser' };
+  const { email, password } = req.body;
+
+  const settings = { username: email, password };
 
   const params = {
     name: 'orgil',
     settings,
-    email_address: 'munkhorgil@live.com',
+    email_address: email,
     provider: 'exchange',
     client_id: NYLAS_CLIENT_ID,
   };
@@ -128,7 +130,7 @@ const exchangeMiddleware = async (req, res) => {
   try {
     const token = await connectToNylas(params);
 
-    await createAccount('munkhorgil@live.com', token, 'exchange');
+    await createAccount(email, token, 'exchange');
 
     res.redirect(authorizedRedirectUrl);
   } catch (e) {
