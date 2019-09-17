@@ -6,7 +6,7 @@ interface IRequestParams {
   path?: string;
   method: string;
   params?: { [key: string]: string };
-  body?: { [key: string]: string };
+  body?: { [key: string]: string | string[] };
 }
 
 /**

@@ -1,6 +1,7 @@
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
+import * as session from 'express-session';
 
 // load environment variables
 dotenv.config();
@@ -33,6 +34,7 @@ const rawBodySaver = (req, _res, buf, encoding) => {
 app.use(bodyParser.urlencoded({ verify: rawBodySaver, extended: true }));
 app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 app.use(bodyParser.raw({ verify: rawBodySaver, type: '*/*' }));
+app.use(session({ secret: 'aksjdaklsdjaslk' }));
 
 app.post('/integrations/remove', async (req, res) => {
   debugRequest(debugIntegrations, req);

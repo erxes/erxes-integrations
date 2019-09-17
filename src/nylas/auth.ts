@@ -1,8 +1,8 @@
 import * as dotenv from 'dotenv';
 import * as querystring from 'querystring';
-import * as request from 'request';
 import { debugNylas, debugRequest, debugResponse } from '../debuggers';
 import { Accounts } from '../models';
+import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
 import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES, NYLAS_API_URL } from './constants';
 import { checkCredentials } from './utils';
@@ -10,12 +10,14 @@ import { checkCredentials } from './utils';
 // loading config
 dotenv.config();
 
-const { MAIN_APP_DOMAIN, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
+const { DOMAIN, MAIN_APP_DOMAIN, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
 const authorizedRedirectUrl = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
+const connectAuthroizeUrl = NYLAS_API_URL + '/connect/authorize';
+const connectTokenUrl = NYLAS_API_URL + '/connect/token';
 
-const googleMiddleware = (req, res, next) => {
-  const { DOMAIN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+const googleMiddleware = async (req, res) => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
 
   if (!checkCredentials()) {
     debugNylas('Nylas not configured, check your env');
@@ -31,10 +33,11 @@ const googleMiddleware = (req, res, next) => {
   if (!req.query.code) {
     if (!req.query.error) {
       const params = {
+        response_type: 'code',
         access_type: 'offline',
         redirect_uri: redirectUri,
-        scope: GOOGLE_SCOPES,
         client_id: GOOGLE_CLIENT_ID,
+        scope: GOOGLE_SCOPES,
       };
 
       const authUrl = GOOGLE_OAUTH_AUTH_URL + querystring.stringify(params);
@@ -50,29 +53,20 @@ const googleMiddleware = (req, res, next) => {
     code: req.query.code,
     redirect_uri: redirectUri,
     client_id: GOOGLE_CLIENT_ID,
-    client_secrent: GOOGLE_CLIENT_SECRET,
+    client_secret: GOOGLE_CLIENT_SECRET,
     grant_type: 'authorization_code',
   };
 
-  const options = {
-    uri: GOOGLE_OAUTH_ACCESS_TOKEN_URL,
-    method: 'POST',
-    form: data,
-  };
+  const { access_token, refresh_token } = await sendRequest({
+    url: GOOGLE_OAUTH_ACCESS_TOKEN_URL,
+    method: 'post',
+    body: data,
+  });
 
-  return request(options)
-    .then(body => {
-      const { access_token, refresh_token } = JSON.parse(body);
+  req.session.google_refresh_token = refresh_token;
+  req.session.google_access_token = access_token;
 
-      req.session.google_refresh_token = refresh_token;
-      req.session.google_access_token = access_token;
-
-      res.redirect('/google/nylas-token');
-    })
-    .catch(e => {
-      debugNylas(e.message);
-      next();
-    });
+  res.redirect('/google/nylas-token');
 };
 
 const googleToNylasMiddleware = async (req, res) => {
@@ -97,7 +91,7 @@ const googleToNylasMiddleware = async (req, res) => {
   };
 
   const data = {
-    client_id: NYLAS_CLIENT_SECRET,
+    client_id: NYLAS_CLIENT_ID,
     name: 'erxes',
     email_address: email,
     provider: 'gmail',
@@ -108,14 +102,11 @@ const googleToNylasMiddleware = async (req, res) => {
 
   await createAccount(email, token, 'gmail');
 
-  // clear token session
-  delete req.session;
-
   return res.redirect(authorizedRedirectUrl);
 };
 
 // Exchange ================
-const exchangeMiddleware = async (req, res, next) => {
+const exchangeMiddleware = async (req, res) => {
   if (!checkCredentials()) {
     debugNylas('Nylas not configured, check your env');
 
@@ -124,14 +115,12 @@ const exchangeMiddleware = async (req, res, next) => {
 
   debugRequest(debugNylas, req);
 
-  const { email, password, name } = req.body;
-
-  const settings = { username: email, password };
+  const settings = { username: 'munkhorgil@live.com', password: '$udouser' };
 
   const params = {
-    name,
+    name: 'orgil',
     settings,
-    email_address: email,
+    email_address: 'munkhorgil@live.com',
     provider: 'exchange',
     client_id: NYLAS_CLIENT_ID,
   };
@@ -139,12 +128,11 @@ const exchangeMiddleware = async (req, res, next) => {
   try {
     const token = await connectToNylas(params);
 
-    await createAccount(email, token, 'exchange');
+    await createAccount('munkhorgil@live.com', token, 'exchange');
 
     res.redirect(authorizedRedirectUrl);
   } catch (e) {
     throw new Error(e.message);
-    next();
   }
 };
 
@@ -155,6 +143,8 @@ const exchangeMiddleware = async (req, res, next) => {
  * @param {String} accessToken
  */
 const createAccount = async (email: string, accessToken: string, kind: string) => {
+  debugNylas('Creating account for kind: ' + kind);
+
   if (!email || !accessToken) {
     return debugNylas('Missing email or accesToken');
   }
@@ -195,11 +185,14 @@ const connectToNylas = async params => {
  * @param {Object} params
  * @returns {Promise} code
  */
-const getNylasCode = params => {
-  return request
-    .post({ uri: NYLAS_API_URL + '/connect/authorize', json: params })
-    .then(body => Promise.resolve(body.code))
-    .catch(e => Promise.reject('Could not fetch Nylas code: ' + e.message));
+const getNylasCode = async data => {
+  const { code } = await sendRequest({
+    url: connectAuthroizeUrl,
+    method: 'post',
+    body: data,
+  });
+
+  return code;
 };
 
 /**
@@ -207,11 +200,14 @@ const getNylasCode = params => {
  * @param {Object} data
  * @param {Promise} accessToken
  */
-const getNylasAccessToken = data => {
-  return request
-    .post({ uri: NYLAS_API_URL + '/connect/token', json: data })
-    .then(body => Promise.resolve(body.access_token))
-    .catch(e => Promise.reject('Could not fetch Nylas access_token: ' + e.message));
+const getNylasAccessToken = async data => {
+  const { token } = await sendRequest({
+    url: connectTokenUrl,
+    method: 'post',
+    body: data,
+  });
+
+  return token;
 };
 
 export { googleMiddleware, googleToNylasMiddleware, exchangeMiddleware };

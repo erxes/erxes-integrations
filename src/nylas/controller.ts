@@ -17,7 +17,7 @@ const init = async app => {
   // native authentication
   app.get('/google/login', googleMiddleware);
   app.get('/google/nylas-token', googleToNylasMiddleware);
-  app.post('/google/exchange', exchangeMiddleware);
+  app.get('/exchange/login', exchangeMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook
