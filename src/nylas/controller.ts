@@ -3,8 +3,13 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Integrations } from '../models';
 import { getMessage } from './api';
-import { exchangeMiddleware, googleMiddleware, googleToNylasMiddleware } from './auth';
-import loginMiddleware from './loginMiddleware';
+import {
+  exchangeMiddleware,
+  googleMiddleware,
+  googleToNylasMiddleware,
+  loginMiddleware,
+  officeMiddleware,
+} from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
 
@@ -18,6 +23,7 @@ const init = async app => {
   app.get('/google/login', googleMiddleware);
   app.get('/google/nylas-token', googleToNylasMiddleware);
   app.get('/exchange/login', exchangeMiddleware);
+  app.get('/office365/login', officeMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook

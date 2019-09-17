@@ -1,6 +1,6 @@
 import { sendRequest } from '../utils';
 import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
-import { sendRequest as nylasSendRequest } from './utils';
+import { nylasRequest } from './utils';
 
 /**
  * Build message and send API request
@@ -12,7 +12,7 @@ import { sendRequest as nylasSendRequest } from './utils';
 const buildMessage = (child: string, ...args: string[]) => {
   const [accessToken, filter] = args;
 
-  return nylasSendRequest({
+  return nylasRequest({
     parent: 'messages',
     child,
     accessToken,

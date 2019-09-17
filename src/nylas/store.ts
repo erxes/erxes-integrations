@@ -7,7 +7,7 @@ import { Accounts } from '../models';
  * @param {String} kind
  * @param {String} accessToken
  */
-const createAccount = async (email: string, kind: string, accessToken: string) => {
+const createAccount = async (kind: string, email: string, accessToken: string) => {
   debugNylas('Creating account for kind: ' + kind);
 
   if (!email || !accessToken) {

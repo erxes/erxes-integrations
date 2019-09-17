@@ -29,14 +29,14 @@ const checkCredentials = () => {
 };
 
 /**
- * Get API request to nylas
+ * Request to Nylas SDK
  * @param {String} - accessToken
  * @param {String} - parent
  * @param {String} - child
  * @param {String} - filter
  * @returns {Promise} - nylas response
  */
-const sendRequest = args => {
+const nylasRequest = args => {
   const {
     parent,
     child,
@@ -64,4 +64,4 @@ const sendRequest = args => {
     .catch(e => debugNylas(e.message));
 };
 
-export { sendRequest, checkCredentials, verifyNylasSignature };
+export { nylasRequest, checkCredentials, verifyNylasSignature };
