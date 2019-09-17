@@ -1,3 +1,5 @@
+import * as request from 'request';
+import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
 import { sendRequest } from './utils';
 
 /**
@@ -34,4 +36,18 @@ const getMessages = (...args: string[]) => buildMessage('list', ...args);
  */
 const getMessage = (...args: string[]) => buildMessage('find', ...args);
 
-export { getMessage, getMessages };
+/**
+ * Get email from google with accessToken
+ * @param accessToken
+ * @returns {Promise} email
+ */
+const getEmailFromAccessToken = (accessToken: string) => {
+  const data = { access_token: accessToken, fields: ['email'] };
+
+  return request
+    .post({ url: GOOGLE_OAUTH_TOKEN_VALIDATION_URL, form: data })
+    .then(body => Promise.resolve(JSON.parse(body).email))
+    .catch(e => Promise.reject(`Error validating Google token: ${e.message}`));
+};
+
+export { getMessage, getMessages, getEmailFromAccessToken };

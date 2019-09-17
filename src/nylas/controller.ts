@@ -3,7 +3,7 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Integrations } from '../models';
 import { getMessage } from './api';
-import { googleMiddleware, googleToNylasMiddleware } from './auth';
+import { exchangeMiddleware, googleMiddleware, googleToNylasMiddleware } from './auth';
 import loginMiddleware from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
@@ -13,8 +13,11 @@ dotenv.config();
 
 const init = async app => {
   app.get('/nylaslogin', loginMiddleware);
+
+  // native authentication
   app.get('/google/login', googleMiddleware);
   app.get('/google/nylas-token', googleToNylasMiddleware);
+  app.post('/google/exchange', exchangeMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook
@@ -37,7 +40,7 @@ const init = async app => {
       if (delta.type === 'message.created') {
         const data = delta.object_data;
 
-        await getMessage('accessToken', data.id);
+        await getMessage('TNwTKHSAeVs6fDasGokxIUpOYYTETA', data.id);
       }
     }
 

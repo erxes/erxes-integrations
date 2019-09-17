@@ -4,7 +4,7 @@ export const GOOGLE_OAUTH_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/au
 export const GOOGLE_OAUTH_ACCESS_TOKEN_URL = 'https://www.googleapis.com/oauth2/v4/token';
 
 // Nylas
-export const WEBHOOK_CALLBACK_URL = 'https://495fb7af.ngrok.io/nylas/webhook';
+export const WEBHOOK_CALLBACK_URL = '';
 export const NYLAS_API_URL = 'https://api.nylas.com';
 
 export const EMAIL_SCOPES = [
