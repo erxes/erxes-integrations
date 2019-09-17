@@ -15,7 +15,7 @@ export const NYLAS_API_URL = 'https://api.nylas.com';
 export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
 export const CONNECT_AUTHROIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
-export const WEBHOOK_CALLBACK_URL = '';
+export const WEBHOOK_CALLBACK_URL = 'https://fd2a3643.ngrok.io/nylas/webhook';
 
 export const EMAIL_SCOPES = [
   'email.modify',

@@ -12,6 +12,7 @@ import {
   GOOGLE_SCOPES,
 } from './constants';
 import { createAccount } from './store';
+import { IProviderSettings } from './types';
 import { checkCredentials } from './utils';
 
 // loading config
@@ -89,19 +90,15 @@ const googleToNylasMiddleware = async (req, res) => {
     google_client_secret: GOOGLE_CLIENT_SECRET,
   };
 
-  const data = {
-    name: 'erxes',
-    email_address: email,
-    provider: 'gmail',
-    settings,
-    client_id: NYLAS_CLIENT_ID,
-  };
+  try {
+    const token = await integrateProviderToNylas(email, 'gmail', settings);
 
-  const token = await connectToNylas(data);
+    await createAccount(email, 'gmail', token);
 
-  await createAccount(email, token, 'gmail');
-
-  return res.redirect(AUTHORIZED_REDIRECT_URL);
+    return res.redirect(AUTHORIZED_REDIRECT_URL);
+  } catch (e) {
+    throw new Error(e.mesasge);
+  }
 };
 
 // Exchange ================
@@ -118,18 +115,10 @@ const exchangeMiddleware = async (req, res) => {
 
   const settings = { username: email, password };
 
-  const params = {
-    name: 'orgil',
-    settings,
-    email_address: email,
-    provider: 'exchange',
-    client_id: NYLAS_CLIENT_ID,
-  };
-
   try {
-    const token = await connectToNylas(params);
+    const token = await integrateProviderToNylas(email, 'exchange', settings);
 
-    await createAccount(email, token, 'exchange');
+    await createAccount(email, 'exchange', token);
 
     res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
@@ -137,15 +126,50 @@ const exchangeMiddleware = async (req, res) => {
   }
 };
 
+// Office 365 ===========================
+const officeMiddleware = async (_req, res) => {
+  if (!checkCredentials()) {
+    debugNylas('Nylas not configured, check your env');
+
+    return res.send('not configured');
+  }
+
+  const settings = {
+    microsoft_client_id: '',
+    microsoft_client_secret: '',
+    microsoft_refresh_token: '',
+    redirect_uri: '',
+  };
+
+  try {
+    const token = await integrateProviderToNylas('email@mail.com', 'office365', settings);
+
+    await createAccount('email@mail.com', 'gmail', token);
+
+    return res.redirect(AUTHORIZED_REDIRECT_URL);
+  } catch (e) {
+    throw new Error(e.message);
+  }
+};
+
 /**
- * Integrate third party accessToken to Nylas
- * and get Nylas accessToken
- * @param {Object} params
- * @returns {Promise} accessToken
+ * Connect specified provider
+ * and get nylas accessToken
+ * @param {String} email
+ * @param {String} provider
+ * @param {Object} settings
  */
-const connectToNylas = async params => {
+const integrateProviderToNylas = async (email: string, provider: string, settings: IProviderSettings) => {
+  const code = await getNylasCode({
+    provider,
+    settings,
+    name: 'erxes',
+    email_address: email,
+    client_id: NYLAS_CLIENT_SECRET,
+  });
+
   return getNylasAccessToken({
-    code: await getNylasCode(params),
+    code,
     client_id: NYLAS_CLIENT_ID,
     client_secret: NYLAS_CLIENT_SECRET,
   });
@@ -181,4 +205,4 @@ const getNylasAccessToken = async data => {
   return token;
 };
 
-export { googleMiddleware, googleToNylasMiddleware, exchangeMiddleware };
+export { googleMiddleware, googleToNylasMiddleware, exchangeMiddleware, officeMiddleware };
