@@ -12,6 +12,7 @@ import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
   GOOGLE_SCOPES,
+  MICROSOFT_OAUTH_AUTH_URL,
 } from './constants';
 import { createAccount } from './store';
 import { checkCredentials } from './utils';
@@ -19,9 +20,9 @@ import { checkCredentials } from './utils';
 // loading config
 dotenv.config();
 
-const loginMiddleware = (req, res) => {
-  const DOMAIN = getEnv({ name: 'DOMAIN' });
+const { DOMAIN } = process.env;
 
+const loginMiddleware = (req, res) => {
   if (!checkCredentials()) {
     debugNylas('Nylas not configured, check your env');
 
@@ -59,7 +60,7 @@ const loginMiddleware = (req, res) => {
 };
 
 // Office 365 ===========================
-const officeMiddleware = async (req, res, next) => {
+const getAzureCredentials = async (req, res, next) => {
   if (!checkCredentials()) {
     return next(debugNylas('Nylas not configured, check your env'));
   }
@@ -71,19 +72,45 @@ const officeMiddleware = async (req, res, next) => {
     return next(debugNylas('Missing Microsoft env configs'));
   }
 
-  debugRequest(debugNylas, req);
+  const redirectUrl = `${DOMAIN}/office365/login`;
+
+  if (!req.query.code) {
+    if (!req.query.error) {
+      const params = {
+        client_id: MICROSOFT_CLIENT_ID,
+        response_type: 'code',
+        redirect_uri: redirectUrl,
+        resource: 'https://graph.microsoft.com',
+      };
+
+      const authUrl = MICROSOFT_OAUTH_AUTH_URL + querystring.stringify(params);
+
+      return res.redirect(authUrl);
+    } else {
+      return next('access denied');
+    }
+  }
+
+  debugNylas(req.query);
+};
+
+const officeMiddleware = async (req, res) => {
+  const MICROSOFT_CLIENT_ID = getEnv({ name: 'MICROSOFT_CLIENT_ID' });
+  const MICROSOFT_CLIENT_SECRET = getEnv({ name: 'MICROSOFT_CLIENT_SECRET' });
+
+  const { microsoft_refresh_token } = req.session;
 
   const settings = {
-    microsoft_client_id: '',
-    microsoft_client_secret: '',
-    microsoft_refresh_token: '',
-    redirect_uri: '',
+    microsoft_client_id: MICROSOFT_CLIENT_ID,
+    microsoft_client_secret: MICROSOFT_CLIENT_SECRET,
+    microsoft_refresh_token,
+    redirect_uri: `${DOMAIN}/office365/login`,
   };
 
   const token = await integrateProviderToNylas('email@mail.com', 'office365', settings);
 
   try {
-    await createAccount('gmail', 'email@mail.com', token);
+    await createAccount('office365', 'email@mail.com', token);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.message);
@@ -113,14 +140,13 @@ const exchangeMiddleware = async (req, res, next) => {
 };
 
 // Google =================
-const googleMiddleware = async (req, res, next) => {
+const getGoogleCredentials = async (req, res, next) => {
   if (!checkCredentials()) {
     return next('Nylas not configured, check your env');
   }
 
   const GOOGLE_CLIENT_ID = getEnv({ name: 'GOOGLE_CLIENT_ID' });
   const GOOGLE_CLIENT_SECRET = getEnv({ name: 'GOOGLE_CLIENT_SECRET' });
-  const DOMAIN = getEnv({ name: 'DOMAIN' });
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     return next('Missing google env');
@@ -202,4 +228,11 @@ const googleToNylasMiddleware = async (req, res, next) => {
   }
 };
 
-export { loginMiddleware, officeMiddleware, exchangeMiddleware, googleMiddleware, googleToNylasMiddleware };
+export {
+  loginMiddleware,
+  getAzureCredentials,
+  officeMiddleware,
+  exchangeMiddleware,
+  getGoogleCredentials,
+  googleToNylasMiddleware,
+};

@@ -5,7 +5,8 @@ import { Integrations } from '../models';
 import { getMessage } from './api';
 import {
   exchangeMiddleware,
-  googleMiddleware,
+  getAzureCredentials,
+  getGoogleCredentials,
   googleToNylasMiddleware,
   loginMiddleware,
   officeMiddleware,
@@ -20,10 +21,11 @@ const init = async app => {
   app.get('/nylaslogin', loginMiddleware);
 
   // native authentication
-  app.get('/google/login', googleMiddleware);
+  app.get('/google/login', getGoogleCredentials);
   app.get('/google/nylas-token', googleToNylasMiddleware);
+  app.get('/office365/login', getAzureCredentials);
+  app.get('/office365/nylas-token', officeMiddleware);
   app.get('/exchange/login', exchangeMiddleware);
-  app.get('/office365/login', officeMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook

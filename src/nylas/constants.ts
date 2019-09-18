@@ -17,6 +17,9 @@ export const CONNECT_AUTHROIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
 export const WEBHOOK_CALLBACK_URL = 'https://fd2a3643.ngrok.io/nylas/webhook';
 
+// Microsoft
+export const MICROSOFT_OAUTH_AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/authorize?';
+
 export const EMAIL_SCOPES = [
   'email.modify',
   'email.read_only',
