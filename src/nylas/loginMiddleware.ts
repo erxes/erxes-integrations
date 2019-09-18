@@ -12,7 +12,9 @@ import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
   GOOGLE_SCOPES,
+  MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
   MICROSOFT_OAUTH_AUTH_URL,
+  MICROSOFT_SCOPES,
 } from './constants';
 import { createAccount } from './store';
 import { checkCredentials } from './utils';
@@ -79,8 +81,9 @@ const getAzureCredentials = async (req, res, next) => {
       const params = {
         client_id: MICROSOFT_CLIENT_ID,
         response_type: 'code',
+        response_mode: 'query',
         redirect_uri: redirectUrl,
-        resource: 'https://graph.microsoft.com',
+        scope: MICROSOFT_SCOPES,
       };
 
       const authUrl = MICROSOFT_OAUTH_AUTH_URL + querystring.stringify(params);
@@ -91,7 +94,26 @@ const getAzureCredentials = async (req, res, next) => {
     }
   }
 
-  debugNylas(req.query);
+  const data = {
+    grant_type: 'authorization_code',
+    code: req.query.code,
+    redirect_uri: redirectUrl,
+    client_id: MICROSOFT_CLIENT_ID,
+    client_secret: MICROSOFT_CLIENT_SECRET,
+  };
+
+  const { access_token, refresh_token } = await sendRequest({
+    url: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+    headerType: 'application/x-www-form-urlencoded',
+    dataType: 'form-url-encoded',
+    method: 'post',
+    body: data,
+  });
+
+  req.session.microsoft_access_token = access_token;
+  req.session.microsoft_refresh_token = refresh_token;
+
+  res.redirect('/office365/nylas-token');
 };
 
 const officeMiddleware = async (req, res) => {
@@ -107,7 +129,7 @@ const officeMiddleware = async (req, res) => {
     redirect_uri: `${DOMAIN}/office365/login`,
   };
 
-  const token = await integrateProviderToNylas('email@mail.com', 'office365', settings);
+  const token = await integrateProviderToNylas('email', 'office365', settings);
 
   try {
     await createAccount('office365', 'email@mail.com', token);

@@ -18,7 +18,19 @@ export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
 export const WEBHOOK_CALLBACK_URL = 'https://fd2a3643.ngrok.io/nylas/webhook';
 
 // Microsoft
-export const MICROSOFT_OAUTH_AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/authorize?';
+export const MICROSOFT_OAUTH_AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?';
+export const MICROSOFT_OAUTH_ACCESS_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+
+export const MICROSOFT_SCOPES = [
+  'https://outlook.office.com/user.read.all',
+  'https://outlook.office.com/mail.send',
+  'https://outlook.office.com/mail.read',
+  'https://outlook.office.com/mail.readwrite',
+  'https://outlook.office.com/calendars.readwrite',
+  'https://outlook.office.com/contacts.read',
+  'https://outlook.office.com/contacts.readwrite',
+  'offline_access',
+].join(' ');
 
 export const EMAIL_SCOPES = [
   'email.modify',

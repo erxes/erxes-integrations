@@ -21,7 +21,7 @@ const integrateProviderToNylas = async (email: string, provider: string, setting
     settings,
     name: 'erxes',
     email_address: email,
-    client_id: NYLAS_CLIENT_SECRET,
+    client_id: NYLAS_CLIENT_ID,
   });
 
   return getNylasAccessToken({
