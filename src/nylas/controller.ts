@@ -3,14 +3,7 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Integrations } from '../models';
 import { getMessage } from './api';
-import {
-  exchangeMiddleware,
-  getAzureCredentials,
-  getGoogleCredentials,
-  googleToNylasMiddleware,
-  loginMiddleware,
-  officeMiddleware,
-} from './loginMiddleware';
+import { getOAuthCredentials, googleToNylasMiddleware, loginMiddleware, officeMiddleware } from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
 
@@ -19,13 +12,9 @@ dotenv.config();
 
 const init = async app => {
   app.get('/nylaslogin', loginMiddleware);
-
-  // native authentication
-  app.get('/google/login', getGoogleCredentials);
-  app.get('/google/nylas-token', googleToNylasMiddleware);
-  app.get('/office365/login', getAzureCredentials);
-  app.get('/office365/nylas-token', officeMiddleware);
-  app.get('/exchange/login', exchangeMiddleware);
+  app.get('/oauth2/callback', getOAuthCredentials);
+  app.get('/gmail/connect', googleToNylasMiddleware);
+  app.get('/outlook/connect', officeMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook

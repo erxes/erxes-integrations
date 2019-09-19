@@ -22,14 +22,15 @@ export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/${MIC
 export const MICROSOFT_OAUTH_ACCESS_TOKEN_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/token`;
 
 export const MICROSOFT_SCOPES = [
-  'https://outlook.office.com/user.read.all',
+  'https://outlook.office.com/user.read',
   'https://outlook.office.com/mail.send',
-  'https://outlook.office.com/mail.read',
   'https://outlook.office.com/mail.readwrite',
   'https://outlook.office.com/calendars.readwrite',
-  'https://outlook.office.com/contacts.read',
   'https://outlook.office.com/contacts.readwrite',
-  'offline_access',
+  'offline_access', // for refresh token
+  'openid',
+  'email',
+  'profile',
 ].join(' ');
 
 export const EMAIL_SCOPES = [
