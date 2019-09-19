@@ -15,13 +15,19 @@ const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
  * @param {String} provider
  * @param {Object} settings
  */
-const integrateProviderToNylas = async (email: string, provider: string, settings: IProviderSettings) => {
+const integrateProviderToNylas = async (
+  email: string,
+  provider: string,
+  settings: IProviderSettings,
+  scope?: string,
+) => {
   const code = await getNylasCode({
     provider,
     settings,
     name: 'erxes',
     email_address: email,
     client_id: NYLAS_CLIENT_ID,
+    ...(scope ? { scope } : {}),
   });
 
   return getNylasAccessToken({
@@ -52,13 +58,13 @@ const getNylasCode = async data => {
  * @param {Promise} accessToken
  */
 const getNylasAccessToken = async data => {
-  const { token } = await sendRequest({
+  const { access_token } = await sendRequest({
     url: CONNECT_TOKEN_URL,
     method: 'post',
     body: data,
   });
 
-  return token;
+  return access_token;
 };
 
 export { integrateProviderToNylas };
