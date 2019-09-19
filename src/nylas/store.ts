@@ -23,6 +23,7 @@ const createAccount = async (kind: string, email: string, accessToken: string) =
       kind,
       name: email,
       email,
+      token: accessToken,
     });
   }
 };
