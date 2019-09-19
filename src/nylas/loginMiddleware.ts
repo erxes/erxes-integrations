@@ -3,27 +3,19 @@ import * as Nylas from 'nylas';
 import * as querystring from 'querystring';
 import { debugNylas, debugRequest, debugResponse } from '../debuggers';
 import { Accounts } from '../models';
-import { getEnv, sendRequest } from '../utils';
+import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
 import { integrateProviderToNylas } from './auth';
-import {
-  AUTHORIZED_REDIRECT_URL,
-  EMAIL_SCOPES,
-  GOOGLE_OAUTH_ACCESS_TOKEN_URL,
-  GOOGLE_OAUTH_AUTH_URL,
-  GOOGLE_SCOPES,
-  MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
-  MICROSOFT_OAUTH_AUTH_URL,
-  MICROSOFT_SCOPES,
-} from './constants';
+import { AUTHORIZED_REDIRECT_URL, EMAIL_SCOPES } from './constants';
 import { createAccount } from './store';
-import { checkCredentials } from './utils';
+import { checkCredentials, getClientConfig, getProviderSettings } from './utils';
 
 // loading config
 dotenv.config();
 
 const { DOMAIN } = process.env;
 
+// Hosted authentication
 const loginMiddleware = (req, res) => {
   if (!checkCredentials()) {
     debugNylas('Nylas not configured, check your env');
@@ -61,34 +53,37 @@ const loginMiddleware = (req, res) => {
   });
 };
 
-// Office 365 ===========================
-const getAzureCredentials = async (req, res, next) => {
+// Provider specific OAuth2 ===========================
+const getOAuthCredentials = async (req, res, next) => {
+  const kind = 'outlook';
+
   if (!checkCredentials()) {
-    return next(debugNylas('Nylas not configured, check your env'));
+    return next('Nylas not configured, check your env');
   }
 
-  const MICROSOFT_CLIENT_ID = getEnv({ name: 'MICROSOFT_CLIENT_ID' });
-  const MICROSOFT_CLIENT_SECRET = getEnv({ name: 'MICROSOFT_CLIENT_SECRET' });
+  const [clientId, clientSecret] = getClientConfig(kind);
 
-  if (!MICROSOFT_CLIENT_ID || !MICROSOFT_CLIENT_SECRET) {
-    return next(debugNylas('Missing Microsoft env configs'));
+  if (!clientId || !clientSecret) {
+    debugNylas(`Missing config check your env of ${kind}`);
+    return next();
   }
 
-  const redirectUrl = `${DOMAIN}/office365/login`;
+  debugRequest(debugNylas, req);
+
+  const redirectUri = `${DOMAIN}/oauth2/callback`;
+
+  const { params, urls, requestParams } = getProviderSettings(kind);
 
   if (!req.query.code) {
     if (!req.query.error) {
-      const params = {
-        client_id: MICROSOFT_CLIENT_ID,
+      const commonParams = {
+        client_id: clientId,
         response_type: 'code',
-        response_mode: 'query',
-        redirect_uri: redirectUrl,
-        scope: MICROSOFT_SCOPES,
+        redirect_uri: redirectUri,
+        ...params,
       };
 
-      const authUrl = MICROSOFT_OAUTH_AUTH_URL + querystring.stringify(params);
-
-      return res.redirect(authUrl);
+      return res.redirect(urls.authUrl + querystring.stringify(commonParams));
     } else {
       return next('access denied');
     }
@@ -97,147 +92,63 @@ const getAzureCredentials = async (req, res, next) => {
   const data = {
     grant_type: 'authorization_code',
     code: req.query.code,
-    redirect_uri: redirectUrl,
-    client_id: MICROSOFT_CLIENT_ID,
-    client_secret: MICROSOFT_CLIENT_SECRET,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
   };
 
   const { access_token, refresh_token } = await sendRequest({
-    url: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
-    headerType: 'application/x-www-form-urlencoded',
-    dataType: 'form-url-encoded',
+    url: urls.tokenUrl,
     method: 'post',
     body: data,
+    ...requestParams,
   });
 
-  req.session.microsoft_access_token = access_token;
-  req.session.microsoft_refresh_token = refresh_token;
+  req.session[kind + '_access_token'] = access_token;
+  req.session[kind + '_refresh_token'] = refresh_token;
 
-  res.redirect('/office365/nylas-token');
+  res.redirect(`/${kind}/connect`);
 };
 
+// Office 365 ===========================
 const officeMiddleware = async (req, res) => {
-  const MICROSOFT_CLIENT_ID = getEnv({ name: 'MICROSOFT_CLIENT_ID' });
-  const MICROSOFT_CLIENT_SECRET = getEnv({ name: 'MICROSOFT_CLIENT_SECRET' });
+  const [clientId, clientSecret] = getClientConfig('outlook');
 
-  const { microsoft_refresh_token } = req.session;
+  const { outlook_refresh_token } = req.session;
 
   const settings = {
-    microsoft_client_id: MICROSOFT_CLIENT_ID,
-    microsoft_client_secret: MICROSOFT_CLIENT_SECRET,
-    microsoft_refresh_token,
-    redirect_uri: `${DOMAIN}/office365/login`,
+    microsoft_client_id: clientId,
+    microsoft_client_secret: clientSecret,
+    microsoft_refresh_token: outlook_refresh_token,
+    redirect_uri: `${DOMAIN}/oauth2/callback`,
   };
 
-  const token = await integrateProviderToNylas('email', 'office365', settings);
+  const token = await integrateProviderToNylas('munkhorgil@live.com', 'outlook', settings);
 
   try {
-    await createAccount('office365', 'email@mail.com', token);
+    await createAccount('outlook', 'email@mail.com', token);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.message);
   }
 };
 
-// Exchange ================
-const exchangeMiddleware = async (req, res, next) => {
-  if (!checkCredentials()) {
-    next('Nylas not configured, check your env');
-  }
-
-  debugRequest(debugNylas, req);
-
-  const { email, password } = req.body;
-
-  const settings = { username: email, password };
-
-  const token = await integrateProviderToNylas(email, 'exchange', settings);
-
-  try {
-    await createAccount('exchange', email, token);
-    res.redirect(AUTHORIZED_REDIRECT_URL);
-  } catch (e) {
-    throw new Error(e.message);
-  }
-};
-
 // Google =================
-const getGoogleCredentials = async (req, res, next) => {
-  if (!checkCredentials()) {
-    return next('Nylas not configured, check your env');
+const googleToNylasMiddleware = async (req, res) => {
+  const [clientId, clientSecret] = getClientConfig('outlook');
+
+  const { gmail_access_token, gmail_refresh_token } = req.session;
+
+  if (!gmail_access_token) {
+    res.redirect('/oauth2/callback');
   }
 
-  const GOOGLE_CLIENT_ID = getEnv({ name: 'GOOGLE_CLIENT_ID' });
-  const GOOGLE_CLIENT_SECRET = getEnv({ name: 'GOOGLE_CLIENT_SECRET' });
-
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return next('Missing google env');
-  }
-
-  debugRequest(debugNylas, req);
-
-  const redirectUri = `${DOMAIN}/google/login`;
-
-  // Request to get code and redirect to oauth dialog
-  if (!req.query.code) {
-    if (!req.query.error) {
-      const params = {
-        response_type: 'code',
-        access_type: 'offline',
-        redirect_uri: redirectUri,
-        client_id: GOOGLE_CLIENT_ID,
-        scope: GOOGLE_SCOPES,
-      };
-
-      const authUrl = GOOGLE_OAUTH_AUTH_URL + querystring.stringify(params);
-
-      return res.redirect(authUrl);
-    } else {
-      debugResponse(debugNylas, req, 'access denied');
-      return res.send('access denied');
-    }
-  }
-
-  const data = {
-    code: req.query.code,
-    redirect_uri: redirectUri,
-    grant_type: 'authorization_code',
-    client_id: GOOGLE_CLIENT_ID,
-    client_secret: GOOGLE_CLIENT_SECRET,
-  };
-
-  const { access_token, refresh_token } = await sendRequest({
-    url: GOOGLE_OAUTH_ACCESS_TOKEN_URL,
-    method: 'post',
-    body: data,
-  });
-
-  req.session.google_refresh_token = refresh_token;
-  req.session.google_access_token = access_token;
-
-  res.redirect('/google/nylas-token');
-};
-
-const googleToNylasMiddleware = async (req, res, next) => {
-  const GOOGLE_CLIENT_ID = getEnv({ name: 'GOOGLE_CLIENT_ID' });
-  const GOOGLE_CLIENT_SECRET = getEnv({ name: 'GOOGLE_CLIENT_SECRET' });
-
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return next('Missing google env');
-  }
-
-  const { google_access_token, google_refresh_token } = req.session;
-
-  if (!google_access_token) {
-    res.redirect('/google/login');
-  }
-
-  const email = await getEmailFromAccessToken(google_access_token);
+  const email = await getEmailFromAccessToken(gmail_access_token);
 
   const settings = {
-    google_refresh_token,
-    google_client_id: GOOGLE_CLIENT_ID,
-    google_client_secret: GOOGLE_CLIENT_SECRET,
+    google_refresh_token: gmail_refresh_token,
+    google_client_id: clientId,
+    google_client_secret: clientSecret,
   };
 
   const token = await integrateProviderToNylas(email, 'gmail', settings);
@@ -250,11 +161,4 @@ const googleToNylasMiddleware = async (req, res, next) => {
   }
 };
 
-export {
-  loginMiddleware,
-  getAzureCredentials,
-  officeMiddleware,
-  exchangeMiddleware,
-  getGoogleCredentials,
-  googleToNylasMiddleware,
-};
+export { loginMiddleware, getOAuthCredentials, officeMiddleware, googleToNylasMiddleware };
