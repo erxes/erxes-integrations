@@ -5,6 +5,13 @@ dotenv.config();
 
 const { MAIN_APP_DOMAIN, MICROSOFT_TENANT_ID } = process.env;
 
+// Integration action
+export const ACTIONS = {
+  CUSTOMER: 'create-or-update-customer',
+  CONVERSATION: 'create-or-update-conversation',
+  CONVERSATION_MESSAGE: 'create-conversation-message',
+};
+
 // Google
 export const GOOGLE_OAUTH_TOKEN_VALIDATION_URL = 'https://www.googleapis.com/oauth2/v2/tokeninfo';
 export const GOOGLE_OAUTH_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth?';
@@ -13,9 +20,9 @@ export const GOOGLE_OAUTH_ACCESS_TOKEN_URL = 'https://www.googleapis.com/oauth2/
 // Nylas
 export const NYLAS_API_URL = 'https://api.nylas.com';
 export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
-export const CONNECT_AUTHROIZE_URL = NYLAS_API_URL + '/connect/authorize';
+export const CONNECT_AUTHORIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
-export const WEBHOOK_CALLBACK_URL = 'https://fd2a3643.ngrok.io/nylas/webhook';
+export const WEBHOOK_CALLBACK_URL = 'https://da4f45cd.ngrok.io/nylas/webhook';
 
 // Microsoft
 export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?`;

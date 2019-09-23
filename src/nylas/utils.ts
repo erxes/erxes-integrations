@@ -11,6 +11,7 @@ import {
   MICROSOFT_OAUTH_AUTH_URL,
   MICROSOFT_SCOPES,
 } from './constants';
+import { IMessageDraft } from './types';
 
 // load config
 dotenv.config();
@@ -35,6 +36,30 @@ const verifyNylasSignature = req => {
  */
 const checkCredentials = () => {
   return Nylas.clientCredentials();
+};
+
+/**
+ * Set token for nylas and
+ * check credentials
+ * @param {String} accessToken
+ * @returns {Boolean} credentials
+ */
+const setNylasToken = (accessToken: string) => {
+  if (!checkCredentials()) {
+    debugNylas('Nylas is not configured');
+
+    return false;
+  }
+
+  if (!accessToken) {
+    debugNylas('Access token not found');
+
+    return false;
+  }
+
+  const nylas = Nylas.with(accessToken);
+
+  return nylas;
 };
 
 /**
@@ -108,19 +133,35 @@ const nylasRequest = args => {
     filter?: any;
   } = args;
 
-  if (!checkCredentials()) {
-    return debugNylas('Nylas is not configured');
-  }
+  const nylas = setNylasToken(accessToken);
 
-  if (!accessToken) {
-    return debugNylas('Access token not found');
+  if (!nylas) {
+    return;
   }
-
-  const nylas = Nylas.with(accessToken);
 
   return nylas[parent][child](filter)
     .then(response => debugNylas(response))
     .catch(e => debugNylas(e.message));
 };
 
-export { getProviderSettings, getClientConfig, nylasRequest, checkCredentials, verifyNylasSignature };
+/**
+ * Draft and Send message
+ * @param {Object} - args
+ * @returns {Promise} - sent message
+ */
+const nylasSendMessage = (accessToken: string, args: IMessageDraft) => {
+  const nylas = setNylasToken(accessToken);
+
+  if (!nylas) {
+    return;
+  }
+
+  const draft = nylas.drafts.build(args);
+
+  return draft
+    .send()
+    .then(message => debugNylas(`${message.id} message was sent`))
+    .catch(error => debugNylas(error.message));
+};
+
+export { nylasSendMessage, getProviderSettings, getClientConfig, nylasRequest, checkCredentials, verifyNylasSignature };

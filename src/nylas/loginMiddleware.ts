@@ -55,7 +55,7 @@ const loginMiddleware = (req, res) => {
 
 // Provider specific OAuth2 ===========================
 const getOAuthCredentials = async (req, res, next) => {
-  const kind = 'outlook';
+  const kind = 'gmail';
 
   if (!checkCredentials()) {
     return next('Nylas not configured, check your env');
@@ -70,7 +70,7 @@ const getOAuthCredentials = async (req, res, next) => {
 
   debugRequest(debugNylas, req);
 
-  const redirectUri = `${DOMAIN}/oauth2/callback`;
+  const redirectUri = `${DOMAIN}/nylas/oauth2/callback`;
 
   const { params, urls, requestParams } = getProviderSettings(kind);
 
@@ -107,7 +107,7 @@ const getOAuthCredentials = async (req, res, next) => {
   req.session[kind + '_access_token'] = access_token;
   req.session[kind + '_refresh_token'] = refresh_token;
 
-  res.redirect(`/${kind}/connect`);
+  res.redirect(`/nylas/${kind}/connect`);
 };
 
 // Office 365 ===========================
@@ -120,13 +120,13 @@ const officeMiddleware = async (req, res) => {
     microsoft_client_id: clientId,
     microsoft_client_secret: clientSecret,
     microsoft_refresh_token: outlook_refresh_token,
-    redirect_uri: `${DOMAIN}/oauth2/callback`,
+    redirect_uri: `${DOMAIN}/nylas/oauth2/callback`,
   };
 
-  const token = await integrateProviderToNylas('munkhorgil@live.com', 'outlook', settings);
+  const { account_id, access_token } = await integrateProviderToNylas('email', 'outlook', settings);
 
   try {
-    await createAccount('outlook', 'email@mail.com', token);
+    await createAccount('outlook', 'email@mail.com', account_id, access_token);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.message);
@@ -135,12 +135,12 @@ const officeMiddleware = async (req, res) => {
 
 // Google =================
 const googleToNylasMiddleware = async (req, res) => {
-  const [clientId, clientSecret] = getClientConfig('outlook');
+  const [clientId, clientSecret] = getClientConfig('gmail');
 
   const { gmail_access_token, gmail_refresh_token } = req.session;
 
   if (!gmail_access_token) {
-    res.redirect('/oauth2/callback');
+    res.redirect('/nylas/oauth2/callback');
   }
 
   const email = await getEmailFromAccessToken(gmail_access_token);
@@ -151,10 +151,10 @@ const googleToNylasMiddleware = async (req, res) => {
     google_client_secret: clientSecret,
   };
 
-  const token = await integrateProviderToNylas(email, 'gmail', settings);
+  const { access_token, account_id } = await integrateProviderToNylas(email, 'gmail', settings);
 
   try {
-    await createAccount('gmail', email, token);
+    await createAccount('gmail', email, account_id, access_token);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.mesasge);

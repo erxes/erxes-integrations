@@ -2,8 +2,8 @@ import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Integrations } from '../models';
-import { getMessage } from './api';
-import { getOAuthCredentials, googleToNylasMiddleware, loginMiddleware, officeMiddleware } from './loginMiddleware';
+import { sendMessage, syncMessages } from './api';
+import { getOAuthCredentials, googleToNylasMiddleware } from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
 
@@ -11,10 +11,8 @@ import { verifyNylasSignature } from './utils';
 dotenv.config();
 
 const init = async app => {
-  app.get('/nylaslogin', loginMiddleware);
-  app.get('/oauth2/callback', getOAuthCredentials);
-  app.get('/gmail/connect', googleToNylasMiddleware);
-  app.get('/outlook/connect', officeMiddleware);
+  app.get('/nylas/oauth2/callback', getOAuthCredentials);
+  app.get('/nylas/gmail/connect', googleToNylasMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook
@@ -28,16 +26,15 @@ const init = async app => {
       return res.status(401).send('X-Nylas-Signature failed verification');
     }
 
-    // Notify endpoint is online
-    // res.sendStatus(200);
+    debugNylas('Received new email in nylas...');
 
     const deltas = req.body.deltas;
 
     for (const delta of deltas) {
-      if (delta.type === 'message.created') {
-        const data = delta.object_data;
+      const data = delta.object_data;
 
-        await getMessage('TNwTKHSAeVs6fDasGokxIUpOYYTETA', data.id);
+      if (delta.type === 'message.created') {
+        await syncMessages(data.account_id, data.id);
       }
     }
 
@@ -62,6 +59,15 @@ const init = async app => {
 
   app.get('/nylas/send', async (_req, res) => {
     debugNylas('Sending message...');
+
+    const token = 'XkNaSzTU5OQ5sQgcbl4uZ5ghkpxCpr';
+
+    await sendMessage(token, {
+      subject: 'Re: test',
+      body: '<h1>Helaskdjaklsjdlo World</h1>',
+      to: [{ email: 'munkhorgil@live.com' }],
+      replyToMessageId: '1vx47imn5mn58b2ug6yi015f1',
+    });
 
     return res.json({ status: 'ok' });
   });

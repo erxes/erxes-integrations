@@ -6,7 +6,7 @@ import { checkCredentials } from './utils';
 /**
  * Create webhook for specific triggers
  */
-export const createWebhook = () => {
+export const createWebhook = async () => {
   debugNylas('Creating Nylas webhook');
 
   if (!checkCredentials()) {

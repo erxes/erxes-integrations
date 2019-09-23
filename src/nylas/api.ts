@@ -1,6 +1,9 @@
+import { debugNylas } from '../debuggers';
+import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
-import { nylasRequest } from './utils';
+import { IFilter, IMessageDraft } from './types';
+import { nylasRequest, nylasSendMessage } from './utils';
 
 /**
  * Build message and send API request
@@ -9,7 +12,7 @@ import { nylasRequest } from './utils';
  * @param {String} - filter
  * @param {Promise} - nylas message object
  */
-const buildMessage = (child: string, ...args: string[]) => {
+const buildMessage = (child: string, ...args: Array<string | IFilter>) => {
   const [accessToken, filter] = args;
 
   return nylasRequest({
@@ -34,10 +37,23 @@ const getMessages = (...args: string[]) => buildMessage('list', ...args);
  * @param {Object} - filter
  * @returns {Promise} - nylas message object
  */
-const getMessage = (...args: string[]) => buildMessage('find', ...args);
+const getMessageById = (...args: string[]) => buildMessage('find', ...args);
 
 /**
- * Get email from google with accessToken
+ * Get most recent messages
+ * @param {String} - accessToken
+ * @returns {Promise} - nylas messages object
+ */
+const recentMessages = (accessToken: string) => {
+  return buildMessage('find', accessToken, { in: 'inbox' });
+};
+
+const sendMessage = async (accessToken: string, args: IMessageDraft) => {
+  return nylasSendMessage(accessToken, args);
+};
+
+/**
+ * Google: get email from google with accessToken
  * @param accessToken
  * @returns {Promise} email
  */
@@ -53,4 +69,22 @@ const getEmailFromAccessToken = async (accessToken: string) => {
   return email;
 };
 
-export { getMessage, getMessages, getEmailFromAccessToken };
+/**
+ * Sync messages with messageId from webhook
+ * @param {String} accountId
+ * @param {String} messageId
+ * @retusn {Promise} nylas messages object
+ */
+const syncMessages = async (accountId: string, messageId: string) => {
+  const account = await Accounts.findOne({ uid: accountId }).lean();
+
+  if (!account) {
+    return debugNylas('Account not found with uid: ', accountId);
+  }
+
+  const message = await getMessageById(account.token, messageId);
+
+  debugNylas(message);
+};
+
+export { syncMessages, sendMessage, recentMessages, getMessageById, getMessages, getEmailFromAccessToken };

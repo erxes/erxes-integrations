@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { sendRequest } from '../utils';
-import { CONNECT_AUTHROIZE_URL, CONNECT_TOKEN_URL } from './constants';
+import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { IProviderSettings } from './types';
 
 // loading config
@@ -44,7 +44,7 @@ const integrateProviderToNylas = async (
  */
 const getNylasCode = async data => {
   const { code } = await sendRequest({
-    url: CONNECT_AUTHROIZE_URL,
+    url: CONNECT_AUTHORIZE_URL,
     method: 'post',
     body: data,
   });
@@ -58,13 +58,11 @@ const getNylasCode = async data => {
  * @param {Promise} accessToken
  */
 const getNylasAccessToken = async data => {
-  const { access_token } = await sendRequest({
+  return sendRequest({
     url: CONNECT_TOKEN_URL,
     method: 'post',
     body: data,
   });
-
-  return access_token;
 };
 
 export { integrateProviderToNylas };
