@@ -12,6 +12,16 @@ interface IRequestParams {
 }
 
 /**
+ * Check and throw error when concurrent
+ * @param {Object} e - error
+ * @param {String} name - model
+ * @returns throw Error
+ */
+export const checkConcurrentError = (e: any, name: string) => {
+  throw new Error(e.message.includes('duplicate') ? `Concurrent request: nylas ${name} duplication` : e);
+};
+
+/**
  * Send request
  */
 export const sendRequest = async ({ url, headerType, dataType, method, body, params }: IRequestParams) => {

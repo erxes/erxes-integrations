@@ -22,7 +22,7 @@ export const NYLAS_API_URL = 'https://api.nylas.com';
 export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations?nylasAuthorized=true`;
 export const CONNECT_AUTHORIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
-export const WEBHOOK_CALLBACK_URL = 'https://da4f45cd.ngrok.io/nylas/webhook';
+export const WEBHOOK_CALLBACK_URL = 'https://f6b23d45.ngrok.io/nylas/webhook';
 
 // Microsoft
 export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?`;

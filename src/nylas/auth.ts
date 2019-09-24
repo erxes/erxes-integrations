@@ -1,4 +1,6 @@
 import * as dotenv from 'dotenv';
+import * as Nylas from 'nylas';
+import { debugNylas } from '../debuggers';
 import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { IProviderSettings } from './types';
@@ -30,11 +32,30 @@ const integrateProviderToNylas = async (
     ...(scope ? { scope } : {}),
   });
 
-  return getNylasAccessToken({
+  const { access_token, account_id } = await getNylasAccessToken({
     code,
     client_id: NYLAS_CLIENT_ID,
     client_secret: NYLAS_CLIENT_SECRET,
   });
+
+  // Disable account
+  await enableOrDisableAccount(account_id, true);
+
+  return { access_token, account_id };
+};
+
+/**
+ * Toggle nylas account
+ * @param {String} accountId
+ * @param {Boolean} enable
+ */
+const enableOrDisableAccount = async (accountId: string, enable: boolean) => {
+  debugNylas(`${enable} account with uid: ${accountId}`);
+
+  const account = await Nylas.accounts.find(accountId);
+  const method = enable ? 'upgrade' : 'downgrade';
+
+  return account[method]();
 };
 
 /**
@@ -65,4 +86,4 @@ const getNylasAccessToken = async data => {
   });
 };
 
-export { integrateProviderToNylas };
+export { enableOrDisableAccount, integrateProviderToNylas };

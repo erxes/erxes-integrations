@@ -1,6 +1,7 @@
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
 import { fetchMainApi } from '../utils';
+import { checkConcurrentError } from '../utils';
 import { ACTIONS } from './constants';
 import { NylasGmailCustomers } from './models';
 import { IApiCustomer } from './types';
@@ -45,6 +46,7 @@ const createAccount = async (kind: string, email: string, accountId: string, acc
  */
 const createOrGetNylasCustomer = async args => {
   const { integrationId, name, email, kind, integrationIdErxesApiId } = args;
+
   debugNylas('Create or get nylas customer function called...');
 
   let customer = await NylasGmailCustomers.findOne({ email });
@@ -65,7 +67,7 @@ const createOrGetNylasCustomer = async args => {
     try {
       customer = await NylasGmailCustomers.create(doc);
     } catch (e) {
-      throw new Error(e.message.includes('duplicate') ? `Concurrent request: nylas customer duplication` : e);
+      checkConcurrentError(e, 'customer');
     }
 
     const params = {

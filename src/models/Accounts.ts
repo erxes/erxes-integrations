@@ -3,6 +3,7 @@ import { field } from './utils';
 
 export interface IAccount {
   kind: string;
+  email: string;
   token: string;
   tokenSecret?: string;
   expireDate?: string;
@@ -16,6 +17,9 @@ export interface IAccountDocument extends IAccount, Document {}
 export const accountSchema = new Schema({
   _id: field({ pkey: true }),
   kind: {
+    type: String,
+  },
+  email: {
     type: String,
   },
   token: {

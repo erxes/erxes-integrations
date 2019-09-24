@@ -1,8 +1,9 @@
 import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
-import { Integrations } from '../models';
+import { Accounts, Integrations } from '../models';
 import { sendMessage, syncMessages } from './api';
+import { enableOrDisableAccount } from './auth';
 import { getOAuthCredentials, googleToNylasMiddleware } from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
@@ -31,8 +32,7 @@ const init = async app => {
     const deltas = req.body.deltas;
 
     for (const delta of deltas) {
-      const data = delta.object_data;
-
+      const data = delta.object_data || {};
       if (delta.type === 'message.created') {
         await syncMessages(data.account_id, data.id);
       }
@@ -44,15 +44,23 @@ const init = async app => {
   app.post('/nylas/create-integration', async (req, res, _next) => {
     debugRequest(debugNylas, req);
 
-    const { accountId, integrationId, data, kind } = req.body;
-    const { email } = JSON.parse(data);
+    const { accountId, integrationId, kind } = req.body;
+
+    debugNylas(`Creating nylas integration kind: ${kind}`);
+
+    const account = await Accounts.getAccount({ _id: accountId });
 
     await Integrations.create({
       kind,
-      email,
       accountId,
+      email: account.email,
       erxesApiId: integrationId,
     });
+
+    // Enable nylas account for sync
+    await enableOrDisableAccount(account.uid, true);
+
+    debugNylas(`Successfully created the integration and enabled the nylas account`);
 
     return res.json({ status: 'ok' });
   });
