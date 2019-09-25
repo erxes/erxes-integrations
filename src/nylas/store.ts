@@ -43,6 +43,7 @@ const createAccount = async (args: INylasAccountArguments) => {
       uid: accountId,
       token: accessToken,
     });
+
     debugNylas(`Successfully created the account with: ${email}`);
   }
 };
@@ -57,14 +58,9 @@ const createAccount = async (args: INylasAccountArguments) => {
  * @returns {Promise} customer object
  */
 const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
-  const {
-    kind,
-    toEmail,
-    integrationIds,
-    message,
-    from: { email, name },
-  } = args;
+  const { kind, toEmail, integrationIds, message } = args;
   const { id, erxesApiId } = integrationIds;
+  const [{ email, name }] = message.from;
 
   debugNylas('Create or get nylas customer function called...');
   const { Customers } = getNylasModel(kind);
@@ -111,14 +107,12 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
   return {
     kind,
     message,
+    integrationIds,
+    customerId: customer.erxesApiId,
     emails: {
       fromEmail: email,
       toEmail,
     },
-    integrationIds,
-    subject: message.subject,
-    threadId: message.threadId,
-    customerId: customer.erxesApiId,
   };
 };
 
@@ -133,7 +127,7 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
  * @returns {Promise} conversation object
  */
 const createOrGetNylasConversation = async (args: INylasConversationArguments) => {
-  const { kind, customerId, subject, threadId, integrationIds, emails, message } = args;
+  const { kind, customerId, integrationIds, emails, message } = args;
   const { toEmail, fromEmail } = emails;
   const { id, erxesApiId } = integrationIds;
   const { Conversations } = getNylasModel(kind);
@@ -141,7 +135,7 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
   debugNylas(`Creating nylas conversation kind: ${kind}`);
 
   // Check reply
-  let conversation = await Conversations.findOne({ threadId });
+  let conversation = await Conversations.findOne({ threadId: message.threadId });
 
   if (!conversation) {
     try {
@@ -159,7 +153,7 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
     try {
       const params = {
         customerId,
-        content: subject,
+        content: message.subject,
         integrationId: erxesApiId,
       };
 

@@ -93,13 +93,10 @@ const syncMessages = async (accountId: string, messageId: string) => {
 
   const message = await getMessageById(token, messageId);
 
-  const [from] = message.from;
-
   const doc = {
-    from,
+    kind,
     message,
     toEmail: email,
-    kind,
     integrationIds: {
       id: 'integrationId',
       erxesApiId: 'erxesApiId',

@@ -66,10 +66,6 @@ export interface INylasCustomerArguments {
   kind: string;
   toEmail: string;
   message: any;
-  from: {
-    email: string;
-    name: string;
-  };
   integrationIds: {
     id: string;
     erxesApiId: string;
@@ -79,8 +75,6 @@ export interface INylasCustomerArguments {
 export interface INylasConversationArguments {
   kind: string;
   customerId: string;
-  subject: string;
-  threadId: string;
   message: INylasConversationMessage;
   emails: {
     toEmail: string;
