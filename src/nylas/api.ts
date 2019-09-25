@@ -1,7 +1,8 @@
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
-import { sendRequest } from '../utils';
+import { compose as composeStore, sendRequest } from '../utils';
 import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
+import { createOrGetNylasConversation, createOrGetNylasConversationMessage, createOrGetNylasCustomer } from './store';
 import { IFilter, IMessageDraft } from './types';
 import { nylasRequest, nylasSendMessage } from './utils';
 
@@ -44,13 +45,15 @@ const getMessageById = (...args: string[]) => buildMessage('find', ...args);
  * @param {String} - accessToken
  * @returns {Promise} - nylas messages object
  */
-const recentMessages = (accessToken: string) => {
-  return buildMessage('find', accessToken, { in: 'inbox' });
-};
+const recentMessages = (accessToken: string) => buildMessage('find', accessToken, { in: 'inbox' });
 
-const sendMessage = async (accessToken: string, args: IMessageDraft) => {
-  return nylasSendMessage(accessToken, args);
-};
+/**
+ * Send or Reply message
+ * @param {String} accessToken
+ * @param {Object} args - message object
+ * @returns {Promise} message object response
+ */
+const sendMessage = (accessToken: string, args: IMessageDraft) => nylasSendMessage(accessToken, args);
 
 /**
  * Google: get email from google with accessToken
@@ -82,9 +85,25 @@ const syncMessages = async (accountId: string, messageId: string) => {
     return debugNylas('Account not found with uid: ', accountId);
   }
 
-  const message = await getMessageById(account.token, messageId);
+  const { token, email, kind } = account;
 
-  debugNylas(message);
+  const message = await getMessageById(token, messageId);
+
+  const [from] = message.from;
+
+  const doc = {
+    from,
+    message,
+    toEmail: email,
+    kind,
+    integrationIds: {
+      id: 'integrationId',
+      erxesApiId: 'erxesApiId',
+    },
+  };
+
+  // Store new received message ========
+  return composeStore(createOrGetNylasConversationMessage, createOrGetNylasConversation, createOrGetNylasCustomer)(doc);
 };
 
 export { syncMessages, sendMessage, recentMessages, getMessageById, getMessages, getEmailFromAccessToken };

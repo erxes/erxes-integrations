@@ -18,15 +18,6 @@ export interface IMessageDraft {
   body?: string;
 }
 
-export interface IApiCustomer {
-  emails: string[];
-  primaryEmail: string;
-  integrationId: string;
-  firstName: string;
-  lastName: string;
-  kind: string;
-}
-
 export interface IProviderSettings {
   microsoft_client_id?: string;
   microsoft_client_secret?: string;
@@ -38,3 +29,60 @@ export interface IProviderSettings {
   email?: string;
   password?: string;
 }
+
+// API ====================
+export interface IAPICustomer {
+  emails: string[];
+  primaryEmail: string;
+  integrationId: string;
+  firstName: string;
+  lastName: string;
+  kind: string;
+}
+
+export interface IAPIConversation {
+  integrationId: string;
+  customerId: string;
+  content: string;
+}
+
+export interface IAPIConversationMessage {}
+
+// Store =======================
+export interface INylasAccountArguments {
+  kind: string;
+  email: string;
+  accountId: string;
+  accessToken: string;
+}
+
+export interface INylasCustomerArguments {
+  kind: string;
+  toEmail: string;
+  message: any;
+  from: {
+    email: string;
+    name: string;
+  };
+  integrationIds: {
+    id: string;
+    erxesApiId: string;
+  };
+}
+
+export interface INylasConversationArguments {
+  kind: string;
+  customerId: string;
+  subject: string;
+  threadId: string;
+  emails: {
+    toEmail: string;
+    fromEmail: string;
+  };
+  integrationIds: {
+    id: string;
+    erxesApiId: string;
+  };
+}
+
+export interface INylasConversationMessageArguments {}

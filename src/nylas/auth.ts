@@ -32,16 +32,11 @@ const integrateProviderToNylas = async (
     ...(scope ? { scope } : {}),
   });
 
-  const { access_token, account_id } = await getNylasAccessToken({
+  return getNylasAccessToken({
     code,
     client_id: NYLAS_CLIENT_ID,
     client_secret: NYLAS_CLIENT_SECRET,
   });
-
-  // Disable account
-  await enableOrDisableAccount(account_id, true);
-
-  return { access_token, account_id };
 };
 
 /**

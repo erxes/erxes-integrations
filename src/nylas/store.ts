@@ -3,8 +3,14 @@ import { Accounts } from '../models';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
 import { ACTIONS } from './constants';
-import { NylasGmailCustomers } from './models';
-import { IApiCustomer } from './types';
+import {
+  IAPIConversation,
+  IAPICustomer,
+  INylasAccountArguments,
+  INylasConversationArguments,
+  INylasCustomerArguments,
+} from './types';
+import { getNylasModel } from './utils';
 
 /**
  * Create account with nylas accessToken
@@ -13,7 +19,9 @@ import { IApiCustomer } from './types';
  * @param {String} accountId - nylas
  * @param {String} accessToken
  */
-const createAccount = async (kind: string, email: string, accountId: string, accessToken: string) => {
+const createAccount = async (args: INylasAccountArguments) => {
+  const { kind, email, accountId, accessToken } = args;
+
   debugNylas('Creating account for kind: ' + kind);
 
   if (!email || !accessToken) {
@@ -39,17 +47,27 @@ const createAccount = async (kind: string, email: string, accountId: string, acc
 
 /**
  * Create or get nylas customer
- * @param kind
- * @param email
- * @param accountId
- * @param accessToken
+ * @param {String} kind
+ * @param {String} toEmail
+ * @param {Object} from - email, name
+ * @param {Object} integrationIds - id, erxesApiId
+ * @param {Object} message
+ * @returns {Promise} customer object
  */
-const createOrGetNylasCustomer = async args => {
-  const { integrationId, name, email, kind, integrationIdErxesApiId } = args;
+const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
+  const {
+    kind,
+    toEmail,
+    integrationIds,
+    message,
+    from: { email, name },
+  } = args;
+  const { id, erxesApiId } = integrationIds;
 
   debugNylas('Create or get nylas customer function called...');
+  const { Customers } = getNylasModel(kind);
 
-  let customer = await NylasGmailCustomers.findOne({ email });
+  let customer = await Customers.findOne({ email });
 
   if (!customer) {
     const commonValues = {
@@ -60,12 +78,12 @@ const createOrGetNylasCustomer = async args => {
 
     const doc = {
       email,
-      integrationId,
+      integrationId: id,
       ...commonValues,
     };
 
     try {
-      customer = await NylasGmailCustomers.create(doc);
+      customer = await Customers.create(doc);
     } catch (e) {
       checkConcurrentError(e, 'customer');
     }
@@ -73,30 +91,96 @@ const createOrGetNylasCustomer = async args => {
     const params = {
       emails: [email],
       primaryEmail: email,
-      integrationId: integrationIdErxesApiId,
+      integrationId: erxesApiId,
       ...commonValues,
     };
 
     try {
       const response = await requestMainApi(ACTIONS.CUSTOMER, params);
-
       customer.erxesApiId = response._id;
+
       await customer.save();
     } catch (e) {
-      await NylasGmailCustomers.deleteOne({ _id: customer._id });
+      await Customers.deleteOne({ _id: customer._id });
       throw new Error(e);
     }
   }
 
-  return customer;
+  return {
+    kind,
+    emails: {
+      fromEmail: email,
+      toEmail,
+    },
+    integrationIds,
+    subject: message.subject,
+    threadId: message.threadId,
+    customerId: customer.erxesApiId,
+  };
 };
+
+/**
+ * Create or get nylas conversation
+ * @param {String} kind
+ * @param {String} toEmail
+ * @param {String} threadId
+ * @param {String} subject
+ * @param {Object} emails - toEmail, fromEamil
+ * @param {Object} integrationIds - id, erxesApiId
+ * @returns {Promise} conversation object
+ */
+const createOrGetNylasConversation = async (args: INylasConversationArguments) => {
+  const { kind, customerId, subject, threadId, integrationIds, emails } = args;
+  const { toEmail, fromEmail } = emails;
+  const { id, erxesApiId } = integrationIds;
+  const { Conversations } = getNylasModel(kind);
+
+  debugNylas(`Creating nylas conversation kind: ${kind}`);
+
+  // Check reply
+  let conversation = await Conversations.findOne({ threadId });
+
+  if (!conversation) {
+    try {
+      const doc = {
+        to: toEmail,
+        from: fromEmail,
+        integrationId: id,
+      };
+
+      conversation = await Conversations.create(doc);
+    } catch (e) {
+      checkConcurrentError(e, 'conversation');
+    }
+
+    try {
+      const params = {
+        customerId,
+        content: subject,
+        integrationId: erxesApiId,
+      };
+
+      const response = await requestMainApi(ACTIONS.CONVERSATION, params);
+      conversation.erxesApiId = response._id;
+
+      await conversation.save();
+    } catch (e) {
+      await Conversations.deleteOne({ _id: conversation._id });
+      throw new Error(e);
+    }
+  }
+
+  return args;
+};
+
+const createOrGetNylasConversationMessage = async args => {};
 
 /**
  * Send post request to Main API to store
  * @param {String} action
  * @returns {Promise} main api response
  */
-const requestMainApi = (action: string, otherParams: IApiCustomer) => {
+const requestMainApi = (action: string, otherParams: IAPICustomer | IAPIConversation) => {
   return fetchMainApi({
     path: '/integrations-api',
     method: 'POST',
@@ -104,4 +188,4 @@ const requestMainApi = (action: string, otherParams: IApiCustomer) => {
   });
 };
 
-export { createAccount, createOrGetNylasCustomer };
+export { createAccount, createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage };

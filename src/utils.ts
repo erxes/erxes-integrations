@@ -90,3 +90,10 @@ export const getEnv = ({ name, defaultValue }: { name: string; defaultValue?: st
 
   return value || '';
 };
+
+/**
+ * Compose functions
+ * @param {Functions} fns
+ * @returns {Promise} fns value
+ */
+export const compose = (...fns) => arg => fns.reduce((p, f) => p.then(f), Promise.resolve(arg));

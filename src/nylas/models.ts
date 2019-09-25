@@ -62,7 +62,7 @@ export interface INylasConversatonModel extends Model<INylasConversationDocument
 export const nylasGmailConversationSchema = new Schema(conversationCommonSchema);
 
 // tslint:disable-next-line
-export const nylasGmailConversations = model<INylasConversationDocument, INylasConversatonModel>(
+export const NylasGmailConversations = model<INylasConversationDocument, INylasConversatonModel>(
   'conversations_nylas_gmail',
   nylasGmailConversationSchema,
 );

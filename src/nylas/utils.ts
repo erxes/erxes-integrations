@@ -11,6 +11,7 @@ import {
   MICROSOFT_OAUTH_AUTH_URL,
   MICROSOFT_SCOPES,
 } from './constants';
+import { NylasGmailConversations, NylasGmailCustomers } from './models';
 import { IMessageDraft } from './types';
 
 // load config
@@ -77,6 +78,20 @@ const getClientConfig = (kind: string): string[] => {
 };
 
 /**
+ * Get nylas model according to kind
+ * @param {String} kind
+ * @returns {Object} - Models - (gmail, office365, etc)
+ */
+const getNylasModel = (kind: string) => {
+  if (kind === 'gmail') {
+    return {
+      Customers: NylasGmailCustomers,
+      Conversations: NylasGmailConversations,
+    };
+  }
+};
+
+/**
  * Get provider specific values
  * @param {String} kind
  * @returns {Object} configs
@@ -140,7 +155,7 @@ const nylasRequest = args => {
   }
 
   return nylas[parent][child](filter)
-    .then(response => debugNylas(response))
+    .then(response => response)
     .catch(e => debugNylas(e.message));
 };
 
@@ -149,7 +164,7 @@ const nylasRequest = args => {
  * @param {Object} - args
  * @returns {Promise} - sent message
  */
-const nylasSendMessage = (accessToken: string, args: IMessageDraft) => {
+const nylasSendMessage = async (accessToken: string, args: IMessageDraft) => {
   const nylas = setNylasToken(accessToken);
 
   if (!nylas) {
@@ -164,4 +179,12 @@ const nylasSendMessage = (accessToken: string, args: IMessageDraft) => {
     .catch(error => debugNylas(error.message));
 };
 
-export { nylasSendMessage, getProviderSettings, getClientConfig, nylasRequest, checkCredentials, verifyNylasSignature };
+export {
+  getNylasModel,
+  nylasSendMessage,
+  getProviderSettings,
+  getClientConfig,
+  nylasRequest,
+  checkCredentials,
+  verifyNylasSignature,
+};

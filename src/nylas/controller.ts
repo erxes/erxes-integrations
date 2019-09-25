@@ -3,7 +3,6 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendMessage, syncMessages } from './api';
-import { enableOrDisableAccount } from './auth';
 import { getOAuthCredentials, googleToNylasMiddleware } from './loginMiddleware';
 import { createWebhook } from './tracker';
 import { verifyNylasSignature } from './utils';
@@ -57,10 +56,7 @@ const init = async app => {
       erxesApiId: integrationId,
     });
 
-    // Enable nylas account for sync
-    await enableOrDisableAccount(account.uid, true);
-
-    debugNylas(`Successfully created the integration and enabled the nylas account`);
+    debugNylas(`Successfully created the integration`);
 
     return res.json({ status: 'ok' });
   });
