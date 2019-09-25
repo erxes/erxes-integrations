@@ -66,3 +66,78 @@ export const NylasGmailConversations = model<INylasConversationDocument, INylasC
   'conversations_nylas_gmail',
   nylasGmailConversationSchema,
 );
+
+// Conversation message ===========
+interface IEmail {
+  name: string;
+  email: string;
+}
+
+export interface INylasConversationMessage {
+  conversationId: string;
+  customerId: string;
+  erxesApiMessageId: string;
+
+  // Message type
+  messageId: string;
+  subject: string;
+  accountId: string;
+  replyTo: [IEmail];
+  to: [IEmail];
+  from: [IEmail];
+  cc: [IEmail];
+  bcc: [IEmail];
+  date: string;
+  threadId: string;
+  snipped: string;
+  files: any;
+  labels: [
+    {
+      id: string;
+      name: string;
+      displayName: string;
+    }
+  ];
+}
+
+export interface INylasConversationMessageDocument extends INylasConversationMessage, Document {}
+
+const emailSchema = {
+  name: String,
+  email: String,
+};
+
+const conversationMessageCommonSchema = {
+  _id: field({ pkey: true }),
+  conversationId: String,
+  customerId: String,
+  erxesApiMessageId: String,
+  id: String,
+  subject: String,
+  accountId: String,
+  replyTo: [emailSchema],
+  to: [emailSchema],
+  from: [emailSchema],
+  cc: [emailSchema],
+  bcc: [emailSchema],
+  date: String,
+  threadId: String,
+  snipped: String,
+  labels: [
+    {
+      id: String,
+      name: String,
+      displayName: String,
+    },
+  ],
+};
+
+export const nylasConversationMessageSchema = new Schema(conversationMessageCommonSchema);
+
+export interface INylasConversationMessageModel extends Model<INylasConversationMessageDocument> {}
+
+// tslint:disable-next-line
+export const NylasGmailConversationMessages = model<INylasConversationMessageDocument, INylasConversationMessageModel>(
+  'conversation_messages_nylas_gmail',
+  nylasConversationMessageSchema,
+);

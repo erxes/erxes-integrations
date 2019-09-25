@@ -11,7 +11,7 @@ import {
   MICROSOFT_OAUTH_AUTH_URL,
   MICROSOFT_SCOPES,
 } from './constants';
-import { NylasGmailConversations, NylasGmailCustomers } from './models';
+import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './models';
 import { IMessageDraft } from './types';
 
 // load config
@@ -87,6 +87,7 @@ const getNylasModel = (kind: string) => {
     return {
       Customers: NylasGmailCustomers,
       Conversations: NylasGmailConversations,
+      ConversationMessages: NylasGmailConversationMessages,
     };
   }
 };

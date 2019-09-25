@@ -1,3 +1,5 @@
+import { INylasConversationMessage } from './models';
+
 export interface IFilter {
   [key: string]: string;
 }
@@ -46,7 +48,11 @@ export interface IAPIConversation {
   content: string;
 }
 
-export interface IAPIConversationMessage {}
+export interface IAPIConversationMessage {
+  conversationId: string;
+  customerId: string;
+  content: string;
+}
 
 // Store =======================
 export interface INylasAccountArguments {
@@ -75,6 +81,7 @@ export interface INylasConversationArguments {
   customerId: string;
   subject: string;
   threadId: string;
+  message: INylasConversationMessage;
   emails: {
     toEmail: string;
     fromEmail: string;
@@ -85,4 +92,12 @@ export interface INylasConversationArguments {
   };
 }
 
-export interface INylasConversationMessageArguments {}
+export interface INylasConversationMessageArguments {
+  kind: string;
+  customerId: string;
+  conversationIds: {
+    id: string;
+    erxesApiId: string;
+  };
+  message: INylasConversationMessage & { id: string };
+}

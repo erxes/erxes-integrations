@@ -125,8 +125,15 @@ const officeMiddleware = async (req, res) => {
 
   const { account_id, access_token } = await integrateProviderToNylas('email', 'outlook', settings);
 
+  const doc = {
+    kind: 'office365',
+    email: 'user@mail.com',
+    accountId: account_id,
+    accessToken: access_token,
+  };
+
   try {
-    await createAccount('outlook', 'email@mail.com', account_id, access_token);
+    await createAccount(doc);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.message);
@@ -153,8 +160,15 @@ const googleToNylasMiddleware = async (req, res) => {
 
   const { access_token, account_id } = await integrateProviderToNylas(email, 'gmail', settings);
 
+  const doc = {
+    email,
+    kind: 'gmail',
+    accountId: account_id,
+    accessToken: access_token,
+  };
+
   try {
-    await createAccount('gmail', email, account_id, access_token);
+    await createAccount(doc);
     return res.redirect(AUTHORIZED_REDIRECT_URL);
   } catch (e) {
     throw new Error(e.mesasge);

@@ -5,9 +5,11 @@ import { checkConcurrentError } from '../utils';
 import { ACTIONS } from './constants';
 import {
   IAPIConversation,
+  IAPIConversationMessage,
   IAPICustomer,
   INylasAccountArguments,
   INylasConversationArguments,
+  INylasConversationMessageArguments,
   INylasCustomerArguments,
 } from './types';
 import { getNylasModel } from './utils';
@@ -108,6 +110,7 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
 
   return {
     kind,
+    message,
     emails: {
       fromEmail: email,
       toEmail,
@@ -130,7 +133,7 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
  * @returns {Promise} conversation object
  */
 const createOrGetNylasConversation = async (args: INylasConversationArguments) => {
-  const { kind, customerId, subject, threadId, integrationIds, emails } = args;
+  const { kind, customerId, subject, threadId, integrationIds, emails, message } = args;
   const { toEmail, fromEmail } = emails;
   const { id, erxesApiId } = integrationIds;
   const { Conversations } = getNylasModel(kind);
@@ -170,21 +173,82 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
     }
   }
 
-  return args;
+  return {
+    kind,
+    message,
+    customerId,
+    conversationIds: {
+      id: conversation._id,
+      erxesApiId: conversation.erxesApiId,
+    },
+  };
 };
 
-const createOrGetNylasConversationMessage = async args => {};
+/**
+ * Create or get nylas conversation message
+ * @param {String} kind
+ * @param {Object} conversationIds - id, erxesApiId
+ * @param {Object} message
+ * @param {String} customerId
+ * @returns {Promise} - conversationMessage object
+ */
+const createOrGetNylasConversationMessage = async (args: INylasConversationMessageArguments) => {
+  const { kind, conversationIds, message, customerId } = args;
+  const { id, erxesApiId } = conversationIds;
+
+  debugNylas(`Creating nylas conversation message kind: ${kind}`);
+
+  const { ConversationMessages } = getNylasModel(kind);
+
+  let conversationMessage = await ConversationMessages.findOne({ messageId: message.id });
+
+  if (!conversationMessage) {
+    const doc = {
+      conversationId: id,
+      customerId,
+      ...message,
+    };
+
+    try {
+      conversationMessage = await ConversationMessages.create(doc);
+    } catch (e) {
+      checkConcurrentError(e, 'conversation message');
+    }
+
+    const params = {
+      customerId,
+      content: message.subject,
+      conversationId: erxesApiId,
+    };
+
+    try {
+      const response = await requestMainApi(ACTIONS.CONVERSATION_MESSAGE, params, 'replaceContent');
+
+      conversationMessage.erxesApiMessageId = response._id;
+      conversationMessage.save();
+    } catch (e) {
+      await ConversationMessages.deleteOne({ messageId: message.id });
+      throw new Error(e);
+    }
+  }
+
+  return conversationMessage;
+};
 
 /**
  * Send post request to Main API to store
  * @param {String} action
  * @returns {Promise} main api response
  */
-const requestMainApi = (action: string, otherParams: IAPICustomer | IAPIConversation) => {
+const requestMainApi = (
+  action: string,
+  otherParams: IAPICustomer | IAPIConversation | IAPIConversationMessage,
+  metaInfo?: string,
+) => {
   return fetchMainApi({
     path: '/integrations-api',
     method: 'POST',
-    body: { action, ...otherParams },
+    body: { action, metaInfo, ...otherParams },
   });
 };
 

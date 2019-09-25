@@ -1,8 +1,12 @@
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
-import { compose as composeNylasStore, sendRequest } from '../utils';
+import { compose, sendRequest } from '../utils';
 import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
-import { createOrGetNylasConversation, createOrGetNylasConversationMessage, createOrGetNylasCustomer } from './store';
+import {
+  createOrGetNylasConversation as storeConversation,
+  createOrGetNylasConversationMessage as storeMessage,
+  createOrGetNylasCustomer as storeCustomer,
+} from './store';
 import { IFilter, IMessageDraft } from './types';
 import { nylasRequest, nylasSendMessage } from './utils';
 
@@ -103,9 +107,11 @@ const syncMessages = async (accountId: string, messageId: string) => {
   };
 
   // Store new received message ========
-  return composeNylasStore(createOrGetNylasConversationMessage, createOrGetNylasConversation, createOrGetNylasCustomer)(
-    doc,
-  );
+  return compose(
+    storeMessage,
+    storeConversation,
+    storeCustomer,
+  )(doc);
 };
 
 export { syncMessages, sendMessage, recentMessages, getMessageById, getMessages, getEmailFromAccessToken };
