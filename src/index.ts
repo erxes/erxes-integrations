@@ -1,6 +1,7 @@
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
+import * as Smooch from 'smooch-core';
 
 // load environment variables
 dotenv.config();
@@ -14,6 +15,7 @@ import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
 import { init } from './startup';
+import { initSmooch } from './smooch/controller';
 
 connect();
 
@@ -28,6 +30,47 @@ const rawBodySaver = (req, _res, buf, encoding) => {
     }
   }
 };
+
+export const smooch = new Smooch({
+  keyId: 'act_5d8b0497090420001030c1b0',
+  secret: 'pl0reHtNO7cz7dhKAxbOAAu1Zkz1EivhxAuNOOlqKWpxh4vgHqyuyQaH6bZLRPwMrDuO6HMQZWsv44OrEbocEw',
+  scope: 'account',
+});
+
+// smooch.apps
+//   .create({
+//     name: 'Smooch Demo',
+//   })
+//   .then(response => {
+//     console.log('App ID: ' + response.app._id);
+//   });
+
+// smooch.integrations
+//   .create('5d8b050bd9f23100103d42aa', {
+//     type: 'web',
+//     businessName: 'Smooch Interactive Walkthrough',
+//     brandColor: '00ff00',
+//   })
+//   .then(response => {
+//     console.log('integration ID: ' + response.integration._id);
+//     // 5d8b055ca1193600109ae8f6
+//   });
+
+// smooch.webhooks
+//   .create('5d8b050bd9f23100103d42aa', {
+//     target: 'http://932eaac1.ngrok.io/webhook',
+//     triggers: ['message:appUser'],
+//   })
+//   .then(response => {
+//     // 5d8b06c283e0830010e7d364
+//     console.log('Created a webhook with ID: ' + response.webhook._id);
+//   });
+
+// smooch.appUsers.sendMessage('5d8b050bd9f23100103d42aa', '25594dfd8ced8c9e87bd45e6', {
+//   text: 'Hello from the other side',
+//   role: 'appMaker',
+//   type: 'text',
+// });
 
 app.use(bodyParser.urlencoded({ verify: rawBodySaver, extended: true }));
 app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
@@ -84,6 +127,9 @@ initGmail(app);
 
 // init callpro
 initCallPro(app);
+
+// init smooch
+initSmooch(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
