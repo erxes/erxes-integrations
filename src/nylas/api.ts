@@ -1,5 +1,5 @@
 import { debugNylas } from '../debuggers';
-import { Accounts } from '../models';
+import { Accounts, Integrations } from '../models';
 import { compose, sendRequest } from '../utils';
 import { GOOGLE_OAUTH_TOKEN_VALIDATION_URL } from './constants';
 import {
@@ -89,17 +89,23 @@ const syncMessages = async (accountId: string, messageId: string) => {
     return debugNylas('Account not found with uid: ', accountId);
   }
 
-  const { token, email, kind } = account;
+  const integration = await Integrations.findOne({ accountId: account._id });
 
-  const message = await getMessageById(token, messageId);
+  if (!integration) {
+    return debugNylas('Integration not found with accountId: ', account._id);
+  }
+
+  const { nylasToken, email, kind } = account;
+
+  const message = await getMessageById(nylasToken, messageId);
 
   const doc = {
     kind,
-    message,
+    message: JSON.parse(message),
     toEmail: email,
     integrationIds: {
-      id: 'integrationId',
-      erxesApiId: 'erxesApiId',
+      id: integration._id,
+      erxesApiId: integration.erxesApiId,
     },
   };
 

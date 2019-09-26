@@ -55,7 +55,11 @@ app.post('/integrations/remove', async (req, res) => {
 app.get('/accounts', async (req, res) => {
   debugRequest(debugIntegrations, req);
 
-  const accounts = await Accounts.find({ kind: req.query.kind });
+  const { kind, platform } = req.query;
+
+  const selector = { kind, ...(platform ? { platform } : {}) };
+
+  const accounts = await Accounts.find(selector);
 
   debugResponse(debugIntegrations, req, JSON.stringify(accounts));
 

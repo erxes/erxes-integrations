@@ -89,7 +89,8 @@ export interface INylasConversationMessage {
   bcc: [IEmail];
   date: string;
   threadId: string;
-  snipped: string;
+  snippet: string;
+  body: string;
   files: any;
   labels: [
     {
@@ -123,13 +124,16 @@ const conversationMessageCommonSchema = {
   date: String,
   threadId: String,
   snipped: String,
-  labels: [
-    {
-      id: String,
-      name: String,
-      displayName: String,
-    },
-  ],
+  labels: {
+    _id: false,
+    type: [
+      {
+        id: String,
+        name: String,
+        displayName: String,
+      },
+    ],
+  },
 };
 
 export const nylasConversationMessageSchema = new Schema(conversationMessageCommonSchema);

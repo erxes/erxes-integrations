@@ -71,7 +71,7 @@ const setNylasToken = (accessToken: string) => {
 const getClientConfig = (kind: string): string[] => {
   const providers = {
     gmail: [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })],
-    outlook: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
+    office365: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
   };
 
   return providers[kind];
@@ -109,7 +109,7 @@ const getProviderSettings = (kind: string) => {
     },
   };
 
-  const outlook = {
+  const office365 = {
     params: {
       scope: MICROSOFT_SCOPES,
     },
@@ -123,7 +123,7 @@ const getProviderSettings = (kind: string) => {
     },
   };
 
-  const providers = { gmail, outlook };
+  const providers = { gmail, office365 };
 
   return providers[kind];
 };

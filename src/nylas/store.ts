@@ -198,9 +198,24 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
 
   if (!conversationMessage) {
     const doc = {
-      conversationId: id,
       customerId,
-      ...message,
+      conversationId: id,
+
+      // message
+      messageId: message.id,
+      accountId: message.accountId,
+      threadId: message.threadId,
+      subject: message.subject,
+      from: message.from,
+      to: message.to,
+      replyTo: message.replyTo,
+      cc: message.cc,
+      bcc: message.bcc,
+      date: message.date,
+      snipped: message.snippet,
+      body: message.body,
+      files: message.files,
+      labels: message.labels,
     };
 
     try {
@@ -236,13 +251,17 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
  */
 const requestMainApi = (
   action: string,
-  otherParams: IAPICustomer | IAPIConversation | IAPIConversationMessage,
+  params: IAPICustomer | IAPIConversation | IAPIConversationMessage,
   metaInfo?: string,
 ) => {
   return fetchMainApi({
     path: '/integrations-api',
     method: 'POST',
-    body: { action, metaInfo, ...otherParams },
+    body: {
+      action,
+      metaInfo,
+      payload: JSON.stringify(params),
+    },
   });
 };
 

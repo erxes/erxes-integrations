@@ -1,9 +1,11 @@
 import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
+import Accounts, { IAccount } from '../models/Accounts';
 import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { IProviderSettings } from './types';
+import { getClientConfig } from './utils';
 
 // loading config
 dotenv.config();
@@ -11,20 +13,48 @@ dotenv.config();
 const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
 /**
+ * Connect google to nylas with token
+ * @param {String} kind
+ * @param {Object} account
+ */
+const connectGoogleToNylas = async (kind: string, account: IAccount & { _id: string }) => {
+  const [clientId, clientSecret] = getClientConfig(kind);
+
+  const { email, tokenSecret } = account;
+
+  const settings = {
+    google_refresh_token: tokenSecret,
+    google_client_id: clientId,
+    google_client_secret: clientSecret,
+  };
+
+  const { access_token, account_id } = await integrateProviderToNylas(email, kind, settings);
+
+  try {
+    await Accounts.updateOne(
+      { _id: account._id },
+      {
+        $set: {
+          uid: account_id,
+          nylasToken: access_token,
+        },
+      },
+    );
+  } catch (e) {
+    throw new Error(e.mesasge);
+  }
+};
+
+/**
  * Connect specified provider
  * and get nylas accessToken
  * @param {String} email
- * @param {String} provider
+ * @param {String} kind
  * @param {Object} settings
  */
-const integrateProviderToNylas = async (
-  email: string,
-  provider: string,
-  settings: IProviderSettings,
-  scope?: string,
-) => {
+const integrateProviderToNylas = async (email: string, kind: string, settings: IProviderSettings, scope?: string) => {
   const code = await getNylasCode({
-    provider,
+    provider: kind,
     settings,
     name: 'erxes',
     email_address: email,
@@ -81,4 +111,4 @@ const getNylasAccessToken = async data => {
   });
 };
 
-export { enableOrDisableAccount, integrateProviderToNylas };
+export { enableOrDisableAccount, integrateProviderToNylas, connectGoogleToNylas };

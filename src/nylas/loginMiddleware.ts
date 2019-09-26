@@ -55,7 +55,17 @@ const loginMiddleware = (req, res) => {
 
 // Provider specific OAuth2 ===========================
 const getOAuthCredentials = async (req, res, next) => {
-  const kind = 'gmail';
+  debugRequest(debugNylas, req);
+
+  let { kind, platform } = req.query;
+
+  if (kind && platform) {
+    req.session.kind = kind;
+    req.session.platform = platform;
+  } else {
+    kind = req.session.kind;
+    platform = req.session.platform;
+  }
 
   if (!checkCredentials()) {
     return next('Nylas not configured, check your env');
@@ -104,10 +114,19 @@ const getOAuthCredentials = async (req, res, next) => {
     ...requestParams,
   });
 
-  req.session[kind + '_access_token'] = access_token;
-  req.session[kind + '_refresh_token'] = refresh_token;
+  const email = await getEmailFromAccessToken(access_token);
 
-  res.redirect(`/nylas/${kind}/connect`);
+  await Accounts.create({
+    email,
+    kind,
+    platform,
+    name: email,
+    token: access_token,
+    tokenSecret: refresh_token,
+    scope: params.scope,
+  });
+
+  res.redirect(AUTHORIZED_REDIRECT_URL);
 };
 
 // Office 365 ===========================
@@ -140,39 +159,4 @@ const officeMiddleware = async (req, res) => {
   }
 };
 
-// Google =================
-const googleToNylasMiddleware = async (req, res) => {
-  const [clientId, clientSecret] = getClientConfig('gmail');
-
-  const { gmail_access_token, gmail_refresh_token } = req.session;
-
-  if (!gmail_access_token) {
-    res.redirect('/nylas/oauth2/callback');
-  }
-
-  const email = await getEmailFromAccessToken(gmail_access_token);
-
-  const settings = {
-    google_refresh_token: gmail_refresh_token,
-    google_client_id: clientId,
-    google_client_secret: clientSecret,
-  };
-
-  const { access_token, account_id } = await integrateProviderToNylas(email, 'gmail', settings);
-
-  const doc = {
-    email,
-    kind: 'gmail',
-    accountId: account_id,
-    accessToken: access_token,
-  };
-
-  try {
-    await createAccount(doc);
-    return res.redirect(AUTHORIZED_REDIRECT_URL);
-  } catch (e) {
-    throw new Error(e.mesasge);
-  }
-};
-
-export { loginMiddleware, getOAuthCredentials, officeMiddleware, googleToNylasMiddleware };
+export { loginMiddleware, getOAuthCredentials, officeMiddleware };

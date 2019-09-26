@@ -3,7 +3,10 @@ import { field } from './utils';
 
 export interface IAccount {
   kind: string;
+  platform: string;
   email: string;
+  nylasToken: string;
+  nylasTokenSecret: string;
   token: string;
   tokenSecret?: string;
   expireDate?: string;
@@ -19,8 +22,18 @@ export const accountSchema = new Schema({
   kind: {
     type: String,
   },
+  platform: {
+    type: String,
+  },
   email: {
     type: String,
+  },
+  nylasToken: {
+    type: String,
+  },
+  nylasTokenSecret: {
+    type: String,
+    optional: true,
   },
   token: {
     type: String,

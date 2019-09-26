@@ -3,16 +3,16 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendMessage, syncMessages } from './api';
-import { getOAuthCredentials, googleToNylasMiddleware } from './loginMiddleware';
+import { connectGoogleToNylas } from './auth';
+import { getOAuthCredentials } from './loginMiddleware';
 import { createWebhook } from './tracker';
-import { verifyNylasSignature } from './utils';
+import { getNylasModel, verifyNylasSignature } from './utils';
 
 // load config
 dotenv.config();
 
 const init = async app => {
   app.get('/nylas/oauth2/callback', getOAuthCredentials);
-  app.get('/nylas/gmail/connect', googleToNylasMiddleware);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook
@@ -52,13 +52,51 @@ const init = async app => {
     await Integrations.create({
       kind,
       accountId,
+      platform: 'nylas',
       email: account.email,
       erxesApiId: integrationId,
     });
 
-    debugNylas(`Successfully created the integration`);
+    if (kind === 'gmail') {
+      await connectGoogleToNylas(kind, account);
+    }
+
+    debugNylas(`Successfully created the integration and connected to nylas`);
 
     return res.json({ status: 'ok' });
+  });
+
+  app.get('/nylas/get-message', async (req, res, next) => {
+    const { erxesApiMessageId, integrationId } = req.query;
+
+    debugNylas('Get message with erxesApiId: ', erxesApiMessageId);
+
+    if (!erxesApiMessageId) {
+      return next();
+    }
+
+    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+
+    if (!integration) {
+      debugNylas('Integration not found');
+      return next();
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    const { ConversationMessages } = getNylasModel(account.kind);
+
+    const message = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
+
+    if (!message) {
+      debugNylas('Conversation message not found');
+      return next();
+    }
+
+    // attach account email for dinstinguish sender
+    message.integrationEmail = account.uid;
+
+    return res.json(message);
   });
 
   app.get('/nylas/send', async (_req, res) => {
