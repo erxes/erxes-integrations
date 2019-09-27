@@ -20,6 +20,21 @@ export interface IMessageDraft {
   body?: string;
 }
 
+export interface IGetOrCreateArguments {
+  selector: { [key: string]: string };
+  apiField: string;
+  name: string;
+  metaInfo?: string;
+  fields: any;
+}
+
+export interface IIntegrateProvider {
+  email: string;
+  kind: string;
+  settings: IProviderSettings;
+  scope?: string;
+}
+
 export interface IProviderSettings {
   microsoft_client_id?: string;
   microsoft_client_secret?: string;

@@ -7,9 +7,9 @@ const { MAIN_APP_DOMAIN, MICROSOFT_TENANT_ID } = process.env;
 
 // Integration action
 export const ACTIONS = {
-  CUSTOMER: 'create-or-update-customer',
-  CONVERSATION: 'create-or-update-conversation',
-  CONVERSATION_MESSAGE: 'create-conversation-message',
+  customer: 'create-or-update-customer',
+  conversation: 'create-or-update-conversation',
+  conversation_message: 'create-conversation-message',
 };
 
 // Google

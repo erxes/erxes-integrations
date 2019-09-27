@@ -7,6 +7,7 @@ import {
   IAPIConversation,
   IAPIConversationMessage,
   IAPICustomer,
+  IGetOrCreateArguments,
   INylasAccountArguments,
   INylasConversationArguments,
   INylasConversationMessageArguments,
@@ -63,46 +64,33 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
   const [{ email, name }] = message.from;
 
   debugNylas('Create or get nylas customer function called...');
+
   const { Customers } = getNylasModel(kind);
 
-  let customer = await Customers.findOne({ email });
+  const common = { kind, firstName: name, lastName: '' };
 
-  if (!customer) {
-    const commonValues = {
-      firstName: name,
-      lastName: '',
-      kind,
-    };
+  const doc = {
+    email,
+    integrationId: id,
+    ...common,
+  };
 
-    const doc = {
-      email,
-      integrationId: id,
-      ...commonValues,
-    };
+  // fields to save on api
+  const api = {
+    emails: [email],
+    primaryEmail: email,
+    integrationId: erxesApiId,
+    ...common,
+  };
 
-    try {
-      customer = await Customers.create(doc);
-    } catch (e) {
-      checkConcurrentError(e, 'customer');
-    }
+  const params = {
+    name: 'customer',
+    apiField: 'erxesApiId',
+    selector: { email },
+    fields: { doc, api },
+  };
 
-    const params = {
-      emails: [email],
-      primaryEmail: email,
-      integrationId: erxesApiId,
-      ...commonValues,
-    };
-
-    try {
-      const response = await requestMainApi(ACTIONS.CUSTOMER, params);
-      customer.erxesApiId = response._id;
-
-      await customer.save();
-    } catch (e) {
-      await Customers.deleteOne({ _id: customer._id });
-      throw new Error(e);
-    }
-  }
+  const customer = await getOrCreate(Customers, params);
 
   return {
     kind,
@@ -134,38 +122,27 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
 
   debugNylas(`Creating nylas conversation kind: ${kind}`);
 
-  // Check reply
-  let conversation = await Conversations.findOne({ threadId: message.threadId });
+  const doc = {
+    to: toEmail,
+    from: fromEmail,
+    integrationId: id,
+  };
 
-  if (!conversation) {
-    try {
-      const doc = {
-        to: toEmail,
-        from: fromEmail,
-        integrationId: id,
-      };
+  // fields to save on api
+  const api = {
+    customerId,
+    content: message.subject,
+    integrationId: erxesApiId,
+  };
 
-      conversation = await Conversations.create(doc);
-    } catch (e) {
-      checkConcurrentError(e, 'conversation');
-    }
+  const params = {
+    name: 'conversation',
+    apiField: 'erxesApiId',
+    fields: { doc, api },
+    selector: { threadId: message.threadId },
+  };
 
-    try {
-      const params = {
-        customerId,
-        content: message.subject,
-        integrationId: erxesApiId,
-      };
-
-      const response = await requestMainApi(ACTIONS.CONVERSATION, params);
-      conversation.erxesApiId = response._id;
-
-      await conversation.save();
-    } catch (e) {
-      await Conversations.deleteOne({ _id: conversation._id });
-      throw new Error(e);
-    }
-  }
+  const conversation = await getOrCreate(Conversations, params);
 
   return {
     kind,
@@ -194,54 +171,78 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
 
   const { ConversationMessages } = getNylasModel(kind);
 
-  let conversationMessage = await ConversationMessages.findOne({ messageId: message.id });
+  const doc = {
+    customerId,
+    conversationId: id,
 
-  if (!conversationMessage) {
-    const doc = {
-      customerId,
-      conversationId: id,
+    // message
+    messageId: message.id,
+    accountId: message.accountId,
+    threadId: message.threadId,
+    subject: message.subject,
+    from: message.from,
+    to: message.to,
+    replyTo: message.replyTo,
+    cc: message.cc,
+    bcc: message.bcc,
+    date: message.date,
+    snipped: message.snippet,
+    body: message.body,
+    files: message.files,
+    labels: message.labels,
+  };
 
-      // message
-      messageId: message.id,
-      accountId: message.accountId,
-      threadId: message.threadId,
-      subject: message.subject,
-      from: message.from,
-      to: message.to,
-      replyTo: message.replyTo,
-      cc: message.cc,
-      bcc: message.bcc,
-      date: message.date,
-      snipped: message.snippet,
-      body: message.body,
-      files: message.files,
-      labels: message.labels,
-    };
+  // fields to save on api
+  const api = {
+    customerId,
+    content: message.subject,
+    conversationId: erxesApiId,
+  };
 
+  const params = {
+    name: 'conversationMessage',
+    selector: { messageId: message.id },
+    apiField: 'erxesApiMessageId',
+    fields: { doc, api },
+    metaInfo: 'replaceContent',
+  };
+
+  const conversationMessage = await getOrCreate(ConversationMessages, params);
+
+  return conversationMessage;
+};
+
+/**
+ * Get or create selector model
+ * @param {Model} model - Customer, Conversation, ConversationMessage
+ * @param {Object} args - doc, selector, apiField, name
+ * @param {Promise} selected model
+ */
+const getOrCreate = async (model, args: IGetOrCreateArguments) => {
+  const { selector, fields, apiField, name, metaInfo } = args;
+
+  let selectedModel = await model.findOne(selector);
+
+  if (!selectedModel) {
     try {
-      conversationMessage = await ConversationMessages.create(doc);
+      selectedModel = await model.create(fields.doc);
     } catch (e) {
-      checkConcurrentError(e, 'conversation message');
+      checkConcurrentError(e, name);
     }
 
-    const params = {
-      customerId,
-      content: message.subject,
-      conversationId: erxesApiId,
-    };
-
     try {
-      const response = await requestMainApi(ACTIONS.CONVERSATION_MESSAGE, params, 'replaceContent');
+      const response = await requestMainApi(ACTIONS[name], fields.api, metaInfo);
 
-      conversationMessage.erxesApiMessageId = response._id;
-      conversationMessage.save();
+      selectedModel[apiField] = response._id;
+
+      await selectedModel.save();
     } catch (e) {
-      await ConversationMessages.deleteOne({ messageId: message.id });
+      await model.deleteOne({ _id: selectedModel._id });
       throw new Error(e);
     }
   }
 
-  return conversationMessage;
+  return selectedModel;
 };
 
 /**

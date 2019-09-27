@@ -4,7 +4,7 @@ import { debugNylas } from '../debuggers';
 import Accounts, { IAccount } from '../models/Accounts';
 import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
-import { IProviderSettings } from './types';
+import { IIntegrateProvider } from './types';
 import { getClientConfig } from './utils';
 
 // loading config
@@ -28,18 +28,15 @@ const connectGoogleToNylas = async (kind: string, account: IAccount & { _id: str
     google_client_secret: clientSecret,
   };
 
-  const { access_token, account_id } = await integrateProviderToNylas(email, kind, settings);
+  const params = { email, kind, settings };
+
+  const { access_token, account_id } = await integrateProviderToNylas(params);
+
+  const selector = { _id: account._id };
+  const updateFields = { $set: { uid: account_id, nylasToken: access_token } };
 
   try {
-    await Accounts.updateOne(
-      { _id: account._id },
-      {
-        $set: {
-          uid: account_id,
-          nylasToken: access_token,
-        },
-      },
-    );
+    await Accounts.updateOne(selector, updateFields);
   } catch (e) {
     throw new Error(e.mesasge);
   }
@@ -52,7 +49,9 @@ const connectGoogleToNylas = async (kind: string, account: IAccount & { _id: str
  * @param {String} kind
  * @param {Object} settings
  */
-const integrateProviderToNylas = async (email: string, kind: string, settings: IProviderSettings, scope?: string) => {
+const integrateProviderToNylas = async (args: IIntegrateProvider) => {
+  const { email, kind, settings, scope } = args;
+
   const code = await getNylasCode({
     provider: kind,
     settings,
