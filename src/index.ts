@@ -1,10 +1,8 @@
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
-
-// load environment variables
-dotenv.config();
-
+import * as session from 'express-session';
+import * as passport from 'passport';
 import initCallPro from './callpro/controller';
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
@@ -14,6 +12,11 @@ import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
 import { init } from './startup';
+import initTwitter from './twitter/controller';
+import initPassport from './twitter/passportMiddleware';
+
+// load environment variables
+dotenv.config();
 
 connect();
 
@@ -32,6 +35,18 @@ const rawBodySaver = (req, _res, buf, encoding) => {
 app.use(bodyParser.urlencoded({ verify: rawBodySaver, extended: true }));
 app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 app.use(bodyParser.raw({ verify: rawBodySaver, type: '*/*' }));
+app.use(passport.initialize());
+app.set('trust proxy', 1);
+app.use(
+  session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    sameSite: false,
+  }),
+);
+
+app.use(passport.session());
 
 app.post('/integrations/remove', async (req, res) => {
   debugRequest(debugIntegrations, req);
@@ -84,6 +99,12 @@ initGmail(app);
 
 // init callpro
 initCallPro(app);
+
+// initPassport
+initPassport(passport);
+
+// init twitter
+initTwitter(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
