@@ -1,12 +1,11 @@
 import * as dotenv from 'dotenv';
-import * as Nylas from 'nylas';
 import * as querystring from 'querystring';
-import { debugNylas, debugRequest, debugResponse } from '../debuggers';
+import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
 import { integrateProviderToNylas } from './auth';
-import { AUTHORIZED_REDIRECT_URL, EMAIL_SCOPES } from './constants';
+import { AUTHORIZED_REDIRECT_URL } from './constants';
 import { createAccount } from './store';
 import { checkCredentials, getClientConfig, getProviderSettings } from './utils';
 
@@ -14,44 +13,6 @@ import { checkCredentials, getClientConfig, getProviderSettings } from './utils'
 dotenv.config();
 
 const { DOMAIN } = process.env;
-
-// Hosted authentication
-const loginMiddleware = (req, res) => {
-  if (!checkCredentials()) {
-    debugNylas('Nylas not configured, check your env');
-
-    return res.send('not configured');
-  }
-
-  debugRequest(debugNylas, req);
-
-  // Request to get code and redirect to oauth dialog
-  if (!req.query.code) {
-    if (!req.query.error) {
-      const options = {
-        redirectURI: `${DOMAIN}/nylaslogin`,
-        scopes: EMAIL_SCOPES,
-      };
-
-      return res.redirect(Nylas.urlForAuthentication(options));
-    } else {
-      debugResponse(debugNylas, req, 'access denied');
-      return res.send('access denied');
-    }
-  }
-
-  return Nylas.exchangeCodeForToken(req.query.code).then(async token => {
-    const account = await Accounts.findOne({ token });
-
-    if (account) {
-      await Accounts.updateOne({ _id: account._id }, { $set: { token } });
-    } else {
-      await Accounts.create({ kind: 'nylas', token });
-    }
-
-    return res.redirect(AUTHORIZED_REDIRECT_URL);
-  });
-};
 
 // Provider specific OAuth2 ===========================
 const getOAuthCredentials = async (req, res, next) => {
@@ -165,4 +126,4 @@ const officeMiddleware = async (req, res) => {
   }
 };
 
-export { loginMiddleware, getOAuthCredentials, officeMiddleware };
+export { getOAuthCredentials, officeMiddleware };
