@@ -50,6 +50,7 @@
     "migrate": "^1.6.2",
     "mongoose": "^5.2.16",
     "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "requestify": "^0.2.5",
     "smooch-core": "^8.7.3"
   },

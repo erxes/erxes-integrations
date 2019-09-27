@@ -3,6 +3,8 @@ import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as Smooch from 'smooch-core';
 
+// import * as request from 'request-promise';
+
 // load environment variables
 dotenv.config();
 
@@ -15,7 +17,6 @@ import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
 import { init } from './startup';
-import { initSmooch } from './smooch/controller';
 
 connect();
 
@@ -119,6 +120,12 @@ app.post('/accounts/remove', async (req, res) => {
   return res.json({ status: 'removed' });
 });
 
+app.post('/twitter/receive', async (req, res) => {
+  console.log('twitter received', req.body);
+
+  return res.sendStatus(200);
+});
+
 // init bots
 initFacebook(app);
 
@@ -129,7 +136,7 @@ initGmail(app);
 initCallPro(app);
 
 // init smooch
-initSmooch(app);
+// initSmooch(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
@@ -139,8 +146,26 @@ app.use((error, _req, res, _next) => {
 
 const { PORT } = process.env;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   debugInit(`Integrations server is running on port ${PORT}`);
+
+  // const requestOptions = {
+  //   url: 'https://api.twitter.com/1.1/account_activity/all/dev/webhooks.json',
+  //   oauth: {
+  //     consumer_key: 'uwK9ETFkNPNB0BB6MstXC16WG',
+  //     constumer_secret: 'fhl9Y8fxe7ums7htSm795w8bMXijP4I5ukLDaaf4W1TFyVGXEp',
+  //     token: '1066992164423397377-OL1CiA0VzZRsOTkbpG9U3wDtsQFeLZ',
+  //     token_secret: '8QjThx0qcHCrgObWKdon9iwpZx7yNkuZPf4WevdUmiTE3',
+  //   },
+  //   headers: {
+  //     'Content-type': 'application/x-www-form-urlencoded',
+  //   },
+  //   form: {
+  //     url: `https://c696ceb8.ngrok.io/twitter/receive`,
+  //   },
+  // };
+
+  // await request.post(requestOptions);
 
   // Initialize startup
   init();
