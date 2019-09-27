@@ -35,6 +35,7 @@ export const NylasGmailCustomers = model<INylasCustomerDocument, INylasCustomerM
 export interface INylasConversation {
   to: string;
   from: string;
+  threadId: string;
   content: string;
   customerId: string;
   erxesApiId: string;
@@ -50,6 +51,7 @@ const conversationCommonSchema = {
   _id: field({ pkey: true }),
   to: { type: String, index: true },
   from: { type: String, index: true },
+  threadId: { type: String, index: true },
   content: String,
   customerId: String,
   erxesApiId: String,
@@ -81,14 +83,14 @@ export interface INylasConversationMessage {
   // Message type
   messageId: string;
   subject: string;
-  accountId: string;
+  account_id: string;
   replyTo: [IEmail];
   to: [IEmail];
   from: [IEmail];
   cc: [IEmail];
   bcc: [IEmail];
   date: string;
-  threadId: string;
+  thread_id: string;
   snippet: string;
   body: string;
   files: any;
@@ -104,6 +106,7 @@ export interface INylasConversationMessage {
 export interface INylasConversationMessageDocument extends INylasConversationMessage, Document {}
 
 const emailSchema = {
+  _id: false,
   name: String,
   email: String,
 };

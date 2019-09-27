@@ -126,6 +126,7 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
     to: toEmail,
     from: fromEmail,
     integrationId: id,
+    threadId: message.thread_id,
   };
 
   // fields to save on api
@@ -139,7 +140,7 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
     name: 'conversation',
     apiField: 'erxesApiId',
     fields: { doc, api },
-    selector: { threadId: message.threadId },
+    selector: { threadId: message.thread_id },
   };
 
   const conversation = await getOrCreate(Conversations, params);
@@ -177,8 +178,8 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
 
     // message
     messageId: message.id,
-    accountId: message.accountId,
-    threadId: message.threadId,
+    accountId: message.account_id,
+    threadId: message.thread_id,
     subject: message.subject,
     from: message.from,
     to: message.to,
@@ -213,7 +214,7 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
 };
 
 /**
- * Get or create selector model
+ * Get or create selected model
  * @param {Model} model - Customer, Conversation, ConversationMessage
  * @param {Object} args - doc, selector, apiField, name
  * @param {Promise} selected model

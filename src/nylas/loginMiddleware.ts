@@ -142,7 +142,13 @@ const officeMiddleware = async (req, res) => {
     redirect_uri: `${DOMAIN}/nylas/oauth2/callback`,
   };
 
-  const { account_id, access_token } = await integrateProviderToNylas('email', 'outlook', settings);
+  const params = {
+    email: 'email',
+    kind: 'office365',
+    settings,
+  };
+
+  const { account_id, access_token } = await integrateProviderToNylas(params);
 
   const doc = {
     kind: 'office365',

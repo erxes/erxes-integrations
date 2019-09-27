@@ -69,7 +69,7 @@ const integrateProviderToNylas = async (args: IIntegrateProvider) => {
 };
 
 /**
- * Toggle nylas account
+ * Enable or Disable nylas account billing state
  * @param {String} accountId
  * @param {Boolean} enable
  */

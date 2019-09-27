@@ -9,7 +9,7 @@ const { MAIN_APP_DOMAIN, MICROSOFT_TENANT_ID } = process.env;
 export const ACTIONS = {
   customer: 'create-or-update-customer',
   conversation: 'create-or-update-conversation',
-  conversation_message: 'create-conversation-message',
+  conversationMessage: 'create-conversation-message',
 };
 
 // Google
@@ -22,7 +22,7 @@ export const NYLAS_API_URL = 'https://api.nylas.com';
 export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations?authenticated=true`;
 export const CONNECT_AUTHORIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
-export const WEBHOOK_CALLBACK_URL = 'https://e01d4193.ngrok.io/nylas/webhook';
+export const WEBHOOK_CALLBACK_URL = 'https://aac14310.ngrok.io/nylas/webhook';
 
 // Microsoft
 export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?`;
