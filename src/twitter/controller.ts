@@ -6,6 +6,8 @@ const init = async app => {
   let savedBearerToken;
   let jsonResponse;
 
+  twitterUtils.registerWebhook();
+
   app.get(
     '/twitter/login',
     passport.authenticate('twitter', {
@@ -33,6 +35,28 @@ const init = async app => {
     const response = await addSub(req.user);
 
     res.json({ response });
+  });
+
+  app.get('/twitter/webhook', (req, res) => {
+    const crc_token = req.query.crc_token;
+
+    if (crc_token) {
+      const hash = twitterUtils.getChallengeResponse(crc_token, twitterUtils.twitterConfig.oauth.consumer_secret);
+
+      res.status(200);
+      res.send({
+        response_token: 'sha256=' + hash,
+      });
+    } else {
+      res.status(400);
+      res.send('Error: crc_token missing from request.');
+    }
+  });
+
+  app.post('/twitter/webhook', (req, res) => {
+    console.log('Twitter received', req.body);
+
+    res.sendSTatus(200);
   });
 
   app.get('/twitter/twitter-accounts', (_req, res) => {

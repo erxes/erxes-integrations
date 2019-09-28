@@ -1,6 +1,7 @@
+import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as queryString from 'query-string';
-import request from 'request-promise';
+import * as request from 'request-promise';
 
 interface ITwitterConfig {
   oauth: {
@@ -94,5 +95,98 @@ export const getTwitterBearerToken = () => {
         resolve(twitterConfig.twitterBearerToken);
       }
     });
+  });
+};
+
+export const getChallengeResponse = (crcToken, consumerSecret) => {
+  return crypto
+    .createHmac('sha256', consumerSecret)
+    .update(crcToken)
+    .digest('base64');
+};
+
+export const registerWebhook = async () => {
+  const webhooks = await retreiveWebhooks();
+
+  if (webhooks.length > 0) {
+    const webhookObj = webhooks.find(webhook => webhook.url.includes(`ngrok.io`));
+
+    if (webhookObj) {
+      deleteWebhook(webhookObj.id);
+    }
+  }
+
+  const requestOptions = {
+    url:
+      'https://api.twitter.com/1.1/account_activity/all/' + twitterConfig.twitterWebhookEnvironment + '/webhooks.json',
+    oauth: twitterConfig.oauth,
+    headers: {
+      'Content-type': 'application/x-www-form-urlencoded',
+    },
+    form: {
+      url: `https://86acd842.ngrok.io/twitter/webhook`,
+    },
+  };
+
+  return request.post(requestOptions);
+};
+
+interface IWebhook {
+  id: string;
+  url: string;
+  valid: boolean;
+  created_timestamp: string;
+  update_webhook_url: string;
+}
+
+export const retreiveWebhooks = (): Promise<IWebhook[]> => {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterConfig.twitterWebhookEnvironment +
+        '/webhooks.json',
+      oauth: twitterConfig.oauth,
+    };
+
+    request
+      .get(requestOptions)
+      .then(body => {
+        resolve(JSON.parse(body));
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const deleteWebhook = webhookId => {
+  return new Promise((resolve, reject) => {
+    // if no webhook id provided, assume there is none to delete
+    if (!webhookId) {
+      resolve();
+      return;
+    }
+
+    // construct request to delete webhook config
+    const requestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterConfig.twitterWebhookEnvironment +
+        '/webhooks/' +
+        webhookId +
+        '.json',
+      oauth: twitterConfig.oauth,
+      resolveWithFullResponse: true,
+    };
+
+    request
+      .delete(requestOptions)
+      .then(() => {
+        resolve();
+      })
+      .catch(() => {
+        reject();
+      });
   });
 };
