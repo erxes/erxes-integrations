@@ -32,7 +32,7 @@ export interface IConversation {
   erxesApiId?: string;
   timestamp: Date;
   senderId: string;
-  recipientId: string;
+  receiverId: string;
   content: string;
   integrationId: string;
 }
@@ -49,7 +49,7 @@ export const conversationSchema = new Schema({
   content: String,
 });
 
-conversationSchema.index({ senderId: 1, recipientId: 1 }, { unique: true });
+conversationSchema.index({ senderId: 1, receiverId: 1 }, { unique: true });
 
 export interface IConversationModel extends Model<IConversationDocument> {
   getConversation(selector): Promise<IConversationDocument>;

@@ -53,8 +53,6 @@ const init = async app => {
   });
 
   app.post('/twitter/webhook', (req, res) => {
-    console.log('Twitter received', req.body);
-
     receiveDms(req.body);
 
     res.sendStatus(200);

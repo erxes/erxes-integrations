@@ -29,19 +29,19 @@ const receiveDms = async requestBody => {
     receiverId: receiver.id,
   });
 
-  // create conversation
-  if (!conversation) {
-    for (const event of direct_message_events) {
-      const { type, message_create, id, created_timestamp } = event;
+  for (const event of direct_message_events) {
+    const { type, message_create, id, created_timestamp } = event;
 
-      if (type === 'message_create') {
-        const { message_data } = message_create;
+    if (type === 'message_create') {
+      const { message_data } = message_create;
 
+      // create conversation
+      if (!conversation) {
         // save on integrations db
         try {
           conversation = await Conversations.create({
             senderId,
-            recipientId: receiver.id,
+            receiverId: receiver.id,
             content: message_data.text,
             integrationId: integration._id,
           });
@@ -71,40 +71,40 @@ const receiveDms = async requestBody => {
           await Conversations.deleteOne({ _id: conversation._id });
           throw new Error(e);
         }
+      }
 
-        // get conversation message
-        const conversationMessage = await ConversationMessages.findOne({
-          mid: id,
+      // get conversation message
+      const conversationMessage = await ConversationMessages.findOne({
+        messageId: id,
+      });
+
+      if (!conversationMessage) {
+        // save on integrations db
+        await ConversationMessages.create({
+          conversationId: conversation._id,
+          messageId: id,
+          timestamp: created_timestamp,
+          content: message_data.text,
         });
 
-        if (!conversationMessage) {
-          // save on integrations db
-          await ConversationMessages.create({
-            conversationId: conversation._id,
-            mid: id,
-            timestamp: created_timestamp,
-            content: message_data.text,
+        // save message on api
+        try {
+          await fetchMainApi({
+            path: '/integrations-api',
+            method: 'POST',
+            body: {
+              action: 'create-conversation-message',
+              metaInfo: 'replaceContent',
+              payload: JSON.stringify({
+                content: message_data.text,
+                conversationId: conversation.erxesApiId,
+                customerId: customer.erxesApiId,
+              }),
+            },
           });
-
-          // save message on api
-          try {
-            await fetchMainApi({
-              path: '/integrations-api',
-              method: 'POST',
-              body: {
-                action: 'create-conversation-message',
-                metaInfo: 'replaceContent',
-                payload: JSON.stringify({
-                  content: message_data.text,
-                  conversationId: conversation.erxesApiId,
-                  customerId: customer.erxesApiId,
-                }),
-              },
-            });
-          } catch (e) {
-            await ConversationMessages.deleteOne({ mid: id });
-            throw new Error(e);
-          }
+        } catch (e) {
+          await ConversationMessages.deleteOne({ messageId: id });
+          throw new Error(e);
         }
       }
     }
