@@ -1,5 +1,9 @@
 import * as passport from 'passport';
 import * as request from 'request-promise';
+import { debugResponse, debugTwitter } from '../debuggers';
+import { Accounts } from '../models';
+// import { Accounts } from '../models';
+import { getEnv } from '../utils';
 import receiveDms from './receiveDms';
 import * as twitterUtils from './utils';
 
@@ -12,7 +16,7 @@ const init = async app => {
   app.get(
     '/twitter/login',
     passport.authenticate('twitter', {
-      callbackURL: 'https://86acd842.ngrok.io/twitter/callback/add',
+      callbackURL: `${getEnv({ name: 'DOMAIN' })}/twitter/callback/add`,
     }),
   );
 
@@ -33,9 +37,25 @@ const init = async app => {
       return request.post(subRequestOptions);
     };
 
-    const response = await addSub(req.user);
+    await addSub(req.user);
 
-    res.json({ response });
+    const { profile, access_token, access_token_secret } = req.user;
+
+    await Accounts.create({
+      token: access_token,
+      tokenSecret: access_token_secret,
+      name: profile.username,
+      kind: 'twitter',
+      uid: profile.id,
+    });
+
+    const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
+
+    const url = `${MAIN_APP_DOMAIN}/settings/integrations?twitterAuthorized=true`;
+
+    debugResponse(debugTwitter, req, url);
+
+    return res.redirect(url);
   });
 
   app.get('/twitter/webhook', (req, res) => {
