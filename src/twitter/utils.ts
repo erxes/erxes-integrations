@@ -46,8 +46,6 @@ export const getTwitterAuthUrl = (host, callbackAction) => {
         // construct sign-in URL from returned authorization token
         const responseParams = queryString.parse(response.body);
 
-        console.log(responseParams);
-
         const twitterAuthUrl =
           'https://api.twitter.com/oauth/authenticate?force_login=true&oauth_token=' + responseParams.oauth_token;
 
@@ -88,8 +86,6 @@ export const getTwitterBearerToken = () => {
       } else {
         const jsonBody = JSON.parse(response.body);
 
-        console.log('Bearer Token:', jsonBody.access_token);
-
         twitterConfig.twitterBearerToken = jsonBody.access_token;
 
         resolve(twitterConfig.twitterBearerToken);
@@ -124,7 +120,7 @@ export const registerWebhook = async () => {
       'Content-type': 'application/x-www-form-urlencoded',
     },
     form: {
-      url: `https://86acd842.ngrok.io/twitter/webhook`,
+      url: `https://8d85e993.ngrok.io/twitter/webhook`,
     },
   };
 

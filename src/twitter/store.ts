@@ -1,4 +1,4 @@
-import { Integrations } from '../models';
+import { IIntegration } from '../models/Integrations';
 import { fetchMainApi } from '../utils';
 import { Customers } from './models';
 
@@ -16,12 +16,8 @@ export interface IUser {
   profile_image_url_https: string;
 }
 
-export const getOrCreateCustomer = async (userId: string, receiver: IUser) => {
+export const getOrCreateCustomer = async (integration: IIntegration, userId: string, receiver: IUser) => {
   let customer = await Customers.findOne({ userId });
-
-  const integration = await Integrations.getIntegration({
-    $and: [{ twitterAccountId: userId }, { kind: 'twitter-dm' }],
-  });
 
   if (customer) {
     return customer;
