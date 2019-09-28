@@ -1,17 +1,18 @@
 import * as passport from 'passport';
 import * as request from 'request-promise';
+import receiveDms from './receiveDms';
 import * as twitterUtils from './utils';
 
 const init = async app => {
   let savedBearerToken;
   let jsonResponse;
 
-  twitterUtils.registerWebhook();
+  // twitterUtils.registerWebhook();
 
   app.get(
     '/twitter/login',
     passport.authenticate('twitter', {
-      callbackURL: 'https://8284bb8d.ngrok.io/twitter/callback/add',
+      callbackURL: 'https://86acd842.ngrok.io/twitter/callback/add',
     }),
   );
 
@@ -56,7 +57,9 @@ const init = async app => {
   app.post('/twitter/webhook', (req, res) => {
     console.log('Twitter received', req.body);
 
-    res.sendSTatus(200);
+    receiveDms(req.body);
+
+    res.sendStatus(200);
   });
 
   app.get('/twitter/twitter-accounts', (_req, res) => {
