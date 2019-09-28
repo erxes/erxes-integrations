@@ -1,7 +1,7 @@
 import * as passport from 'passport';
 import * as request from 'request-promise';
-import { debugResponse, debugTwitter } from '../debuggers';
-import { Accounts } from '../models';
+import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
+import { Accounts, Integrations } from '../models';
 // import { Accounts } from '../models';
 import { getEnv } from '../utils';
 import receiveDms from './receiveDms';
@@ -21,24 +21,6 @@ const init = async app => {
   );
 
   app.get(`/twitter/callback/add`, passport.authenticate('twitter', { failureRedirect: '/' }), async (req, res) => {
-    const subRequestOptions = {
-      url:
-        'https://api.twitter.com/1.1/account_activity/all/' +
-        twitterUtils.twitterConfig.twitterWebhookEnvironment +
-        '/subscriptions.json',
-      oauth: twitterUtils.twitterConfig.oauth,
-      resolveWithFullResponse: true,
-    };
-
-    const addSub = user => {
-      subRequestOptions.oauth.token = user.access_token;
-      subRequestOptions.oauth.token_secret = user.access_token_secret;
-
-      return request.post(subRequestOptions);
-    };
-
-    await addSub(req.user);
-
     const { profile, access_token, access_token_secret } = req.user;
 
     await Accounts.create({
@@ -80,6 +62,54 @@ const init = async app => {
     receiveDms(req.body);
 
     res.sendStatus(200);
+  });
+
+  app.get('/twitter/get-account', async (req, res, next) => {
+    const account = await Accounts.findOne({ _id: req.query.accountId });
+
+    if (!account) {
+      debugTwitter(`Error Twitter: Account not found with ${req.query.accountId}`);
+      return next(new Error('Account not found'));
+    }
+
+    return res.json(account.uid);
+  });
+
+  app.post('/twitter/create-integration', async (req, res) => {
+    debugRequest(debugTwitter, req);
+
+    const { accountId, integrationId, data, kind } = req.body;
+
+    const account = await Accounts.getAccount({ _id: accountId });
+
+    await Integrations.create({
+      kind,
+      accountId,
+      erxesApiId: integrationId,
+      twitterAccountId: data.twitterAccountId,
+    });
+
+    const subRequestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterUtils.twitterConfig.twitterWebhookEnvironment +
+        '/subscriptions.json',
+      oauth: twitterUtils.twitterConfig.oauth,
+      resolveWithFullResponse: true,
+    };
+
+    const addSub = () => {
+      subRequestOptions.oauth.token = account.token;
+      subRequestOptions.oauth.token_secret = account.tokenSecret;
+
+      return request.post(subRequestOptions);
+    };
+
+    await addSub();
+
+    debugResponse(debugTwitter, req);
+
+    return res.json({ status: 'ok ' });
   });
 
   app.get('/twitter/twitter-accounts', (_req, res) => {
