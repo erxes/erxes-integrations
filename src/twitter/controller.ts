@@ -3,6 +3,7 @@ import * as request from 'request-promise';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { getEnv } from '../utils';
+import { Conversations } from './models';
 import receiveDms from './receiveDms';
 import * as twitterUtils from './utils';
 
@@ -104,6 +105,37 @@ const init = async app => {
     debugResponse(debugTwitter, req);
 
     return res.json({ status: 'ok ' });
+  });
+
+  app.post('/twitter/reply', async (req, res) => {
+    const { conversationId, content } = req.body;
+
+    const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
+
+    const receiverId = conversation.receiverId;
+
+    const requestOptions = {
+      url: 'https://api.twitter.com/1.1/direct_messages/events/new.json',
+      data: {
+        event: {
+          type: 'message_create',
+          message_create: {
+            target: {
+              recipient_id: receiverId,
+            },
+            message_data: {
+              text: content,
+            },
+          },
+        },
+      },
+    };
+
+    await request.post(requestOptions);
+
+    debugResponse(debugTwitter, req);
+
+    res.sendStatus(200);
   });
 };
 

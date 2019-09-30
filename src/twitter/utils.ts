@@ -120,7 +120,7 @@ export const registerWebhook = async () => {
       'Content-type': 'application/x-www-form-urlencoded',
     },
     form: {
-      url: `https://8d85e993.ngrok.io/twitter/webhook`,
+      url: `https://bd08b392.ngrok.io/twitter/webhook`,
     },
   };
 
