@@ -76,7 +76,7 @@ const init = async app => {
     const { accountId, integrationId, data, kind } = req.body;
 
     const prevEntry = await Integrations.findOne({
-      twitterAccountId: data.twitterAccountId,
+      accountId,
     });
 
     if (prevEntry) {
