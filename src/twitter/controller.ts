@@ -137,15 +137,20 @@ const init = async app => {
   });
 
   app.post('/twitter/reply', async (req, res) => {
-    const { conversationId, content } = req.body;
+    const { conversationId, content, integrationId } = req.body;
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
+
+    const integration = await Integrations.findOne({ erxesApiId: integrationId });
+
+    const account = await Accounts.findOne({ _id: integration.accountId });
 
     const receiverId = conversation.receiverId;
 
     const requestOptions = {
       url: 'https://api.twitter.com/1.1/direct_messages/events/new.json',
-      data: {
+      oauth: twitterUtils.twitterConfig.oauth,
+      body: {
         event: {
           type: 'message_create',
           message_create: {
@@ -158,7 +163,11 @@ const init = async app => {
           },
         },
       },
+      json: true,
     };
+
+    requestOptions.oauth.token = account.token;
+    requestOptions.oauth.token_secret = account.tokenSecret;
 
     await request.post(requestOptions);
 
