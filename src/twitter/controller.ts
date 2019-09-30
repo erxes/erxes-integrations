@@ -75,6 +75,14 @@ const init = async app => {
 
     const { accountId, integrationId, data, kind } = req.body;
 
+    const prevEntry = await Integrations.findOne({
+      twitterAccountId: data.twitterAccountId,
+    });
+
+    if (prevEntry) {
+      throw new Error(`You already have integration on this account`);
+    }
+
     const account = await Accounts.getAccount({ _id: accountId });
 
     await Integrations.create({
