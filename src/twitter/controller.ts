@@ -3,7 +3,7 @@ import * as request from 'request-promise';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { getEnv } from '../utils';
-import { Conversations } from './models';
+import { ConversationMessages, Conversations } from './models';
 import receiveDms from './receiveDms';
 import * as twitterUtils from './utils';
 
@@ -169,7 +169,19 @@ const init = async app => {
     requestOptions.oauth.token = account.token;
     requestOptions.oauth.token_secret = account.tokenSecret;
 
-    await request.post(requestOptions);
+    const message = await request.post(requestOptions);
+
+    const { event } = message;
+    const { id, created_timestamp, message_create } = event;
+    const { message_data } = message_create;
+
+    // save on integrations db
+    await ConversationMessages.create({
+      conversationId: conversation._id,
+      messageId: id,
+      timestamp: created_timestamp,
+      content: message_data.text,
+    });
 
     debugResponse(debugTwitter, req);
 

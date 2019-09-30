@@ -104,6 +104,6 @@ export const Conversations = model<IConversationDocument, IConversationModel>(
 
 // tslint:disable-next-line
 export const ConversationMessages = model<IConversationMessageDocument, IConversationMessageModel>(
-  'conversation_messages_twitter',
+  'conversation_messages_twitters',
   conversationMessageSchema,
 );
