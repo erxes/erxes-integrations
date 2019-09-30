@@ -2,6 +2,8 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as queryString from 'query-string';
 import * as request from 'request-promise';
+import { debugTwitter } from '../debuggers';
+import { getEnv } from '../utils';
 
 interface ITwitterConfig {
   oauth: {
@@ -103,13 +105,13 @@ export const getChallengeResponse = (crcToken, consumerSecret) => {
 
 export const registerWebhook = async () => {
   const webhooks = await retreiveWebhooks();
+  const DOMAIN = getEnv({ name: 'DOMAIN' });
 
-  if (webhooks.length > 0) {
-    const webhookObj = webhooks.find(webhook => webhook.url.includes(`ngrok.io`));
+  const webhookObj = webhooks.find(webhook => webhook.url === `${DOMAIN}/twitter/webhook`);
 
-    if (webhookObj) {
-      deleteWebhook(webhookObj.id);
-    }
+  if (webhookObj) {
+    debugTwitter('Webhook already exists');
+    return;
   }
 
   const requestOptions = {
@@ -120,9 +122,11 @@ export const registerWebhook = async () => {
       'Content-type': 'application/x-www-form-urlencoded',
     },
     form: {
-      url: `https://bd08b392.ngrok.io/twitter/webhook`,
+      url: `${DOMAIN}/twitter/webhook`,
     },
   };
+
+  debugTwitter('Registering webhook');
 
   return request.post(requestOptions);
 };

@@ -8,7 +8,7 @@ import receiveDms from './receiveDms';
 import * as twitterUtils from './utils';
 
 const init = async app => {
-  // twitterUtils.registerWebhook();
+  twitterUtils.registerWebhook();
 
   app.get(
     '/twitter/login',
@@ -84,23 +84,44 @@ const init = async app => {
       twitterAccountId: data.twitterAccountId,
     });
 
-    const subRequestOptions = {
-      url:
-        'https://api.twitter.com/1.1/account_activity/all/' +
-        twitterUtils.twitterConfig.twitterWebhookEnvironment +
-        '/subscriptions.json',
-      oauth: twitterUtils.twitterConfig.oauth,
-      resolveWithFullResponse: true,
-    };
-
     const addSub = () => {
+      const subRequestOptions = {
+        url:
+          'https://api.twitter.com/1.1/account_activity/all/' +
+          twitterUtils.twitterConfig.twitterWebhookEnvironment +
+          '/subscriptions.json',
+        oauth: twitterUtils.twitterConfig.oauth,
+        resolveWithFullResponse: true,
+      };
+
       subRequestOptions.oauth.token = account.token;
       subRequestOptions.oauth.token_secret = account.tokenSecret;
 
       return request.post(subRequestOptions);
     };
 
-    await addSub();
+    try {
+      await addSub();
+    } catch (e) {
+      // deleting previous subscription
+      if (e.message.includes('already exists')) {
+        const requestOptions = {
+          url:
+            'https://api.twitter.com/1.1/account_activity/all/' +
+            twitterUtils.twitterConfig.twitterWebhookEnvironment +
+            '/subscriptions.json',
+          oauth: twitterUtils.twitterConfig.oauth,
+        };
+
+        requestOptions.oauth.token = account.token;
+        requestOptions.oauth.token_secret = account.tokenSecret;
+
+        await request.delete(requestOptions);
+
+        // adding new subscription
+        await addSub();
+      }
+    }
 
     debugResponse(debugTwitter, req);
 
