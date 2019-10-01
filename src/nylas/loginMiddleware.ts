@@ -14,6 +14,8 @@ dotenv.config();
 
 const { DOMAIN } = process.env;
 
+const globals: { kind?: string; platform?: string } = {};
+
 // Provider specific OAuth2 ===========================
 const getOAuthCredentials = async (req, res, next) => {
   debugRequest(debugNylas, req);
@@ -21,11 +23,12 @@ const getOAuthCredentials = async (req, res, next) => {
   let { kind, platform } = req.query;
 
   if (kind && platform) {
-    req.session.kind = kind;
-    req.session.platform = platform;
+    // for redirect
+    globals.kind = kind;
+    globals.platform = platform;
   } else {
-    kind = req.session.kind;
-    platform = req.session.platform;
+    kind = globals.kind;
+    platform = globals.platform;
   }
 
   if (!checkCredentials()) {
@@ -77,15 +80,17 @@ const getOAuthCredentials = async (req, res, next) => {
 
   const email = await getEmailFromAccessToken(access_token);
 
-  await Accounts.create({
+  const doc = {
     email,
     kind,
     platform,
     name: email,
+    scope: params.scope,
     token: access_token,
     tokenSecret: refresh_token,
-    scope: params.scope,
-  });
+  };
+
+  await Accounts.create(doc);
 
   res.redirect(AUTHORIZED_REDIRECT_URL);
 };

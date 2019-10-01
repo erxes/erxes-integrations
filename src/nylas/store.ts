@@ -172,6 +172,8 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
 
   const { ConversationMessages } = getNylasModel(kind);
 
+  debugNylas(message);
+
   const doc = {
     customerId,
     conversationId: id,

@@ -83,6 +83,18 @@ const enableOrDisableAccount = async (accountId: string, enable: boolean) => {
 };
 
 /**
+ * Revoke nylas account
+ * @param {String} token
+ */
+const revokeAccount = async (token: string) => {
+  return sendRequest({
+    url: 'https://api.nylas.com/oauth/revoke',
+    method: 'post',
+    headerParams: { Authorization: `Basic ${token}` },
+  });
+};
+
+/**
  * Get nylas code for accessToken
  * @param {Object} params
  * @returns {Promise} code
@@ -110,4 +122,4 @@ const getNylasAccessToken = async data => {
   });
 };
 
-export { enableOrDisableAccount, integrateProviderToNylas, connectGoogleToNylas };
+export { revokeAccount, enableOrDisableAccount, integrateProviderToNylas, connectGoogleToNylas };

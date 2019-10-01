@@ -40,6 +40,19 @@ const checkCredentials = () => {
 };
 
 /**
+ * Convert string emails to email obect
+ * @param {String} emailStr - user1@mail.com, user2mail.com
+ * @returns {Object} - [{ email }]
+ */
+const buildEmailAddress = (emailStr: string) => {
+  if (!emailStr) {
+    return;
+  }
+
+  return emailStr.split(',').map(email => ({ email }));
+};
+
+/**
  * Set token for nylas and
  * check credentials
  * @param {String} accessToken
@@ -187,5 +200,6 @@ export {
   getClientConfig,
   nylasRequest,
   checkCredentials,
+  buildEmailAddress,
   verifyNylasSignature,
 };

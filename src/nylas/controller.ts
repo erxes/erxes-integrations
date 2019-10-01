@@ -6,7 +6,7 @@ import { sendMessage, syncMessages } from './api';
 import { connectGoogleToNylas } from './auth';
 import { getOAuthCredentials } from './loginMiddleware';
 import { createWebhook } from './tracker';
-import { getNylasModel, verifyNylasSignature } from './utils';
+import { buildEmailAddress, getNylasModel, verifyNylasSignature } from './utils';
 
 // load config
 dotenv.config();
@@ -72,13 +72,14 @@ const init = async app => {
     debugNylas('Get message with erxesApiId: ', erxesApiMessageId);
 
     if (!erxesApiMessageId) {
+      debugNylas('erxesApiMessageId is not provided!');
       return next();
     }
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
     if (!integration) {
-      debugNylas('Integration not found');
+      debugNylas('Integration not found!');
       return next();
     }
 
@@ -94,22 +95,50 @@ const init = async app => {
     }
 
     // attach account email for dinstinguish sender
-    message.integrationEmail = account.uid;
+    message.integrationEmail = account.email;
 
     return res.json(message);
   });
 
-  app.get('/nylas/send', async (_req, res) => {
+  app.get('/nylas/get-attachment', async (_req, _res) => {
+    return;
+  });
+
+  app.post('/nylas/send', async (req, res, next) => {
+    debugRequest(debugNylas, req);
     debugNylas('Sending message...');
 
-    const token = 'XkNaSzTU5OQ5sQgcbl4uZ5ghkpxCpr';
+    const { data, erxesApiId } = req.body;
+    const params = JSON.parse(data);
 
-    await sendMessage(token, {
-      subject: 'Re: test',
-      body: '<h1>Helaskdjaklsjdlo World</h1>',
-      to: [{ email: 'munkhorgil@live.com' }],
-      replyToMessageId: '1vx47imn5mn58b2ug6yi015f1',
-    });
+    const integration = await Integrations.findOne({ erxesApiId }).lean();
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    try {
+      const { to, cc, bcc, from, subject, replyToMessageId, ...args } = params;
+
+      const doc = {
+        to: buildEmailAddress(to),
+        cc: buildEmailAddress(cc),
+        bcc: buildEmailAddress(bcc),
+        subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
+        ...args,
+      };
+
+      await sendMessage(account.nylasToken, doc);
+    } catch (e) {
+      debugNylas('Failed to send message');
+      return next(e);
+    }
 
     return res.json({ status: 'ok' });
   });

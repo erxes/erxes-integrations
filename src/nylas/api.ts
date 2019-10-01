@@ -99,6 +99,13 @@ const syncMessages = async (accountId: string, messageId: string) => {
 
   const message = await getMessageById(nylasToken, messageId);
 
+  const [from] = message.from;
+
+  // Prevent to sent email by itself
+  if (from.email === account.email && !message.subject.includes('Re:')) {
+    return;
+  }
+
   const doc = {
     kind,
     message: JSON.parse(message),

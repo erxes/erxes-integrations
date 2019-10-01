@@ -3,7 +3,7 @@ import {
   Conversations as CallProConversations,
   Customers as CallProCustomers,
 } from './callpro/models';
-import { debugCallPro, debugFacebook, debugGmail } from './debuggers';
+import { debugCallPro, debugFacebook, debugGmail, debugNylas } from './debuggers';
 import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
@@ -20,6 +20,8 @@ import {
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
+import { enableOrDisableAccount } from './nylas/auth';
+import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './nylas/models';
 
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
@@ -33,7 +35,7 @@ export const removeIntegration = async (id: string) => {
     throw new Error('Integration not found');
   }
 
-  const { kind, _id, accountId } = integration;
+  const { kind, _id, accountId, platform } = integration;
   const account = await Accounts.findOne({ _id: accountId });
 
   const selector = { integrationId: _id };
@@ -68,6 +70,19 @@ export const removeIntegration = async (id: string) => {
     await GmailCustomers.deleteMany(selector);
     await GmailConversations.deleteMany(selector);
     await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'gmail' && platform === 'nylas') {
+    debugNylas('Removing nylas entries');
+
+    const conversationIds = await NylasGmailConversations.find(selector).distinct('_id');
+
+    await NylasGmailCustomers.deleteMany(selector);
+    await NylasGmailConversations.deleteMany(selector);
+    await NylasGmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+
+    // Cancel and revoke nylas subscription
+    await enableOrDisableAccount(account.uid, false);
   }
 
   if (kind === 'callpro') {
