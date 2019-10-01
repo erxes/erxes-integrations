@@ -126,6 +126,10 @@ export const registerWebhook = async () => {
     },
   };
 
+  for (const webhook of webhooks) {
+    await deleteWebhook(webhook.id);
+  }
+
   debugTwitter('Registering webhook');
 
   return request.post(requestOptions);

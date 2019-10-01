@@ -3,7 +3,7 @@ import {
   Conversations as CallProConversations,
   Customers as CallProCustomers,
 } from './callpro/models';
-import { debugCallPro, debugFacebook, debugGmail } from './debuggers';
+import { debugCallPro, debugFacebook, debugGmail, debugTwitter } from './debuggers';
 import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
@@ -20,6 +20,11 @@ import {
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
+import {
+  ConversationMessages as TwitterConversationMessages,
+  Conversations as TwitterConversations,
+  Customers as TwitterCustomers,
+} from './twitter/models';
 
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
@@ -78,6 +83,16 @@ export const removeIntegration = async (id: string) => {
     await CallProCustomers.deleteMany(selector);
     await CallProConversations.deleteMany(selector);
     await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'twitter-dm') {
+    debugTwitter('Removing twitter entries');
+
+    const conversationIds = await TwitterConversations.find(selector).distinct('_id');
+
+    await TwitterConversationMessages.deleteMany(selector);
+    await TwitterConversations.deleteMany(selector);
+    await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   return Integrations.deleteOne({ _id });
