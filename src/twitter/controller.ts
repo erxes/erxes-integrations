@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as passport from 'passport';
 import * as request from 'request-promise';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
@@ -137,7 +138,22 @@ const init = async app => {
   });
 
   app.post('/twitter/reply', async (req, res) => {
-    const { conversationId, content, integrationId } = req.body;
+    const { conversationId, content, integrationId, attachments } = req.body;
+
+    if (attachments.length > 1) {
+      throw new Error('You can only attach one file');
+    }
+
+    const attachment = {
+      media: {
+        id: null,
+      },
+      type: 'media',
+    };
+
+    for (const attach of attachments) {
+      attachment.media.id = attach.url;
+    }
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
@@ -159,6 +175,7 @@ const init = async app => {
             },
             message_data: {
               text: content,
+              attachment: attachment.media.id ? attachment : null,
             },
           },
         },
@@ -186,6 +203,25 @@ const init = async app => {
     debugResponse(debugTwitter, req);
 
     res.sendStatus(200);
+  });
+
+  app.post('/twitter/upload', async (req, res) => {
+    const { file } = req.body;
+
+    const body = fs.readFileSync(file.path);
+    const base64 = body.toString('base64');
+
+    const requestOptions = {
+      url: 'https://upload.twitter.com/1.1/media/upload.json',
+      oauth: twitterUtils.twitterConfig.oauth,
+      form: {
+        media_data: base64,
+      },
+    };
+
+    const response = await request.post(requestOptions);
+
+    return res.json({ response });
   });
 };
 
