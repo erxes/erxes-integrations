@@ -209,3 +209,13 @@ export const parseBatchResponse = (body: string) => {
 
   return result;
 };
+
+export const buildEmail = (rawString: string) => {
+  if (!rawString) {
+    return;
+  }
+
+  const emails = extractEmailFromString(rawString);
+
+  return emails.split(' ').map(email => ({ email }));
+};

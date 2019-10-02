@@ -114,7 +114,7 @@ const processReceivedEmails = async (
       return;
     }
 
-    const { from, reply, messageId, subject, labelIds } = updatedMessage;
+    const { threadId, from, reply, messageId, subject, labelIds } = updatedMessage;
 
     // prevent to store emails by integration
     if (!reply && labelIds.indexOf('SENT') > -1) {
@@ -123,24 +123,40 @@ const processReceivedEmails = async (
 
     const email = extractEmailFromString(from);
 
-    const customer = await createOrGetCustomer(email, integration.erxesApiId, integration._id);
-    const conversation = await createOrGetConversation(
+    const integrationIds = {
+      id: integration._id,
+      erxesApiId: integration.erxesApiId,
+    };
+
+    // Customer ========
+    const customer = await createOrGetCustomer(email, integrationIds);
+
+    // Conversation =========
+    const conversationDoc = {
       email,
-      reply,
-      integration.erxesApiId,
-      integration._id,
-      customer.erxesApiId,
+      threadId,
       subject,
       receivedEmail,
-    );
+      integrationIds,
+      customerErxesApiId: customer.erxesApiId,
+    };
 
-    await createOrGetConversationMessage(
+    const conversation = await createOrGetConversation(conversationDoc);
+
+    // Conversation message ==========
+    const conversationIds = {
+      id: conversation._id,
+      erxesApiId: conversation.erxesApiId,
+    };
+
+    const messageDoc = {
       messageId,
-      conversation.erxesApiId,
-      customer.erxesApiId,
-      conversation._id,
-      updatedMessage,
-    );
+      conversationIds,
+      message: updatedMessage,
+      customerErxesApiId: customer.erxesApiId,
+    };
+
+    await createOrGetConversationMessage(messageDoc);
   });
 };
 
