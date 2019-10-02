@@ -114,7 +114,7 @@ const processReceivedEmails = async (
       return;
     }
 
-    const { threadId, from, reply, messageId, subject, labelIds } = updatedMessage;
+    const { from, reply, messageId, subject, labelIds } = updatedMessage;
 
     // prevent to store emails by integration
     if (!reply && labelIds.indexOf('SENT') > -1) {
@@ -134,10 +134,10 @@ const processReceivedEmails = async (
     // Conversation =========
     const conversationDoc = {
       email,
-      threadId,
       subject,
       receivedEmail,
       integrationIds,
+      reply,
       customerErxesApiId: customer.erxesApiId,
     };
 

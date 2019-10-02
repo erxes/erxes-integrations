@@ -77,7 +77,6 @@ interface IEmail {
 
 export interface INylasConversationMessage {
   conversationId: string;
-  customerId: string;
   erxesApiMessageId: string;
 
   // Message type

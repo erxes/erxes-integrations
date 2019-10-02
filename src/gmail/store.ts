@@ -53,16 +53,28 @@ const createOrGetCustomer = async (email: string, integrationIds: IIntegrationId
 
 const createOrGetConversation = async (args: {
   email: string;
-  threadId: string;
   subject: string;
+  reply: string[];
   receivedEmail: string;
   integrationIds: IIntegrationIds;
   customerErxesApiId: string;
 }) => {
-  const { subject, email, integrationIds, receivedEmail, threadId, customerErxesApiId } = args;
+  const { subject, reply, email, integrationIds, receivedEmail, customerErxesApiId } = args;
   const { id, erxesApiId } = integrationIds;
 
-  let conversation = await Conversations.findOne({ threadId });
+  let conversation;
+
+  if (reply) {
+    const dumpMessage = await ConversationMessages.findOne({
+      $or: [{ headerId: { $in: reply } }, { headerId: { $eq: reply } }],
+    }).sort({ createdAt: -1 });
+
+    if (dumpMessage) {
+      conversation = await Conversations.findOne({
+        _id: dumpMessage.conversationId,
+      });
+    }
+  }
 
   if (!conversation) {
     try {
