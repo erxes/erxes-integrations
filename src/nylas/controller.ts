@@ -2,10 +2,11 @@ import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts, Integrations } from '../models';
-import { sendMessage, syncMessages } from './api';
+import { getAttachment, sendMessage, syncMessages, uploadFile } from './api';
 import { connectGoogleToNylas } from './auth';
 import { getOAuthCredentials } from './loginMiddleware';
 import { createWebhook } from './tracker';
+import { INylasAttachment } from './types';
 import { buildEmailAddress, getNylasModel, verifyNylasSignature } from './utils';
 
 // load config
@@ -100,8 +101,59 @@ const init = async app => {
     return res.json(message);
   });
 
-  app.get('/nylas/get-attachment', async (_req, _res) => {
-    return;
+  app.post('/nylas/upload', async (req, res, next) => {
+    debugNylas('Uploading a file...');
+
+    const { name, path, type, accountId } = req.body;
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      return next('Account not found');
+    }
+
+    const args: INylasAttachment = {
+      name,
+      path,
+      type,
+      accessToken: account.nylasToken,
+    };
+
+    try {
+      const file = await uploadFile(args);
+      return res.json(file);
+    } catch (e) {
+      return next(new Error(e));
+    }
+  });
+
+  app.get('/nylas/get-attachment', async (req, res, next) => {
+    const { integrationId, fileId, filename } = req.query;
+
+    const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
+
+    if (!integration) {
+      return next('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      return next('Account not found');
+    }
+
+    const buffer = await getAttachment(fileId, account.nylasToken);
+
+    const attachment = { data: buffer, filename };
+
+    if (!attachment) {
+      return next('Attachment not found');
+    }
+
+    res.write(attachment.filename);
+    res.write(attachment.data, 'base64');
+
+    return res.end();
   });
 
   app.post('/nylas/send', async (req, res, next) => {

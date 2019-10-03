@@ -86,12 +86,12 @@ const enableOrDisableAccount = async (accountId: string, enable: boolean) => {
  * Revoke nylas account
  * @param {String} token
  */
-const revokeAccount = async (token: string) => {
-  return sendRequest({
-    url: 'https://api.nylas.com/oauth/revoke',
-    method: 'post',
-    headerParams: { Authorization: `Basic ${token}` },
-  });
+const revokeAccount = async (_token: string) => {
+  return Nylas.accounts
+    .first()
+    .then(account => account.revokeAll())
+    .then(res => debugNylas(res))
+    .catch(e => debugNylas(e.message));
 };
 
 /**

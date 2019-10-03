@@ -65,7 +65,11 @@ app.get('/accounts', async (req, res) => {
 
   const { kind, platform } = req.query;
 
-  const selector = { kind, ...(platform ? { platform } : {}) };
+  const selector = { kind, platform: { $exists: false } };
+
+  if (platform) {
+    selector.platform = platform;
+  }
 
   const accounts = await Accounts.find(selector);
 

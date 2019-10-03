@@ -9,6 +9,13 @@ interface ICommonType {
   email: string;
 }
 
+export interface INylasAttachment {
+  name: string;
+  path: string;
+  type: string;
+  accessToken: string;
+}
+
 export interface IMessageDraft {
   to?: [ICommonType];
   from?: [ICommonType];

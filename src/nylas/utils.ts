@@ -194,6 +194,7 @@ const nylasSendMessage = async (accessToken: string, args: IMessageDraft) => {
 };
 
 export {
+  setNylasToken,
   getNylasModel,
   nylasSendMessage,
   getProviderSettings,

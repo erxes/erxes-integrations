@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { debugNylas } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { compose, sendRequest } from '../utils';
@@ -7,8 +8,8 @@ import {
   createOrGetNylasConversationMessage as storeMessage,
   createOrGetNylasCustomer as storeCustomer,
 } from './store';
-import { IFilter, IMessageDraft } from './types';
-import { nylasRequest, nylasSendMessage } from './utils';
+import { IFilter, IMessageDraft, INylasAttachment } from './types';
+import { nylasRequest, nylasSendMessage, setNylasToken } from './utils';
 
 /**
  * Build message and send API request
@@ -101,7 +102,7 @@ const syncMessages = async (accountId: string, messageId: string) => {
 
   const [from] = message.from;
 
-  // Prevent to sent email by itself
+  // Prevent to send email to itself
   if (from.email === account.email && !message.subject.includes('Re:')) {
     return;
   }
@@ -116,7 +117,7 @@ const syncMessages = async (accountId: string, messageId: string) => {
     },
   };
 
-  // Store new received message ========
+  // Store new received message
   return compose(
     storeMessage,
     storeConversation,
@@ -124,4 +125,71 @@ const syncMessages = async (accountId: string, messageId: string) => {
   )(doc);
 };
 
-export { syncMessages, sendMessage, recentMessages, getMessageById, getMessages, getEmailFromAccessToken };
+/**
+ * Upload a file to Nylas
+ * @param {String} accessToken - nylas account accessToken
+ * @param {String} name
+ * @param {String} path
+ * @param {String} fileType
+ * @returns {Promise} - nylas file object
+ */
+const uploadFile = async (args: INylasAttachment) => {
+  const { name, path, type, accessToken } = args;
+
+  const buffer = await fs.readFileSync(path);
+
+  if (!buffer) {
+    throw new Error('Failed to read file');
+  }
+
+  const nylas = setNylasToken(accessToken);
+
+  const nylasFile = nylas.files.build({
+    data: buffer,
+    filename: name,
+    contentType: type,
+  });
+
+  return new Promise((resolve, reject) => {
+    nylasFile.upload((err, file) => {
+      if (err) {
+        reject(err);
+      }
+
+      return resolve(JSON.parse(file));
+    });
+  });
+};
+
+/**
+ * Get attachment with file id from nylas
+ * @param {String} fileId
+ * @param {String} accessToken
+ * @returns {Buffer} file buffer
+ */
+const getAttachment = (fileId: string, accessToken: string) => {
+  const nylas = setNylasToken(accessToken);
+
+  const nylasFile = nylas.files.build({ id: fileId });
+
+  return new Promise((resolve, reject) => {
+    nylasFile.download((err, file) => {
+      if (err) {
+        reject(err);
+      }
+
+      return resolve(file);
+    });
+  });
+};
+
+export {
+  uploadFile,
+  syncMessages,
+  sendMessage,
+  recentMessages,
+  getMessageById,
+  getMessages,
+  getEmailFromAccessToken,
+  getAttachment,
+};
