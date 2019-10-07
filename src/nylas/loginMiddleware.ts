@@ -14,21 +14,23 @@ dotenv.config();
 
 const { DOMAIN } = process.env;
 
-const globals: { kind?: string; platform?: string } = {};
+const globals: { kind?: string } = {};
 
 // Provider specific OAuth2 ===========================
 const getOAuthCredentials = async (req, res, next) => {
   debugRequest(debugNylas, req);
 
-  let { kind, platform } = req.query;
+  let { kind } = req.query;
 
-  if (kind && platform) {
+  if (kind) {
     // for redirect
     globals.kind = kind;
-    globals.platform = platform;
   } else {
     kind = globals.kind;
-    platform = globals.platform;
+  }
+
+  if (kind.includes('gmail')) {
+    kind = kind.split('-')[1];
   }
 
   if (!checkCredentials()) {
@@ -83,7 +85,6 @@ const getOAuthCredentials = async (req, res, next) => {
   const doc = {
     email,
     kind,
-    platform,
     name: email,
     scope: params.scope,
     token: access_token,

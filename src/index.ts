@@ -1,7 +1,6 @@
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
-import * as session from 'express-session';
 
 // load environment variables
 dotenv.config();
@@ -34,15 +33,6 @@ const rawBodySaver = (req, _res, buf, encoding) => {
 app.use(bodyParser.urlencoded({ verify: rawBodySaver, extended: true }));
 app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 app.use(bodyParser.raw({ verify: rawBodySaver, type: '*/*' }));
-app.use(
-  session({
-    secret: 'aksjdaklsdjaslk',
-    cookie: {
-      secure: true,
-      maxAge: 60 * 30 * 1000,
-    },
-  }),
-);
 
 app.post('/integrations/remove', async (req, res) => {
   debugRequest(debugIntegrations, req);
@@ -63,13 +53,13 @@ app.post('/integrations/remove', async (req, res) => {
 app.get('/accounts', async (req, res) => {
   debugRequest(debugIntegrations, req);
 
-  const { kind, platform } = req.query;
+  let { kind } = req.query;
 
-  const selector = { kind, platform: { $exists: false } };
-
-  if (platform) {
-    selector.platform = platform;
+  if (kind === 'nylas-gmail') {
+    kind = kind.split('-')[1];
   }
+
+  const selector = { kind };
 
   const accounts = await Accounts.find(selector);
 

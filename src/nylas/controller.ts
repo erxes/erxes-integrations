@@ -44,7 +44,13 @@ const init = async app => {
   app.post('/nylas/create-integration', async (req, res, _next) => {
     debugRequest(debugNylas, req);
 
-    const { accountId, integrationId, kind } = req.body;
+    const { accountId, integrationId } = req.body;
+
+    let { kind } = req.body;
+
+    if (kind === 'nylas-gmail') {
+      kind = kind.split('-')[1];
+    }
 
     debugNylas(`Creating nylas integration kind: ${kind}`);
 
@@ -53,7 +59,6 @@ const init = async app => {
     await Integrations.create({
       kind,
       accountId,
-      platform: 'nylas',
       email: account.email,
       erxesApiId: integrationId,
     });

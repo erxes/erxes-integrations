@@ -3,7 +3,6 @@ import { field } from './utils';
 
 export interface IIntegration {
   kind: string;
-  platform?: string;
   accountId: string;
   erxesApiId: string;
   facebookPageIds?: string[];
@@ -20,10 +19,6 @@ export interface IIntegrationDocument extends IIntegration, Document {}
 export const integrationSchema = new Schema({
   _id: field({ pkey: true }),
   kind: String,
-  platform: {
-    type: String,
-    optional: true,
-  },
   accountId: String,
   erxesApiId: String,
   phoneNumber: String,

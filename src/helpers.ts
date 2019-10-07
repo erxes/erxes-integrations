@@ -81,7 +81,7 @@ export const removeIntegration = async (id: string) => {
     await NylasGmailConversations.deleteMany(selector);
     await NylasGmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel and revoke nylas subscription
+    // Cancel nylas subscription
     await enableOrDisableAccount(account.uid, false);
   }
 
