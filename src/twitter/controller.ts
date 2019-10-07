@@ -45,12 +45,12 @@ const init = async app => {
       const hash = twitterUtils.getChallengeResponse(crc_token, twitterUtils.twitterConfig.oauth.consumer_secret);
 
       res.status(200);
-      res.send({
-        response_token: 'sha256=' + hash,
+      return res.json({
+        response_token: `sha256=${hash}`,
       });
     } else {
       res.status(400);
-      res.send('Error: crc_token missing from request.');
+      return res.send('Error: crc_token missing from request.');
     }
   });
 
