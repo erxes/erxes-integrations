@@ -43,6 +43,9 @@ app.use(
     resave: false,
     saveUninitialized: true,
     sameSite: false,
+    cookie: {
+      secure: true,
+    },
   }),
 );
 
