@@ -92,7 +92,16 @@ export interface INylasConversationMessage {
   thread_id: string;
   snippet: string;
   body: string;
-  files: any;
+  files: [
+    {
+      id: string;
+      object: string;
+      content_type: string;
+      size: number;
+      filename: string;
+      message_ids: string[];
+    }
+  ];
   labels: [
     {
       id: string;
@@ -128,6 +137,17 @@ const conversationMessageCommonSchema = {
   date: String,
   threadId: String,
   snipped: String,
+  attachments: [
+    {
+      _id: false,
+      id: String,
+      object: String,
+      content_type: String,
+      size: Number,
+      filename: String,
+      message_ids: [String],
+    },
+  ],
   labels: {
     _id: false,
     type: [

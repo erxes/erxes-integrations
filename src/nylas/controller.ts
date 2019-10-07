@@ -109,9 +109,15 @@ const init = async app => {
   app.post('/nylas/upload', async (req, res, next) => {
     debugNylas('Uploading a file...');
 
-    const { name, path, type, accountId } = req.body;
+    const { name, path, type, erxesApiId } = req.body;
 
-    const account = await Accounts.findOne({ _id: accountId }).lean();
+    const integration = await Integrations.findOne({ erxesApiId }).lean();
+
+    if (!integration) {
+      return next('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
 
     if (!account) {
       return next('Account not found');
@@ -126,6 +132,9 @@ const init = async app => {
 
     try {
       const file = await uploadFile(args);
+
+      debugNylas('Successfully uploaded the file');
+
       return res.json(file);
     } catch (e) {
       return next(new Error(e));
@@ -133,7 +142,7 @@ const init = async app => {
   });
 
   app.get('/nylas/get-attachment', async (req, res, next) => {
-    const { integrationId, fileId, filename } = req.query;
+    const { attachmentId, integrationId, filename } = req.query;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
@@ -147,15 +156,15 @@ const init = async app => {
       return next('Account not found');
     }
 
-    const buffer = await getAttachment(fileId, account.nylasToken);
+    const response: { body?: Buffer } = await getAttachment(attachmentId, account.nylasToken);
 
-    const attachment = { data: buffer, filename };
+    const attachment = { data: response.body, filename };
 
     if (!attachment) {
       return next('Attachment not found');
     }
 
-    res.write(attachment.filename);
+    res.attachment(attachment.filename);
     res.write(attachment.data, 'base64');
 
     return res.end();
@@ -181,12 +190,13 @@ const init = async app => {
     }
 
     try {
-      const { to, cc, bcc, from, subject, replyToMessageId, ...args } = params;
+      const { to, cc, bcc, from, subject, attachments, replyToMessageId, ...args } = params;
 
       const doc = {
         to: buildEmailAddress(to),
         cc: buildEmailAddress(cc),
         bcc: buildEmailAddress(bcc),
+        files: attachments,
         subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
         ...args,
       };
@@ -196,6 +206,8 @@ const init = async app => {
       debugNylas('Failed to send message');
       return next(e);
     }
+
+    debugNylas('Successfully sent message');
 
     return res.json({ status: 'ok' });
   });

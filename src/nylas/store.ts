@@ -191,7 +191,7 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
     date: message.date,
     snipped: message.snippet,
     body: message.body,
-    files: message.files,
+    attachments: message.files,
     labels: message.labels,
   };
 

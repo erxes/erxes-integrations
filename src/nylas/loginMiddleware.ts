@@ -29,7 +29,7 @@ const getOAuthCredentials = async (req, res, next) => {
     kind = globals.kind;
   }
 
-  if (kind.includes('gmail')) {
+  if (kind === 'nylas-gmail') {
     kind = kind.split('-')[1];
   }
 
