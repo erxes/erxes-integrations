@@ -49,7 +49,14 @@ const buildEmailAddress = (emailStr: string) => {
     return;
   }
 
-  return emailStr.split(',').map(email => ({ email }));
+  return emailStr
+    .split(',')
+    .map(email => {
+      if (email.length > 0) {
+        return { email };
+      }
+    })
+    .filter(email => email !== undefined);
 };
 
 /**

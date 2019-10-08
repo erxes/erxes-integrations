@@ -197,6 +197,7 @@ const init = async app => {
         cc: buildEmailAddress(cc),
         bcc: buildEmailAddress(bcc),
         files: attachments,
+        replyToMessageId,
         subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
         ...args,
       };
