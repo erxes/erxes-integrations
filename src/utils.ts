@@ -3,8 +3,6 @@ import { debugBase, debugExternalRequests } from './debuggers';
 
 interface IRequestParams {
   url?: string;
-  headerParams?: { [key: string]: string };
-  headerType?: string;
   dataType?: string;
   path?: string;
   method: string;
@@ -25,7 +23,7 @@ export const checkConcurrentError = (e: any, name: string) => {
 /**
  * Send request
  */
-export const sendRequest = async ({ url, headerParams, dataType, method, body, params }: IRequestParams) => {
+export const sendRequest = async ({ url, dataType, method, body, params }: IRequestParams) => {
   const DOMAIN = getEnv({ name: 'DOMAIN' });
 
   const reqBody = JSON.stringify(body || {});
@@ -42,7 +40,7 @@ export const sendRequest = async ({ url, headerParams, dataType, method, body, p
 
     const response = await requestify.request(url, {
       method,
-      headers: { 'Content-Type': 'application/json', origin: DOMAIN, ...headerParams },
+      headers: { 'Content-Type': 'application/json', origin: DOMAIN },
       body,
       params,
       dataType: dataType || 'json',

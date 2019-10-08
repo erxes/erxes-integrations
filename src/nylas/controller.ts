@@ -48,7 +48,7 @@ const init = async app => {
 
     let { kind } = req.body;
 
-    if (kind === 'nylas-gmail') {
+    if (kind.includes('nylas')) {
       kind = kind.split('-')[1];
     }
 
@@ -78,15 +78,13 @@ const init = async app => {
     debugNylas('Get message with erxesApiId: ', erxesApiMessageId);
 
     if (!erxesApiMessageId) {
-      debugNylas('erxesApiMessageId is not provided!');
-      return next();
+      return next('erxesApiMessageId is not provided!');
     }
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
     if (!integration) {
-      debugNylas('Integration not found!');
-      return next();
+      return next('Integration not found!');
     }
 
     const account = await Accounts.findOne({ _id: integration.accountId }).lean();
@@ -96,8 +94,7 @@ const init = async app => {
     const message = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
 
     if (!message) {
-      debugNylas('Conversation message not found');
-      return next();
+      return next('Conversation message not found');
     }
 
     // attach account email for dinstinguish sender

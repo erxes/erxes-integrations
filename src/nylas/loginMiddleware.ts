@@ -29,7 +29,7 @@ const getOAuthCredentials = async (req, res, next) => {
     kind = globals.kind;
   }
 
-  if (kind === 'nylas-gmail') {
+  if (kind.includes('nylas')) {
     kind = kind.split('-')[1];
   }
 
@@ -40,8 +40,7 @@ const getOAuthCredentials = async (req, res, next) => {
   const [clientId, clientSecret] = getClientConfig(kind);
 
   if (!clientId || !clientSecret) {
-    debugNylas(`Missing config check your env of ${kind}`);
-    return next();
+    return next(`Missing config check your env of ${kind}`);
   }
 
   debugRequest(debugNylas, req);

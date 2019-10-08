@@ -46,13 +46,6 @@ const getMessages = (...args: string[]) => buildMessage('list', ...args);
 const getMessageById = (...args: string[]) => buildMessage('find', ...args);
 
 /**
- * Get most recent messages
- * @param {String} - accessToken
- * @returns {Promise} - nylas messages object
- */
-const recentMessages = (accessToken: string) => buildMessage('find', accessToken, { in: 'inbox' });
-
-/**
  * Send or Reply message
  * @param {String} accessToken
  * @param {Object} args - message object
@@ -183,13 +176,4 @@ const getAttachment = (fileId: string, accessToken: string) => {
   });
 };
 
-export {
-  uploadFile,
-  syncMessages,
-  sendMessage,
-  recentMessages,
-  getMessageById,
-  getMessages,
-  getEmailFromAccessToken,
-  getAttachment,
-};
+export { uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getEmailFromAccessToken, getAttachment };

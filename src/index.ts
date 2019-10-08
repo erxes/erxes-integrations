@@ -55,7 +55,7 @@ app.get('/accounts', async (req, res) => {
 
   let { kind } = req.query;
 
-  if (kind === 'nylas-gmail') {
+  if (kind.includes('nylas')) {
     kind = kind.split('-')[1];
   }
 

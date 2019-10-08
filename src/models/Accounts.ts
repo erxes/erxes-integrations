@@ -3,7 +3,6 @@ import { field } from './utils';
 
 export interface IAccount {
   kind: string;
-  platform: string;
   email: string;
   nylasToken: string;
   nylasTokenSecret: string;
@@ -20,9 +19,6 @@ export interface IAccountDocument extends IAccount, Document {}
 export const accountSchema = new Schema({
   _id: field({ pkey: true }),
   kind: {
-    type: String,
-  },
-  platform: {
     type: String,
   },
   email: {

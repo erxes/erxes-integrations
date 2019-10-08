@@ -217,5 +217,12 @@ export const buildEmail = (rawString: string) => {
 
   const emails = extractEmailFromString(rawString);
 
-  return emails.split(' ').map(email => ({ email }));
+  return emails
+    .split(' ')
+    .map(email => {
+      if (email) {
+        return { email };
+      }
+    })
+    .filter(email => email !== undefined);
 };
