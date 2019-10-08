@@ -194,3 +194,26 @@ export const deleteWebhook = webhookId => {
       });
   });
 };
+
+export const unsubscribe = userId => {
+  return new Promise(async (resolve, reject) => {
+    const bearer = await getTwitterBearerToken();
+    const requestOptions = {
+      url: `https://api.twitter.com/1.1/account_activity/all/${
+        twitterConfig.twitterWebhookEnvironment
+      }/subscriptions/${userId}.json`,
+      auth: {
+        bearer,
+      },
+    };
+
+    request
+      .delete(requestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};

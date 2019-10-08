@@ -25,6 +25,7 @@ import {
   Conversations as TwitterConversations,
   Customers as TwitterCustomers,
 } from './twitter/models';
+import { unsubscribe } from './twitter/utils';
 
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
@@ -79,6 +80,8 @@ export const removeIntegration = async (id: string) => {
     debugCallPro('Removing callpro entries');
 
     const conversationIds = await CallProConversations.find(selector).distinct('_id');
+
+    await unsubscribe(account.uid);
 
     await CallProCustomers.deleteMany(selector);
     await CallProConversations.deleteMany(selector);
