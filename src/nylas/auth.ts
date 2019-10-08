@@ -12,6 +12,8 @@ dotenv.config();
 
 const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
+console.log(NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET);
+
 /**
  * Connect google to nylas with token
  * @param {String} kind

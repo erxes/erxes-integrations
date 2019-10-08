@@ -35,7 +35,7 @@ export const removeIntegration = async (id: string) => {
     throw new Error('Integration not found');
   }
 
-  const { kind, _id, accountId, platform } = integration;
+  const { kind, _id, accountId } = integration;
   const account = await Accounts.findOne({ _id: accountId });
 
   const selector = { integrationId: _id };
@@ -59,7 +59,7 @@ export const removeIntegration = async (id: string) => {
     await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  if (kind === 'gmail' && account) {
+  if (kind === 'gmail' && !account.nylasToken) {
     debugGmail('Removing gmail entries');
 
     const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
@@ -72,7 +72,7 @@ export const removeIntegration = async (id: string) => {
     await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  if (kind === 'gmail' && platform === 'nylas') {
+  if (kind === 'gmail' && account.nylasToken) {
     debugNylas('Removing nylas entries');
 
     const conversationIds = await NylasGmailConversations.find(selector).distinct('_id');
