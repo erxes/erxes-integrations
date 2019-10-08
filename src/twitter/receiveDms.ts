@@ -12,28 +12,28 @@ const receiveDms = async requestBody => {
 
   const users: IUsers = requestBody.users;
 
-  const senderId = requestBody.for_user_id;
-  const receiver = users[senderId];
-
-  const account = await Accounts.findOne({ uid: receiver.id });
-
-  const integration = await Integrations.getIntegration({
-    $and: [{ accountId: account._id }, { kind: 'twitter-dm' }],
-  });
-
-  const customer = await getOrCreateCustomer(integration, senderId, users[senderId]);
-
-  // get conversation
-  let conversation = await Conversations.findOne({
-    senderId,
-    receiverId: receiver.id,
-  });
-
   for (const event of direct_message_events) {
     const { type, message_create, id, created_timestamp } = event;
 
+    const senderId = message_create.sender_id;
+    const receiverId = message_create.target.recipient_id;
+
     if (type === 'message_create') {
       const { message_data } = message_create;
+
+      const account = await Accounts.findOne({ uid: receiverId });
+
+      const integration = await Integrations.getIntegration({
+        $and: [{ accountId: account._id }, { kind: 'twitter-dm' }],
+      });
+
+      const customer = await getOrCreateCustomer(integration, senderId, users[senderId]);
+
+      // get conversation
+      let conversation = await Conversations.findOne({
+        senderId,
+        receiverId,
+      });
 
       // create conversation
       if (!conversation) {
@@ -41,7 +41,7 @@ const receiveDms = async requestBody => {
         try {
           conversation = await Conversations.create({
             senderId,
-            receiverId: receiver.id,
+            receiverId,
             content: message_data.text,
             integrationId: integration._id,
           });
