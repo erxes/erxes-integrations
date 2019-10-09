@@ -4,9 +4,7 @@ import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
-import { integrateProviderToNylas } from './auth';
 import { AUTHORIZED_REDIRECT_URL } from './constants';
-import { createAccount } from './store';
 import { checkCredentials, getClientConfig, getProviderSettings } from './utils';
 
 // loading config
@@ -95,40 +93,4 @@ const getOAuthCredentials = async (req, res, next) => {
   res.redirect(AUTHORIZED_REDIRECT_URL);
 };
 
-// Office 365 ===========================
-const officeMiddleware = async (req, res) => {
-  const [clientId, clientSecret] = getClientConfig('outlook');
-
-  const { outlook_refresh_token } = req.session;
-
-  const settings = {
-    microsoft_client_id: clientId,
-    microsoft_client_secret: clientSecret,
-    microsoft_refresh_token: outlook_refresh_token,
-    redirect_uri: `${DOMAIN}/nylas/oauth2/callback`,
-  };
-
-  const params = {
-    email: 'email',
-    kind: 'office365',
-    settings,
-  };
-
-  const { account_id, access_token } = await integrateProviderToNylas(params);
-
-  const doc = {
-    kind: 'office365',
-    email: 'user@mail.com',
-    accountId: account_id,
-    accessToken: access_token,
-  };
-
-  try {
-    await createAccount(doc);
-    return res.redirect(AUTHORIZED_REDIRECT_URL);
-  } catch (e) {
-    throw new Error(e.message);
-  }
-};
-
-export { getOAuthCredentials, officeMiddleware };
+export { getOAuthCredentials };

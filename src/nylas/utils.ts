@@ -3,14 +3,7 @@ import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
 import { getEnv } from '../utils';
-import {
-  GOOGLE_OAUTH_ACCESS_TOKEN_URL,
-  GOOGLE_OAUTH_AUTH_URL,
-  GOOGLE_SCOPES,
-  MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
-  MICROSOFT_OAUTH_AUTH_URL,
-  MICROSOFT_SCOPES,
-} from './constants';
+import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES } from './constants';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './models';
 import { IMessageDraft } from './types';
 
@@ -91,7 +84,6 @@ const setNylasToken = (accessToken: string) => {
 const getClientConfig = (kind: string): string[] => {
   const providers = {
     gmail: [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })],
-    office365: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
   };
 
   return providers[kind];
@@ -100,7 +92,7 @@ const getClientConfig = (kind: string): string[] => {
 /**
  * Get nylas model according to kind
  * @param {String} kind
- * @returns {Object} - Models - (gmail, office365, etc)
+ * @returns {Object} - Models - (gmail)
  */
 const getNylasModel = (kind: string) => {
   if (kind === 'gmail') {
@@ -129,21 +121,7 @@ const getProviderSettings = (kind: string) => {
     },
   };
 
-  const office365 = {
-    params: {
-      scope: MICROSOFT_SCOPES,
-    },
-    urls: {
-      authUrl: MICROSOFT_OAUTH_AUTH_URL,
-      tokenUrl: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
-    },
-    requestParams: {
-      headerType: 'application/x-www-form-urlencoded',
-      dataType: 'form-url-encoded',
-    },
-  };
-
-  const providers = { gmail, office365 };
+  const providers = { gmail };
 
   return providers[kind];
 };

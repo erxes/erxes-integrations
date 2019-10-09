@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 // load config
 dotenv.config();
 
-const { MAIN_APP_DOMAIN, MICROSOFT_TENANT_ID } = process.env;
+const { MAIN_APP_DOMAIN } = process.env;
 
 // Integration action
 export const ACTIONS = {
@@ -24,40 +24,7 @@ export const CONNECT_AUTHORIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
 export const WEBHOOK_CALLBACK_URL = 'https://164df59d.ngrok.io/nylas/webhook';
 
-// Microsoft
-export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?`;
-export const MICROSOFT_OAUTH_ACCESS_TOKEN_URL = `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/token`;
-
-export const MICROSOFT_SCOPES = [
-  'https://outlook.office.com/user.read',
-  'https://outlook.office.com/mail.send',
-  'https://outlook.office.com/mail.readwrite',
-  'https://outlook.office.com/calendars.readwrite',
-  'https://outlook.office.com/contacts.readwrite',
-  'offline_access', // for refresh token
-  'openid',
-  'email',
-  'profile',
-].join(' ');
-
-export const EMAIL_SCOPES = [
-  'email.modify',
-  'email.read_only',
-  'email.send',
-  'email.folders_and_labels',
-  'email.metadata',
-  'email.drafts',
-];
-
 export const MESSAGE_WEBHOOKS = ['message.created', 'message.opened', 'message.link_clicked', 'thread.replied'];
-
-export const ACCOUNT_WEBHOOKS = [
-  'account.connected',
-  'account.invalid',
-  'account.running',
-  'account.stopped',
-  'account.sync_error',
-];
 
 export const GOOGLE_SCOPES = [
   'https://mail.google.com/',
@@ -67,5 +34,3 @@ export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.google.com/m8/feeds/',
 ].join(' ');
-
-export const ALL_WEBHOOKS = [...MESSAGE_WEBHOOKS, ...ACCOUNT_WEBHOOKS];

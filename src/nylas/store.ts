@@ -1,5 +1,4 @@
 import { debugNylas } from '../debuggers';
-import { Accounts } from '../models';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
 import { ACTIONS } from './constants';
@@ -8,46 +7,11 @@ import {
   IAPIConversationMessage,
   IAPICustomer,
   IGetOrCreateArguments,
-  INylasAccountArguments,
   INylasConversationArguments,
   INylasConversationMessageArguments,
   INylasCustomerArguments,
 } from './types';
 import { getNylasModel } from './utils';
-
-/**
- * Create account with nylas accessToken
- * @param {String} email
- * @param {String} kind
- * @param {String} accountId - nylas
- * @param {String} accessToken
- */
-const createAccount = async (args: INylasAccountArguments) => {
-  const { kind, email, accountId, accessToken } = args;
-
-  debugNylas('Creating account for kind: ' + kind);
-
-  if (!email || !accessToken) {
-    return debugNylas('Missing email or accesToken');
-  }
-
-  const account = await Accounts.findOne({ email });
-
-  if (account) {
-    await Accounts.updateOne({ email }, { $set: { token: accessToken } });
-    debugNylas(`Successfully updated the existing account with: ${email}`);
-  } else {
-    await Accounts.create({
-      kind,
-      name: email,
-      email,
-      uid: accountId,
-      token: accessToken,
-    });
-
-    debugNylas(`Successfully created the account with: ${email}`);
-  }
-};
 
 /**
  * Create or get nylas customer
@@ -267,4 +231,4 @@ const requestMainApi = (
   });
 };
 
-export { createAccount, createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage };
+export { createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage };
