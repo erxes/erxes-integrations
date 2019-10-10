@@ -3,9 +3,16 @@ import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
 import { getEnv } from '../utils';
-import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES } from './constants';
+import {
+  GOOGLE_OAUTH_ACCESS_TOKEN_URL,
+  GOOGLE_OAUTH_AUTH_URL,
+  GOOGLE_SCOPES,
+  MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+  MICROSOFT_OAUTH_AUTH_URL,
+  MICROSOFT_SCOPES,
+} from './constants';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './models';
-import { IMessageDraft } from './types';
+import { IMessageDraft, IProviderConfig, IProviderSettings } from './types';
 
 // load config
 dotenv.config();
@@ -84,6 +91,7 @@ const setNylasToken = (accessToken: string) => {
 const getClientConfig = (kind: string): string[] => {
   const providers = {
     gmail: [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })],
+    office365: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
   };
 
   return providers[kind];
@@ -92,7 +100,7 @@ const getClientConfig = (kind: string): string[] => {
 /**
  * Get nylas model according to kind
  * @param {String} kind
- * @returns {Object} - Models - (gmail)
+ * @returns {Object} - Models - (gmail, office365, etc)
  */
 const getNylasModel = (kind: string) => {
   if (kind === 'gmail') {
@@ -101,6 +109,34 @@ const getNylasModel = (kind: string) => {
       Conversations: NylasGmailConversations,
       ConversationMessages: NylasGmailConversationMessages,
     };
+  }
+};
+
+/**
+ * Get provider config for auth
+ * @param {String} kind
+ * @param {String} clientId
+ * @param {String} clientSecret
+ * @param {String} tokenSecret
+ * @returns {Object} - specified provider config
+ */
+const getProviderConfig = (kind: string, args: IProviderConfig): IProviderSettings => {
+  const { clientId, clientSecret, tokenSecret } = args;
+
+  switch (kind) {
+    case 'gmail':
+      return {
+        google_client_id: clientId,
+        google_client_secret: clientSecret,
+        google_refresh_token: tokenSecret,
+      };
+    case 'office365':
+      return {
+        microsoft_client_id: clientId,
+        microsoft_client_secret: clientSecret,
+        microsoft_refresh_token: tokenSecret,
+        redirect_uri: `http://localhost:3400/nylas/create-integration`,
+      };
   }
 };
 
@@ -121,7 +157,21 @@ const getProviderSettings = (kind: string) => {
     },
   };
 
-  const providers = { gmail };
+  const office365 = {
+    params: {
+      scope: MICROSOFT_SCOPES,
+    },
+    urls: {
+      authUrl: MICROSOFT_OAUTH_AUTH_URL,
+      tokenUrl: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+    },
+    requestParams: {
+      headerType: 'application/x-www-form-urlencoded',
+      dataType: 'form-url-encoded',
+    },
+  };
+
+  const providers = { gmail, office365 };
 
   return providers[kind];
 };
@@ -188,4 +238,5 @@ export {
   checkCredentials,
   buildEmailAddress,
   verifyNylasSignature,
+  getProviderConfig,
 };

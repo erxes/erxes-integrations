@@ -3,7 +3,7 @@ import * as querystring from 'querystring';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts } from '../models';
 import { sendRequest } from '../utils';
-import { getEmailFromAccessToken } from './api';
+import { getMailWithGoogleToken } from './api';
 import { AUTHORIZED_REDIRECT_URL } from './constants';
 import { checkCredentials, getClientConfig, getProviderSettings } from './utils';
 
@@ -34,6 +34,8 @@ const getOAuthCredentials = async (req, res, next) => {
   if (!checkCredentials()) {
     return next('Nylas not configured, check your env');
   }
+
+  debugNylas(kind);
 
   const [clientId, clientSecret] = getClientConfig(kind);
 
@@ -77,12 +79,15 @@ const getOAuthCredentials = async (req, res, next) => {
     ...requestParams,
   });
 
-  const email = await getEmailFromAccessToken(access_token);
+  let email;
+
+  if (kind === 'gmail') {
+    email = await getMailWithGoogleToken(access_token);
+  }
 
   const doc = {
-    email,
     kind,
-    name: email,
+    email,
     scope: params.scope,
     token: access_token,
     tokenSecret: refresh_token,

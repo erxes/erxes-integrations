@@ -55,10 +55,10 @@ const sendMessage = (accessToken: string, args: IMessageDraft) => nylasSendMessa
 
 /**
  * Google: get email from google with accessToken
- * @param accessToken
+ * @param {String} accessToken
  * @returns {Promise} email
  */
-const getEmailFromAccessToken = async (accessToken: string) => {
+const getMailWithGoogleToken = async (accessToken: string) => {
   const data = { access_token: accessToken, fields: ['email'] };
 
   const { email } = await sendRequest({
@@ -176,4 +176,4 @@ const getAttachment = (fileId: string, accessToken: string) => {
   });
 };
 
-export { uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getEmailFromAccessToken, getAttachment };
+export { uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getMailWithGoogleToken, getAttachment };

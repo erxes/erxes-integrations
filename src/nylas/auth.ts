@@ -5,7 +5,7 @@ import Accounts, { IAccount } from '../models/Accounts';
 import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { IIntegrateProvider } from './types';
-import { getClientConfig } from './utils';
+import { getClientConfig, getProviderConfig } from './utils';
 
 // loading config
 dotenv.config();
@@ -13,20 +13,21 @@ dotenv.config();
 const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
 /**
- * Connect google to nylas with token
+ * Connect provider to nylas with accessToken, refreshToken
  * @param {String} kind
  * @param {Object} account
  */
-const connectGoogleToNylas = async (kind: string, account: IAccount & { _id: string }) => {
+const connectProviderToNylas = async (kind: string, account: IAccount & { _id: string }) => {
   const [clientId, clientSecret] = getClientConfig(kind);
-
   const { email, tokenSecret } = account;
 
-  const settings = {
-    google_refresh_token: tokenSecret,
-    google_client_id: clientId,
-    google_client_secret: clientSecret,
+  const configs = {
+    clientId,
+    clientSecret,
+    tokenSecret,
   };
+
+  const settings = getProviderConfig(kind, configs);
 
   const params = { email, kind, settings };
 
@@ -122,4 +123,4 @@ const getNylasAccessToken = async data => {
   });
 };
 
-export { revokeAccount, enableOrDisableAccount, integrateProviderToNylas, connectGoogleToNylas };
+export { revokeAccount, enableOrDisableAccount, integrateProviderToNylas, connectProviderToNylas };

@@ -42,7 +42,16 @@ export interface IIntegrateProvider {
   scope?: string;
 }
 
+export interface IProviderConfig {
+  clientId: string;
+  clientSecret: string;
+  tokenSecret: string;
+}
+
 export interface IProviderSettings {
+  microsoft_client_id?: string;
+  microsoft_client_secret?: string;
+  microsoft_refresh_token?: string;
   redirect_uri?: string;
   google_refresh_token?: string;
   google_client_id?: string;
