@@ -1,6 +1,7 @@
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
-import { MESSAGE_WEBHOOKS, WEBHOOK_CALLBACK_URL } from './constants';
+import { getEnv } from '../utils';
+import { MESSAGE_WEBHOOKS } from './constants';
 import { checkCredentials } from './utils';
 
 /**
@@ -9,6 +10,8 @@ import { checkCredentials } from './utils';
 export const createWebhook = async () => {
   debugNylas('Creating Nylas webhook');
 
+  const NYLAS_WEBHOOK_CALLBACK_URL = getEnv({ name: 'NYLAS_WEBHOOK_CALLBACK_URL' });
+
   if (!checkCredentials()) {
     return debugNylas('Nylas is not configured');
   }
@@ -16,7 +19,7 @@ export const createWebhook = async () => {
   const options = {
     state: 'active',
     triggers: MESSAGE_WEBHOOKS,
-    callbackUrl: WEBHOOK_CALLBACK_URL,
+    callbackUrl: NYLAS_WEBHOOK_CALLBACK_URL,
   };
 
   return Nylas.webhooks
