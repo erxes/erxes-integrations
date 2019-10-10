@@ -187,16 +187,17 @@ const init = async app => {
     }
 
     try {
-      const { to, cc, bcc, from, subject, attachments, replyToMessageId, ...args } = params;
+      const { to, cc, bcc, body, threadId, subject, attachments, replyToMessageId } = params;
 
       const doc = {
         to: buildEmailAddress(to),
         cc: buildEmailAddress(cc),
         bcc: buildEmailAddress(bcc),
+        subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
+        body,
+        threadId,
         files: attachments,
         replyToMessageId,
-        subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
-        ...args,
       };
 
       await sendMessage(account.nylasToken, doc);

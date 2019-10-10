@@ -6,7 +6,7 @@ export interface IFilter {
 
 interface ICommonType {
   name?: string;
-  email: string;
+  email?: string;
 }
 
 export interface INylasAttachment {
@@ -17,12 +17,13 @@ export interface INylasAttachment {
 }
 
 export interface IMessageDraft {
-  to?: [ICommonType];
-  from?: [ICommonType];
-  reply_to?: [ICommonType];
-  cc?: [ICommonType];
-  bcc?: [ICommonType];
+  to?: ICommonType[];
+  from?: ICommonType[];
+  cc?: ICommonType[];
+  bcc?: ICommonType[];
   replyToMessageId?: string;
+  threadId?: string;
+  files: [INylasAttachment];
   subject: string;
   body?: string;
 }
