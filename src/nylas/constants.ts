@@ -33,3 +33,11 @@ export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.google.com/m8/feeds/',
 ].join(' ');
+
+export const NYLAS_MODELS = {
+  gmail: {
+    customers: 'NylasGmailCustomers',
+    conversations: 'NylasGmailConversations',
+    conversationMessages: 'NylasGmailConversationMessages',
+  },
+};

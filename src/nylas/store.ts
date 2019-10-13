@@ -1,7 +1,7 @@
 import { debugNylas } from '../debuggers';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
-import { ACTIONS } from './constants';
+import { ACTIONS, NYLAS_MODELS } from './constants';
 import {
   IAPIConversation,
   IAPIConversationMessage,
@@ -11,7 +11,6 @@ import {
   INylasConversationMessageArguments,
   INylasCustomerArguments,
 } from './types';
-import { getNylasModel } from './utils';
 
 /**
  * Create or get nylas customer
@@ -22,14 +21,11 @@ import { getNylasModel } from './utils';
  * @param {Object} message
  * @returns {Promise} customer object
  */
-const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
-  const { kind, toEmail, integrationIds, message } = args;
+const createOrGetNylasCustomer = async ({ kind, toEmail, integrationIds, message }: INylasCustomerArguments) => {
   const { id, erxesApiId } = integrationIds;
   const [{ email, name }] = message.from;
 
   debugNylas('Create or get nylas customer function called...');
-
-  const { Customers } = getNylasModel(kind);
 
   const common = { kind, firstName: name, lastName: '' };
 
@@ -47,14 +43,12 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
     ...common,
   };
 
-  const params = {
+  const customer = await getOrCreate(kind, 'customers', {
     name: 'customer',
     apiField: 'erxesApiId',
     selector: { email },
     fields: { doc, api },
-  };
-
-  const customer = await getOrCreate(Customers, params);
+  });
 
   return {
     kind,
@@ -78,11 +72,15 @@ const createOrGetNylasCustomer = async (args: INylasCustomerArguments) => {
  * @param {Object} integrationIds - id, erxesApiId
  * @returns {Promise} conversation object
  */
-const createOrGetNylasConversation = async (args: INylasConversationArguments) => {
-  const { kind, customerId, integrationIds, emails, message } = args;
+const createOrGetNylasConversation = async ({
+  kind,
+  customerId,
+  integrationIds,
+  emails,
+  message,
+}: INylasConversationArguments) => {
   const { toEmail, fromEmail } = emails;
   const { id, erxesApiId } = integrationIds;
-  const { Conversations } = getNylasModel(kind);
 
   debugNylas(`Creating nylas conversation kind: ${kind}`);
 
@@ -100,14 +98,12 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
     integrationId: erxesApiId,
   };
 
-  const params = {
+  const conversation = await getOrCreate(kind, 'conversations', {
     name: 'conversation',
     apiField: 'erxesApiId',
     fields: { doc, api },
     selector: { threadId: message.thread_id },
-  };
-
-  const conversation = await getOrCreate(Conversations, params);
+  });
 
   return {
     kind,
@@ -128,13 +124,15 @@ const createOrGetNylasConversation = async (args: INylasConversationArguments) =
  * @param {String} customerId
  * @returns {Promise} - conversationMessage object
  */
-const createOrGetNylasConversationMessage = async (args: INylasConversationMessageArguments) => {
-  const { kind, conversationIds, message, customerId } = args;
+const createOrGetNylasConversationMessage = async ({
+  kind,
+  conversationIds,
+  message,
+  customerId,
+}: INylasConversationMessageArguments) => {
   const { id, erxesApiId } = conversationIds;
 
   debugNylas(`Creating nylas conversation message kind: ${kind}`);
-
-  const { ConversationMessages } = getNylasModel(kind);
 
   const doc = {
     customerId,
@@ -164,15 +162,13 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
     conversationId: erxesApiId,
   };
 
-  const params = {
+  const conversationMessage = await getOrCreate(kind, 'conversationMessages', {
     name: 'conversationMessage',
     selector: { messageId: message.id },
     apiField: 'erxesApiMessageId',
     fields: { doc, api },
     metaInfo: 'replaceContent',
-  };
-
-  const conversationMessage = await getOrCreate(ConversationMessages, params);
+  });
 
   return conversationMessage;
 };
@@ -183,14 +179,16 @@ const createOrGetNylasConversationMessage = async (args: INylasConversationMessa
  * @param {Object} args - doc, selector, apiField, name
  * @param {Promise} selected model
  */
-const getOrCreate = async (model, args: IGetOrCreateArguments) => {
+const getOrCreate = async (collectionName, kind, args: IGetOrCreateArguments) => {
   const { selector, fields, apiField, name, metaInfo } = args;
 
-  let selectedModel = await model.findOne(selector);
+  const model = NYLAS_MODELS[kind][collectionName];
 
-  if (!selectedModel) {
+  let selectedObj = await model.findOne(selector);
+
+  if (!selectedObj) {
     try {
-      selectedModel = await model.create(fields.doc);
+      selectedObj = await model.create(fields.doc);
     } catch (e) {
       checkConcurrentError(e, name);
     }
@@ -198,16 +196,16 @@ const getOrCreate = async (model, args: IGetOrCreateArguments) => {
     try {
       const response = await requestMainApi(ACTIONS[name], fields.api, metaInfo);
 
-      selectedModel[apiField] = response._id;
+      selectedObj[apiField] = response._id;
 
-      await selectedModel.save();
+      await selectedObj.save();
     } catch (e) {
-      await model.deleteOne({ _id: selectedModel._id });
+      await model.deleteOne({ _id: selectedObj._id });
       throw new Error(e);
     }
   }
 
-  return selectedModel;
+  return selectedObj;
 };
 
 /**
