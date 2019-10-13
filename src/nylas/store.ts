@@ -239,7 +239,7 @@ const requestMainApi = (action: string, params: IAPICustomer | IAPIConversation 
     method: 'POST',
     body: {
       action,
-      metaInfo: action.includes('messages') ? 'replaceContent' : null,
+      metaInfo: action.includes('message') ? 'replaceContent' : null,
       payload: JSON.stringify(params),
     },
   });
