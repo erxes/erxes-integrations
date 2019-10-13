@@ -1,7 +1,7 @@
 import { debugNylas } from '../debuggers';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
-import { ACTIONS, NYLAS_MODELS } from './constants';
+import { NYLAS_MODELS } from './constants';
 import {
   IAPIConversation,
   IAPIConversationMessage,
@@ -43,9 +43,9 @@ const createOrGetNylasCustomer = async ({ kind, toEmail, integrationIds, message
     ...common,
   };
 
-  const customer = await getOrCreate(kind, 'customers', {
-    name: 'customer',
-    apiField: 'erxesApiId',
+  const customer = await getOrCreate({
+    kind,
+    collectionName: 'customers',
     selector: { email },
     fields: { doc, api },
   });
@@ -98,9 +98,9 @@ const createOrGetNylasConversation = async ({
     integrationId: erxesApiId,
   };
 
-  const conversation = await getOrCreate(kind, 'conversations', {
-    name: 'conversation',
-    apiField: 'erxesApiId',
+  const conversation = await getOrCreate({
+    kind,
+    collectionName: 'conversations',
     fields: { doc, api },
     selector: { threadId: message.thread_id },
   });
@@ -162,12 +162,11 @@ const createOrGetNylasConversationMessage = async ({
     conversationId: erxesApiId,
   };
 
-  const conversationMessage = await getOrCreate(kind, 'conversationMessages', {
-    name: 'conversationMessage',
+  const conversationMessage = await getOrCreate({
+    kind,
+    collectionName: 'conversationMessages',
     selector: { messageId: message.id },
-    apiField: 'erxesApiMessageId',
     fields: { doc, api },
-    metaInfo: 'replaceContent',
   });
 
   return conversationMessage;
@@ -179,8 +178,21 @@ const createOrGetNylasConversationMessage = async ({
  * @param {Object} args - doc, selector, apiField, name
  * @param {Promise} selected model
  */
-const getOrCreate = async (kind, collectionName, args: IGetOrCreateArguments) => {
-  const { selector, fields, apiField, name, metaInfo } = args;
+const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCreateArguments) => {
+  const map = {
+    customers: {
+      action: 'get-create-update-customer',
+      apiField: 'erxesApiId',
+    },
+    conversations: {
+      action: 'create-or-update-conversation',
+      apiField: 'erxesApiId',
+    },
+    conversationMessages: {
+      action: 'create-conversation-message',
+      apiField: 'erxesMessageApiId',
+    },
+  };
 
   const model = NYLAS_MODELS[kind][collectionName];
 
@@ -190,13 +202,13 @@ const getOrCreate = async (kind, collectionName, args: IGetOrCreateArguments) =>
     try {
       selectedObj = await model.create(fields.doc);
     } catch (e) {
-      checkConcurrentError(e, name);
+      checkConcurrentError(e, collectionName);
     }
 
     try {
-      const response = await requestMainApi(ACTIONS[name], fields.api, metaInfo);
+      const response = await requestMainApi(map[collectionName].action, fields.api);
 
-      selectedObj[apiField] = response._id;
+      selectedObj[map[collectionName].apiField] = response._id;
 
       await selectedObj.save();
     } catch (e) {
@@ -213,17 +225,13 @@ const getOrCreate = async (kind, collectionName, args: IGetOrCreateArguments) =>
  * @param {String} action
  * @returns {Promise} main api response
  */
-const requestMainApi = (
-  action: string,
-  params: IAPICustomer | IAPIConversation | IAPIConversationMessage,
-  metaInfo?: string,
-) => {
+const requestMainApi = (action: string, params: IAPICustomer | IAPIConversation | IAPIConversationMessage) => {
   return fetchMainApi({
     path: '/integrations-api',
     method: 'POST',
     body: {
       action,
-      metaInfo,
+      metaInfo: action.includes('messages') ? 'replaceContent' : null,
       payload: JSON.stringify(params),
     },
   });
