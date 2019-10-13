@@ -1,7 +1,7 @@
 import { debugNylas } from '../debuggers';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
-import { NYLAS_MODELS } from './constants';
+import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './models';
 import {
   IAPIConversation,
   IAPIConversationMessage,
@@ -11,6 +11,14 @@ import {
   INylasConversationMessageArguments,
   INylasCustomerArguments,
 } from './types';
+
+const NYLAS_MODELS = {
+  gmail: {
+    customers: NylasGmailCustomers,
+    conversations: NylasGmailConversations,
+    conversationMessages: NylasGmailConversationMessages,
+  },
+};
 
 /**
  * Create or get nylas customer
@@ -190,7 +198,7 @@ const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCre
     },
     conversationMessages: {
       action: 'create-conversation-message',
-      apiField: 'erxesMessageApiId',
+      apiField: 'erxesApiMessageId',
     },
   };
 
@@ -237,4 +245,4 @@ const requestMainApi = (action: string, params: IAPICustomer | IAPIConversation 
   });
 };
 
-export { createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage };
+export { createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage, NYLAS_MODELS };
