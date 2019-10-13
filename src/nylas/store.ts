@@ -179,7 +179,7 @@ const createOrGetNylasConversationMessage = async ({
  * @param {Object} args - doc, selector, apiField, name
  * @param {Promise} selected model
  */
-const getOrCreate = async (collectionName, kind, args: IGetOrCreateArguments) => {
+const getOrCreate = async (kind, collectionName, args: IGetOrCreateArguments) => {
   const { selector, fields, apiField, name, metaInfo } = args;
 
   const model = NYLAS_MODELS[kind][collectionName];
