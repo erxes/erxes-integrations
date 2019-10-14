@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
-import * as queryString from 'query-string';
+import * as queryString from 'querystring';
 import * as request from 'request-promise';
 import { debugTwitter } from '../debuggers';
 import { IAccount } from '../models/Accounts';
@@ -21,12 +21,12 @@ dotenv.config();
 
 export const twitterConfig: ITwitterConfig = {
   oauth: {
-    consumer_key: process.env.TWITTER_CONSUMER_KEY,
-    consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-    token: process.env.TWITTER_ACCESS_TOKEN,
-    token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+    consumer_key: getEnv({ name: 'TWITTER_CONSUMER_KEY' }),
+    consumer_secret: getEnv({ name: 'TWITTER_CONSUMER_SECRET' }),
+    token: getEnv({ name: 'TWITTER_ACCESS_TOKEN' }),
+    token_secret: getEnv({ name: 'TWITTER_ACCESS_TOKEN_SECRET' }),
   },
-  twitterWebhookEnvironment: process.env.TWITTER_WEBHOOK_ENV,
+  twitterWebhookEnvironment: getEnv({ name: 'TWITTER_WEBHOOK_ENV' }),
 };
 
 export const getTwitterAuthUrl = (host, callbackAction) => {
@@ -105,35 +105,51 @@ export const getChallengeResponse = (crcToken, consumerSecret) => {
 };
 
 export const registerWebhook = async () => {
-  const webhooks = await retreiveWebhooks();
-  const DOMAIN = getEnv({ name: 'DOMAIN' });
+  return new Promise(async (resolve, reject) => {
+    const webhooks = await retreiveWebhooks().catch(e => {
+      debugTwitter('Could not retreive webhooks', e.message);
+    });
+    const DOMAIN = getEnv({ name: 'DOMAIN' });
 
-  const webhookObj = webhooks.find(webhook => webhook.url === `${DOMAIN}/twitter/webhook`);
+    const webhookObj = webhooks && webhooks.find(webhook => webhook.url === `${DOMAIN}/twitter/webhook`);
 
-  if (webhookObj) {
-    debugTwitter('Webhook already exists');
-    return;
-  }
+    if (webhookObj) {
+      debugTwitter('Webhook already exists');
+      return;
+    }
 
-  const requestOptions = {
-    url:
-      'https://api.twitter.com/1.1/account_activity/all/' + twitterConfig.twitterWebhookEnvironment + '/webhooks.json',
-    oauth: twitterConfig.oauth,
-    headers: {
-      'Content-type': 'application/x-www-form-urlencoded',
-    },
-    form: {
-      url: `${DOMAIN}/twitter/webhook`,
-    },
-  };
+    const requestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterConfig.twitterWebhookEnvironment +
+        '/webhooks.json',
+      oauth: twitterConfig.oauth,
+      headers: {
+        'Content-type': 'application/x-www-form-urlencoded',
+      },
+      form: {
+        url: `${DOMAIN}/twitter/webhook`,
+      },
+    };
 
-  for (const webhook of webhooks) {
-    await deleteWebhook(webhook.id);
-  }
+    for (const webhook of webhooks || []) {
+      await deleteWebhook(webhook.id).catch(e => {
+        debugTwitter('Could not retreive webhooks', e.message);
+      });
+    }
 
-  debugTwitter('Registering webhook');
+    debugTwitter('Registering webhook');
 
-  return request.post(requestOptions);
+    request
+      .post(requestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(er => {
+        debugTwitter(er.message);
+        reject(er.message);
+      });
+  });
 };
 
 interface IWebhook {
@@ -200,9 +216,7 @@ export const unsubscribe = (userId: string) => {
   return new Promise(async (resolve, reject) => {
     const bearer = await getTwitterBearerToken();
     const requestOptions = {
-      url: `https://api.twitter.com/1.1/account_activity/all/${
-        twitterConfig.twitterWebhookEnvironment
-      }/subscriptions/${userId}.json`,
+      url: `https://api.twitter.com/1.1/account_activity/all/${twitterConfig.twitterWebhookEnvironment}/subscriptions/${userId}.json`,
       auth: {
         bearer,
       },

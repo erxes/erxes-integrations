@@ -8,11 +8,9 @@ import { ConversationMessages, Conversations } from './models';
 import receiveDms from './receiveDms';
 
 const init = async app => {
-  try {
-    await twitterUtils.registerWebhook();
-  } catch (e) {
+  twitterUtils.registerWebhook().catch(e => {
     debugTwitter('Could not register webhook', e.message);
-  }
+  });
 
   app.get(
     '/twitter/login',

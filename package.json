@@ -51,14 +51,12 @@
     "meteor-random": "^0.0.3",
     "migrate": "^1.6.2",
     "mongoose": "^5.2.16",
+    "nylas": "^4.7.0",
     "passport": "^0.4.0",
     "passport-twitter": "^1.0.4",
-    "query-string": "^6.8.3",
-    "nylas": "^4.7.0",
     "querystring": "^0.2.0",
     "request": "^2.88.0",
-    "request-promise": "^4.2.4",
-    "requestify": "^0.2.5"
+    "request-promise": "^4.2.4"
   },
   "peerOptionalDependencies": {
     "kerberos": "^1.0.0"

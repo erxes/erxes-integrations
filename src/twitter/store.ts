@@ -41,7 +41,7 @@ export const getOrCreateCustomer = async (integration: IIntegration, userId: str
       path: '/integrations-api',
       method: 'POST',
       body: {
-        action: 'create-or-update-customer',
+        action: 'get-create-update-customer',
         payload: JSON.stringify({
           integrationId: integration.erxesApiId,
           firstName: receiver.screen_name,
