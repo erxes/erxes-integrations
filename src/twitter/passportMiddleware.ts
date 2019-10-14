@@ -1,5 +1,5 @@
 import * as TwitterStrategy from 'passport-twitter';
-import { twitterConfig } from './utils';
+import { twitterConfig } from './api';
 
 const init = passport => {
   // Configure the Twitter strategy for use by Passport.

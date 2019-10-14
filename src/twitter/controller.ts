@@ -9,7 +9,7 @@ import receiveDms from './receiveDms';
 
 const init = async app => {
   try {
-    twitterUtils.registerWebhook();
+    await twitterUtils.registerWebhook();
   } catch (e) {
     debugTwitter('Could not register webhook', e.message);
   }
