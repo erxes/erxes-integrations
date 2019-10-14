@@ -11,6 +11,7 @@ import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
 import './messageQueue';
 import Accounts from './models/Accounts';
+import initNylas from './nylas/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
 import initPassport from './twitter/passportMiddleware';
@@ -71,7 +72,15 @@ app.post('/integrations/remove', async (req, res) => {
 app.get('/accounts', async (req, res) => {
   debugRequest(debugIntegrations, req);
 
-  const accounts = await Accounts.find({ kind: req.query.kind });
+  let { kind } = req.query;
+
+  if (kind.includes('nylas')) {
+    kind = kind.split('-')[1];
+  }
+
+  const selector = { kind };
+
+  const accounts = await Accounts.find(selector);
 
   debugResponse(debugIntegrations, req, JSON.stringify(accounts));
 
@@ -109,6 +118,9 @@ initPassport(passport);
 
 // init twitter
 initTwitter(app);
+
+// init nylas
+initNylas(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
