@@ -1,15 +1,18 @@
 import * as fs from 'fs';
 import * as passport from 'passport';
-import * as request from 'request-promise';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { getEnv } from '../utils';
+import * as twitterUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveDms from './receiveDms';
-import * as twitterUtils from './utils';
 
 const init = async app => {
-  twitterUtils.registerWebhook();
+  try {
+    twitterUtils.registerWebhook();
+  } catch (e) {
+    debugTwitter('Could not register webhook', e.message);
+  }
 
   app.get(
     '/twitter/login',
@@ -54,8 +57,12 @@ const init = async app => {
     }
   });
 
-  app.post('/twitter/webhook', (req, res) => {
-    receiveDms(req.body);
+  app.post('/twitter/webhook', async (req, res, next) => {
+    try {
+      await receiveDms(req.body);
+    } catch (e) {
+      return next(new Error(e));
+    }
 
     res.sendStatus(200);
   });
@@ -93,42 +100,15 @@ const init = async app => {
       twitterAccountId: data.twitterAccountId,
     });
 
-    const addSub = () => {
-      const subRequestOptions = {
-        url:
-          'https://api.twitter.com/1.1/account_activity/all/' +
-          twitterUtils.twitterConfig.twitterWebhookEnvironment +
-          '/subscriptions.json',
-        oauth: twitterUtils.twitterConfig.oauth,
-        resolveWithFullResponse: true,
-      };
-
-      subRequestOptions.oauth.token = account.token;
-      subRequestOptions.oauth.token_secret = account.tokenSecret;
-
-      return request.post(subRequestOptions);
-    };
-
     try {
-      await addSub();
+      await twitterUtils.subscribeToWebhook(account);
     } catch (e) {
       // deleting previous subscription
       if (e.message.includes('already exists')) {
-        const requestOptions = {
-          url:
-            'https://api.twitter.com/1.1/account_activity/all/' +
-            twitterUtils.twitterConfig.twitterWebhookEnvironment +
-            '/subscriptions.json',
-          oauth: twitterUtils.twitterConfig.oauth,
-        };
-
-        requestOptions.oauth.token = account.token;
-        requestOptions.oauth.token_secret = account.tokenSecret;
-
-        await request.delete(requestOptions);
+        await twitterUtils.removeFromWebhook(account);
 
         // adding new subscription
-        await addSub();
+        await twitterUtils.subscribeToWebhook(account);
       }
     }
 
@@ -163,30 +143,7 @@ const init = async app => {
 
     const receiverId = conversation.receiverId;
 
-    const requestOptions = {
-      url: 'https://api.twitter.com/1.1/direct_messages/events/new.json',
-      oauth: twitterUtils.twitterConfig.oauth,
-      body: {
-        event: {
-          type: 'message_create',
-          message_create: {
-            target: {
-              recipient_id: receiverId,
-            },
-            message_data: {
-              text: content,
-              attachment: attachment.media.id ? attachment : null,
-            },
-          },
-        },
-      },
-      json: true,
-    };
-
-    requestOptions.oauth.token = account.token;
-    requestOptions.oauth.token_secret = account.tokenSecret;
-
-    const message = await request.post(requestOptions);
+    const message = await twitterUtils.reply(receiverId, content, attachment, account);
 
     const { event } = message;
     const { id, created_timestamp, message_create } = event;
@@ -211,15 +168,7 @@ const init = async app => {
     const body = fs.readFileSync(file.path);
     const base64 = body.toString('base64');
 
-    const requestOptions = {
-      url: 'https://upload.twitter.com/1.1/media/upload.json',
-      oauth: twitterUtils.twitterConfig.oauth,
-      form: {
-        media_data: base64,
-      },
-    };
-
-    const response = await request.post(requestOptions);
+    const response = await twitterUtils.upload(base64);
 
     return res.json({ response });
   });

@@ -14,6 +14,7 @@ import Accounts from './models/Accounts';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
 import initPassport from './twitter/passportMiddleware';
+import { getEnv } from './utils';
 
 // load environment variables
 dotenv.config();
@@ -44,7 +45,7 @@ app.use(
     saveUninitialized: true,
     sameSite: false,
     cookie: {
-      secure: true,
+      secure: getEnv({ name: 'DOMAIN' }).includes('https') ? true : false,
     },
   }),
 );

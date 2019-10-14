@@ -20,12 +20,12 @@ import {
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
+import { unsubscribe } from './twitter/api';
 import {
   ConversationMessages as TwitterConversationMessages,
   Conversations as TwitterConversations,
   Customers as TwitterCustomers,
 } from './twitter/models';
-import { unsubscribe } from './twitter/utils';
 
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
@@ -92,6 +92,8 @@ export const removeIntegration = async (id: string) => {
     debugTwitter('Removing twitter entries');
 
     const conversationIds = await TwitterConversations.find(selector).distinct('_id');
+
+    unsubscribe(account.uid);
 
     await TwitterConversationMessages.deleteMany(selector);
     await TwitterConversations.deleteMany(selector);

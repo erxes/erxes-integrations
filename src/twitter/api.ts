@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import * as queryString from 'query-string';
 import * as request from 'request-promise';
 import { debugTwitter } from '../debuggers';
+import { IAccount } from '../models/Accounts';
 import { getEnv } from '../utils';
 
 interface ITwitterConfig {
@@ -195,7 +196,7 @@ export const deleteWebhook = webhookId => {
   });
 };
 
-export const unsubscribe = userId => {
+export const unsubscribe = (userId: string) => {
   return new Promise(async (resolve, reject) => {
     const bearer = await getTwitterBearerToken();
     const requestOptions = {
@@ -209,6 +210,125 @@ export const unsubscribe = userId => {
 
     request
       .delete(requestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const subscribeToWebhook = (account: IAccount) => {
+  return new Promise((resolve, reject) => {
+    const subRequestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterConfig.twitterWebhookEnvironment +
+        '/subscriptions.json',
+      oauth: twitterConfig.oauth,
+      resolveWithFullResponse: true,
+    };
+
+    subRequestOptions.oauth.token = account.token;
+    subRequestOptions.oauth.token_secret = account.tokenSecret;
+
+    request
+      .post(subRequestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const removeFromWebhook = (account: IAccount) => {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      url:
+        'https://api.twitter.com/1.1/account_activity/all/' +
+        twitterConfig.twitterWebhookEnvironment +
+        '/subscriptions.json',
+      oauth: twitterConfig.oauth,
+    };
+
+    requestOptions.oauth.token = account.token;
+    requestOptions.oauth.token_secret = account.tokenSecret;
+
+    request
+      .delete(requestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+interface IMessage {
+  event: {
+    type: string;
+    id: string;
+    created_timestamp: string;
+    message_create: {
+      message_data: {
+        text: string;
+      };
+    };
+  };
+}
+
+export const reply = (receiverId: string, content: string, attachment, account: IAccount): Promise<IMessage> => {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      url: 'https://api.twitter.com/1.1/direct_messages/events/new.json',
+      oauth: twitterConfig.oauth,
+      body: {
+        event: {
+          type: 'message_create',
+          message_create: {
+            target: {
+              recipient_id: receiverId,
+            },
+            message_data: {
+              text: content,
+              attachment: attachment.media.id ? attachment : null,
+            },
+          },
+        },
+      },
+      json: true,
+    };
+
+    requestOptions.oauth.token = account.token;
+    requestOptions.oauth.token_secret = account.tokenSecret;
+
+    request
+      .post(requestOptions)
+      .then(res => {
+        resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const upload = base64 => {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      url: 'https://upload.twitter.com/1.1/media/upload.json',
+      oauth: twitterConfig.oauth,
+      form: {
+        media_data: base64,
+      },
+    };
+
+    request
+      .post(requestOptions)
       .then(res => {
         resolve(res);
       })
