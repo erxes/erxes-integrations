@@ -11,6 +11,7 @@ export interface IIntegration {
   phoneNumber: string;
   expiration?: string;
   gmailHistoryId?: string;
+  chatfuelCode?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {}
@@ -26,6 +27,7 @@ export const integrationSchema = new Schema({
   email: String,
   expiration: String,
   gmailHistoryId: String,
+  chatfuelCode: String,
   facebookPageTokensMap: field({
     type: Object,
     default: {},
