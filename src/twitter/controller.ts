@@ -1,33 +1,32 @@
-import * as passport from 'passport';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { getEnv } from '../utils';
 import * as twitterUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveDms from './receiveDms';
-import { downloadImageFromApi } from './utils';
 
 const init = async app => {
   twitterUtils.registerWebhook().catch(e => {
     debugTwitter('Could not register webhook', e.message);
   });
 
-  app.get(
-    '/twitter/login',
-    passport.authenticate('twitter', {
-      callbackURL: `${getEnv({ name: 'DOMAIN' })}/twitter/callback/add`,
-    }),
-  );
+  app.get('/twitter/login', async (_req, res) => {
+    const { twitterAuthUrl } = await twitterUtils.getTwitterAuthUrl();
 
-  app.get(`/twitter/callback/add`, passport.authenticate('twitter', { failureRedirect: '/' }), async (req, res) => {
-    const { profile, access_token, access_token_secret } = req.user;
+    return res.redirect(twitterAuthUrl);
+  });
+
+  app.get(`/twitter/callback/add`, async (req, res) => {
+    const response = await twitterUtils.veriyfyLoginToken(req.query.oauth_token, req.query.oauth_verifier);
+
+    const profile = await twitterUtils.verifyUser(response.oauth_token, response.oauth_token_secret);
 
     await Accounts.create({
-      token: access_token,
-      tokenSecret: access_token_secret,
-      name: profile.username,
+      token: response.oauth_token,
+      tokenSecret: response.oauth_token_secret,
+      name: profile.screen_name,
       kind: 'twitter',
-      uid: profile.id,
+      uid: profile.id_str,
     });
 
     const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
@@ -130,7 +129,7 @@ const init = async app => {
     };
 
     for (const attach of attachments) {
-      const base64 = await downloadImageFromApi(attach.url);
+      const base64 = await twitterUtils.downloadImageFromApi(attach.url);
       attachment.media.id = attach.url;
 
       const response: any = await twitterUtils.upload(base64);

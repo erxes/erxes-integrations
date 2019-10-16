@@ -29,35 +29,39 @@ export const twitterConfig: ITwitterConfig = {
   twitterWebhookEnvironment: getEnv({ name: 'TWITTER_WEBHOOK_ENV' }),
 };
 
-export const getTwitterAuthUrl = (host, callbackAction) => {
+export const getTwitterAuthUrl = (): Promise<{
+  responseParams: queryString.ParsedUrlQuery;
+  twitterAuthUrl: string;
+}> => {
   // construct request to retrieve authorization token
   const requestOptions = {
     url: 'https://api.twitter.com/oauth/request_token',
     method: 'POST',
     oauth: {
-      callback: 'https://' + host + '/callbacks/twitter/' + callbackAction,
+      callback: `${getEnv({ name: 'DOMAIN' })}/twitter/callback/add`,
       consumer_key: twitterConfig.oauth.consumer_key,
       consumer_secret: twitterConfig.oauth.consumer_secret,
     },
   };
 
   return new Promise((resolve, reject) => {
-    request(requestOptions, (error, response) => {
-      if (error) {
-        reject(error);
-      } else {
+    request
+      .post(requestOptions)
+      .then(response => {
         // construct sign-in URL from returned authorization token
-        const responseParams = queryString.parse(response.body);
+        const responseParams = queryString.parse(response);
 
         const twitterAuthUrl =
           'https://api.twitter.com/oauth/authenticate?force_login=true&oauth_token=' + responseParams.oauth_token;
 
         resolve({
-          response_params: responseParams,
-          twitter_auth_url: twitterAuthUrl,
+          responseParams,
+          twitterAuthUrl,
         });
-      }
-    });
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 };
 
@@ -345,6 +349,83 @@ export const upload = base64 => {
       .post(requestOptions)
       .then(res => {
         resolve(res);
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const downloadImageFromApi = imageId => {
+  return new Promise(async (resolve, reject) => {
+    const MAIN_API_DOMAIN = getEnv({ name: 'MAIN_API_DOMAIN' });
+    const url = `${MAIN_API_DOMAIN}/read-file?key=${imageId}`;
+
+    const options = {
+      url,
+      encoding: null,
+    };
+
+    try {
+      await request.get(options).then(res => {
+        const buffer = Buffer.from(res, 'utf8');
+
+        resolve(buffer.toString('base64'));
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+export const veriyfyLoginToken = (
+  oauthToken,
+  oauthVerifier,
+): Promise<{ oauth_token: string; oauth_token_secret: string; user_id: string; screen_name: string }> => {
+  return new Promise((resolve, reject) => {
+    const requestOptions: any = {
+      url: 'https://api.twitter.com/oauth/access_token',
+      oauth: twitterConfig.oauth,
+      headers: {
+        'Content-type': 'application/x-www-form-urlencoded',
+      },
+      form: {
+        oauth_verifier: oauthVerifier,
+      },
+    };
+
+    requestOptions.oauth.token = oauthToken;
+
+    request
+      .post(requestOptions)
+      .then(res => {
+        const responseParams: any = queryString.parse(res);
+
+        resolve({ ...responseParams });
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
+};
+
+export const verifyUser = (
+  token,
+  tokenSecret,
+): Promise<{ id: string; username: string; name: string; screen_name: string; id_str: string }> => {
+  return new Promise((resolve, reject) => {
+    const requestOptions: any = {
+      url: 'https://api.twitter.com/1.1/account/verify_credentials.json',
+      oauth: twitterConfig.oauth,
+    };
+
+    requestOptions.oauth.token = token;
+    requestOptions.oauth.token_secret = tokenSecret;
+
+    request
+      .get(requestOptions)
+      .then(res => {
+        resolve(JSON.parse(res));
       })
       .catch(e => {
         reject(e);
