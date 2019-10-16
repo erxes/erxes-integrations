@@ -163,13 +163,21 @@ const init = async app => {
     res.send('success');
   });
 
-  app.post('/chatfuel/reply', async (req, res) => {
+  app.post('/chatfuel/reply', async (req, res, next) => {
     debugRequest(debugChatfuel, req);
 
-    const { content } = req.body;
+    const { content, conversationId } = req.body;
+
+    const conversation = await Conversations.findOne({ erxesApiId: conversationId });
+
+    if (!conversation) {
+      return next(new Error(`Conversation not found with id ${conversationId}`));
+    }
 
     await sendRequest({
-      url: `https://api.chatfuel.com/bots/5da6c0d92cc91e0001d5a751/users/3150994968251873/send?chatfuel_token=mELtlMAHYqR0BvgEiMq8zVek3uYUK3OJMbtyrdNPTrQB9ndV0fM7lWTFZbM4MZvD&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=Answer&content=${content}`,
+      url: `https://api.chatfuel.com/bots/5da6c0d92cc91e0001d5a751/users/${
+        conversation.chatfuelUserId
+      }/send?chatfuel_token=mELtlMAHYqR0BvgEiMq8zVek3uYUK3OJMbtyrdNPTrQB9ndV0fM7lWTFZbM4MZvD&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=Answer&content=${content}`,
       method: 'POST',
     });
 
