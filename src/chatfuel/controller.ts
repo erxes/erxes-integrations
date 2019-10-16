@@ -66,6 +66,7 @@ const init = async app => {
     const lastName = body['last name'];
     const profilePicUrl = body['profile pic url'];
     const chatfuelUserId = body['chatfuel user id'];
+    const lastClickedButtonName = body['last clicked button name'];
 
     // get customer
     let customer = await Customers.findOne({ chatfuelUserId });
@@ -126,7 +127,7 @@ const init = async app => {
             action: 'create-or-update-conversation',
             payload: JSON.stringify({
               customerId: customer.erxesApiId,
-              content: message,
+              content: `Button name: ${lastClickedButtonName}, ${message}`,
               integrationId: integration.erxesApiId,
             }),
           },
