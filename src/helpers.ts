@@ -100,8 +100,6 @@ export const removeIntegration = async (id: string) => {
 
     const conversationIds = await CallProConversations.find(selector).distinct('_id');
 
-    await unsubscribe(account.uid);
-
     await CallProCustomers.deleteMany(selector);
     await CallProConversations.deleteMany(selector);
     await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
