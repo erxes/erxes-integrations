@@ -111,28 +111,28 @@ const init = async app => {
       } catch (e) {
         throw new Error(e.message.includes('duplicate') ? 'Concurrent request: conversation duplication' : e);
       }
-    }
 
-    // save on api
-    try {
-      const apiConversationResponse = await fetchMainApi({
-        path: '/integrations-api',
-        method: 'POST',
-        body: {
-          action: 'create-or-update-conversation',
-          payload: JSON.stringify({
-            customerId: customer.erxesApiId,
-            content: message,
-            integrationId: integration.erxesApiId,
-          }),
-        },
-      });
+      // save on api
+      try {
+        const apiConversationResponse = await fetchMainApi({
+          path: '/integrations-api',
+          method: 'POST',
+          body: {
+            action: 'create-or-update-conversation',
+            payload: JSON.stringify({
+              customerId: customer.erxesApiId,
+              content: message,
+              integrationId: integration.erxesApiId,
+            }),
+          },
+        });
 
-      conversation.erxesApiId = apiConversationResponse._id;
-      await conversation.save();
-    } catch (e) {
-      await Conversations.deleteOne({ _id: conversation._id });
-      throw new Error(e);
+        conversation.erxesApiId = apiConversationResponse._id;
+        await conversation.save();
+      } catch (e) {
+        await Conversations.deleteOne({ _id: conversation._id });
+        throw new Error(e);
+      }
     }
 
     // save on integrations db
