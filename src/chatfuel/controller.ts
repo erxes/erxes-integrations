@@ -8,10 +8,10 @@ const init = async app => {
     debugRequest(debugChatfuel, req);
 
     const { integrationId, data } = req.body;
-    const { code } = JSON.parse(data);
+    const { code, broadcastToken, botId, blockName } = JSON.parse(data);
 
     // Check existing Integration
-    const integration = await Integrations.findOne({ kind: 'chatfuel', chatfuelCode: code }).lean();
+    const integration = await Integrations.findOne({ kind: 'chatfuel', 'chatfuelConfigs.code': code }).lean();
 
     if (integration) {
       return next(`Integration already exists with this code: ${code}`);
@@ -21,7 +21,12 @@ const init = async app => {
       await Integrations.create({
         kind: 'chatfuel',
         erxesApiId: integrationId,
-        chatfuelCode: code,
+        chatfuelConfigs: {
+          code,
+          broadcastToken,
+          botId,
+          blockName,
+        },
       });
     } catch (e) {
       debugChatfuel(`Failed to create integration: ${e}`);
@@ -50,7 +55,7 @@ const init = async app => {
     }
 
     const code = req.query.code;
-    const integration = await Integrations.findOne({ chatfuelCode: code }).lean();
+    const integration = await Integrations.findOne({ 'chatfuelConfigs.code': code }).lean();
 
     if (!integration) {
       debugChatfuel(`Integrtion not found with: ${code}`);
@@ -174,10 +179,13 @@ const init = async app => {
       return next(new Error(`Conversation not found with id ${conversationId}`));
     }
 
+    const integration = await Integrations.getIntegration({ _id: conversation.integrationId });
+    const configs = integration.chatfuelConfigs || {};
+
     await sendRequest({
-      url: `https://api.chatfuel.com/bots/5da6c0d92cc91e0001d5a751/users/${
-        conversation.chatfuelUserId
-      }/send?chatfuel_token=mELtlMAHYqR0BvgEiMq8zVek3uYUK3OJMbtyrdNPTrQB9ndV0fM7lWTFZbM4MZvD&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=Answer&content=${content}`,
+      url: `https://api.chatfuel.com/bots/${configs.botId}/users/${conversation.chatfuelUserId}/send?chatfuel_token=${
+        configs.broadcastToken
+      }&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=${configs.blockName}&content=${content}`,
       method: 'POST',
     });
 
