@@ -63,7 +63,7 @@ const init = async app => {
     }
 
     const firstName = body['first name'];
-    const lastName = body['first name'];
+    const lastName = body['last name'];
     const profilePicUrl = body['profile pic url'];
     const chatfuelUserId = body['chatfuel user id'];
 
