@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as passport from 'passport';
 import { debugRequest, debugResponse, debugTwitter } from '../debuggers';
 import { Accounts, Integrations } from '../models';
@@ -6,6 +5,7 @@ import { getEnv } from '../utils';
 import * as twitterUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveDms from './receiveDms';
+import { downloadImageFromApi } from './utils';
 
 const init = async app => {
   twitterUtils.registerWebhook().catch(e => {
@@ -116,7 +116,7 @@ const init = async app => {
   });
 
   app.post('/twitter/reply', async (req, res) => {
-    const { conversationId, content, integrationId, attachments } = req.body;
+    const { attachments, conversationId, content, integrationId } = req.body;
 
     if (attachments.length > 1) {
       throw new Error('You can only attach one file');
@@ -130,7 +130,11 @@ const init = async app => {
     };
 
     for (const attach of attachments) {
+      const base64 = await downloadImageFromApi(attach.url);
       attachment.media.id = attach.url;
+
+      const response: any = await twitterUtils.upload(base64);
+      attachment.media.id = JSON.parse(response).media_id_string;
     }
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
@@ -158,17 +162,6 @@ const init = async app => {
     debugResponse(debugTwitter, req);
 
     res.sendStatus(200);
-  });
-
-  app.post('/twitter/upload', async (req, res) => {
-    const { file } = req.body;
-
-    const body = fs.readFileSync(file.path);
-    const base64 = body.toString('base64');
-
-    const response = await twitterUtils.upload(base64);
-
-    return res.json({ response });
   });
 };
 
