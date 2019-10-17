@@ -48,26 +48,22 @@ const connectImapToNylas = async (kind: string, account: IAccount & { _id: strin
 
   const { email, password } = account;
 
-  const settings = {
-    imap_username: email,
-    imap_password: password,
-    smtp_username: email,
-    smtp_password: password,
-    imap_host: IMAP_HOST,
-    imap_port: Number(IMAP_PORT),
-    smtp_host: SMTP_HOST,
-    smtp_port: Number(SMTP_PORT),
-    ssl_required: true,
-  };
-
-  const params = {
+  const { access_token, account_id } = await integrateProviderToNylas({
     email,
     kind,
-    settings,
     scopes: 'email',
-  };
-
-  const { access_token, account_id } = await integrateProviderToNylas(params);
+    settings: {
+      imap_username: email,
+      imap_password: password,
+      smtp_username: email,
+      smtp_password: password,
+      imap_host: IMAP_HOST,
+      imap_port: Number(IMAP_PORT),
+      smtp_host: SMTP_HOST,
+      smtp_port: Number(SMTP_PORT),
+      ssl_required: true,
+    },
+  });
 
   await updateAccount(account._id, account_id, access_token);
 };

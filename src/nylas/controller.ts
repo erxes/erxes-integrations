@@ -66,10 +66,14 @@ const init = async app => {
       erxesApiId: integrationId,
     });
 
-    if (kind === 'gmail') {
-      await connectGoogleToNylas(kind, account);
-    } else if (kind === 'imap') {
-      await connectImapToNylas(kind, account);
+    // Connectin provider to nylas ===========
+    switch (kind) {
+      case 'gmail':
+        await connectGoogleToNylas(kind, account);
+        break;
+      case 'imap':
+        await connectImapToNylas(kind, account);
+        break;
     }
 
     debugNylas(`Successfully created the integration and connected to nylas`);
