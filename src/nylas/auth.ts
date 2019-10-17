@@ -54,9 +54,9 @@ const connectImapToNylas = async (kind: string, account: IAccount & { _id: strin
     smtp_username: email,
     smtp_password: password,
     imap_host: IMAP_HOST,
-    imap_port: IMAP_PORT,
+    imap_port: Number(IMAP_PORT),
     smtp_host: SMTP_HOST,
-    smtp_port: SMTP_PORT,
+    smtp_port: Number(SMTP_PORT),
     ssl_required: true,
   };
 
