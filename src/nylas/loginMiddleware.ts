@@ -93,4 +93,26 @@ const getOAuthCredentials = async (req, res, next) => {
   res.redirect(AUTHORIZED_REDIRECT_URL);
 };
 
-export { getOAuthCredentials };
+/**
+ * Create IMAP account
+ * @param {String} username
+ * @param {String} password
+ * @param {String} email
+ */
+const authenticateIMAP = async (req, res, next) => {
+  debugRequest(debugNylas, req);
+
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return next('Missing email or password');
+  }
+
+  debugNylas(`Creating account with email: ${email}`);
+
+  await Accounts.create({ email, password, name: email, kind: 'imap' });
+
+  res.redirect(AUTHORIZED_REDIRECT_URL);
+};
+
+export { getOAuthCredentials, authenticateIMAP };

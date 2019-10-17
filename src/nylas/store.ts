@@ -1,4 +1,5 @@
 import { debugNylas } from '../debuggers';
+import { Accounts } from '../models';
 import { fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './models';
@@ -18,6 +19,23 @@ const NYLAS_MODELS = {
     conversations: NylasGmailConversations,
     conversationMessages: NylasGmailConversationMessages,
   },
+};
+
+/**
+ * Connect account and add nylas token
+ * @param {String} _id
+ * @param {String} accountId
+ * @param {String} access_token
+ */
+const updateAccount = async (_id: string, accountId: string, access_token: string) => {
+  const selector = { _id };
+  const updateFields = { $set: { uid: accountId, nylasToken: access_token } };
+
+  try {
+    await Accounts.updateOne(selector, updateFields);
+  } catch (e) {
+    throw new Error(e.mesasge);
+  }
 };
 
 /**
@@ -245,4 +263,10 @@ const requestMainApi = (action: string, params: IAPICustomer | IAPIConversation 
   });
 };
 
-export { createOrGetNylasCustomer, createOrGetNylasConversation, createOrGetNylasConversationMessage, NYLAS_MODELS };
+export {
+  createOrGetNylasCustomer,
+  createOrGetNylasConversation,
+  createOrGetNylasConversationMessage,
+  NYLAS_MODELS,
+  updateAccount,
+};
