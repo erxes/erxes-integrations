@@ -1,6 +1,6 @@
 import { debugChatfuel, debugRequest } from '../debuggers';
 import { Integrations } from '../models';
-import { fetchMainApi, sendRequest } from '../utils';
+import { fetchMainApi, getEnv, sendRequest } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './models';
 
 const init = async app => {
@@ -41,7 +41,24 @@ const init = async app => {
 
     const body = req.body;
 
-    return res.json({ messages: [{ text: body.content }] });
+    const messages: Array<{ attachment?: { type: string; payload: { url: string } }; text?: string }> = [
+      { text: body.content },
+    ];
+
+    if (body.attachments) {
+      const attachments = body.attachments.split(',');
+
+      for (const attachment of attachments) {
+        messages.push({
+          attachment: {
+            type: 'file',
+            payload: { url: attachment },
+          },
+        });
+      }
+    }
+
+    return res.json({ messages });
   });
 
   app.post('/chatfuel-receive', async (req, res, next) => {
@@ -166,13 +183,15 @@ const init = async app => {
       throw new Error(e);
     }
 
-    res.send('success');
+    res.send({ status: 'success' });
   });
 
   app.post('/chatfuel/reply', async (req, res, next) => {
     debugRequest(debugChatfuel, req);
 
-    const { content, conversationId } = req.body;
+    const MAIN_API_DOMAIN = getEnv({ name: 'MAIN_API_DOMAIN' });
+
+    const { content, attachments, conversationId } = req.body;
 
     const conversation = await Conversations.findOne({ erxesApiId: conversationId });
 
@@ -183,10 +202,16 @@ const init = async app => {
     const integration = await Integrations.getIntegration({ _id: conversation.integrationId });
     const configs = integration.chatfuelConfigs || {};
 
+    const attachmentUrls = (attachments || [])
+      .map(attachment => `${MAIN_API_DOMAIN}/read-file?key=${attachment.url}`)
+      .toString();
+
     await sendRequest({
       url: `https://api.chatfuel.com/bots/${configs.botId}/users/${conversation.chatfuelUserId}/send?chatfuel_token=${
         configs.broadcastToken
-      }&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=${configs.blockName}&content=${content}`,
+      }&chatfuel_message_tag=NON_PROMOTIONAL_SUBSCRIPTION&chatfuel_block_name=${
+        configs.blockName
+      }&content=${content}&attachments=${attachmentUrls}`,
       method: 'POST',
     });
 
