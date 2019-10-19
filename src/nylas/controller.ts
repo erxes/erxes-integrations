@@ -16,7 +16,7 @@ dotenv.config();
 const init = async app => {
   app.get('/nylas/oauth2/callback', getOAuthCredentials);
 
-  app.post('/nylas/auth/imap/callback', authenticateIMAP);
+  app.post('/nylas/auth/imap', authenticateIMAP);
 
   app.get('/nylas/webhook', (req, res) => {
     // Validation endpoint for webhook
@@ -66,7 +66,7 @@ const init = async app => {
       erxesApiId: integrationId,
     });
 
-    // Connectin provider to nylas ===========
+    // Connect provider to nylas ===========
     switch (kind) {
       case 'gmail':
         await connectGoogleToNylas(kind, account);

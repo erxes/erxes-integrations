@@ -5,7 +5,7 @@ import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
 import { AUTHORIZED_REDIRECT_URL } from './constants';
-import { checkCredentials, getClientConfig, getProviderSettings } from './utils';
+import { checkCredentials, encryptPassword, getClientConfig, getProviderSettings } from './utils';
 
 // loading config
 dotenv.config();
@@ -110,7 +110,12 @@ const authenticateIMAP = async (req, res, next) => {
 
   debugNylas(`Creating account with email: ${email}`);
 
-  await Accounts.create({ email, password, name: email, kind: 'imap' });
+  await Accounts.create({
+    email,
+    password: encryptPassword(password),
+    name: email,
+    kind: 'imap',
+  });
 
   res.redirect(AUTHORIZED_REDIRECT_URL);
 };

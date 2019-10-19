@@ -6,7 +6,7 @@ import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { updateAccount } from './store';
 import { IIntegrateProvider } from './types';
-import { getClientConfig } from './utils';
+import { decryptPassword, getClientConfig } from './utils';
 
 // loading config
 dotenv.config();
@@ -48,15 +48,17 @@ const connectImapToNylas = async (kind: string, account: IAccount & { _id: strin
 
   const { email, password } = account;
 
+  const decryptedPassword = decryptPassword(password);
+
   const { access_token, account_id } = await integrateProviderToNylas({
     email,
     kind,
     scopes: 'email',
     settings: {
       imap_username: email,
-      imap_password: password,
+      imap_password: decryptedPassword,
       smtp_username: email,
-      smtp_password: password,
+      smtp_password: decryptedPassword,
       imap_host: IMAP_HOST,
       imap_port: Number(IMAP_PORT),
       smtp_host: SMTP_HOST,
