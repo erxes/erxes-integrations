@@ -3,6 +3,11 @@ import {
   Conversations as CallProConversations,
   Customers as CallProCustomers,
 } from './callpro/models';
+import {
+  ConversationMessages as ChatfuelConversationMessages,
+  Conversations as ChatfuelConversations,
+  Customers as ChatfuelCustomers,
+} from './chatfuel/models';
 import { debugCallPro, debugFacebook, debugGmail, debugNylas, debugTwitter } from './debuggers';
 import {
   Comments as FacebookComments,
@@ -21,7 +26,14 @@ import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
 import { enableOrDisableAccount } from './nylas/auth';
-import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './nylas/models';
+import {
+  NylasGmailConversationMessages,
+  NylasGmailConversations,
+  NylasGmailCustomers,
+  NylasImapConversationMessages,
+  NylasImapConversations,
+  NylasImapCustomers,
+} from './nylas/models';
 import { unsubscribe } from './twitter/api';
 import {
   ConversationMessages as TwitterConversationMessages,
@@ -50,11 +62,16 @@ export const removeIntegration = async (id: string) => {
     debugFacebook('Removing facebook entries');
 
     for (const pageId of integration.facebookPageIds) {
-      const pageTokenResponse = await getPageAccessToken(pageId, account.token);
+      let pageTokenResponse;
+
+      try {
+        pageTokenResponse = await getPageAccessToken(pageId, account.token);
+      } catch (e) {
+        debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+      }
 
       await FacebookPosts.deleteMany({ recipientId: pageId });
       await FacebookComments.deleteMany({ recipientId: pageId });
-
       await unsubscribePage(pageId, pageTokenResponse);
     }
 
@@ -115,6 +132,29 @@ export const removeIntegration = async (id: string) => {
     await TwitterConversationMessages.deleteMany(selector);
     await TwitterConversations.deleteMany(selector);
     await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'imap') {
+    debugNylas('Removing nylas-imap entries');
+
+    const conversationIds = await NylasImapConversations.find(selector).distinct('_id');
+
+    await NylasImapCustomers.deleteMany(selector);
+    await NylasImapConversations.deleteMany(selector);
+    await NylasImapConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+
+    // Cancel nylas subscription
+    await enableOrDisableAccount(account.uid, false);
+  }
+
+  if (kind === 'chatfuel') {
+    debugCallPro('Removing chatfuel entries');
+
+    const conversationIds = await ChatfuelConversations.find(selector).distinct('_id');
+
+    await ChatfuelCustomers.deleteMany(selector);
+    await ChatfuelConversations.deleteMany(selector);
+    await ChatfuelConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   return Integrations.deleteOne({ _id });

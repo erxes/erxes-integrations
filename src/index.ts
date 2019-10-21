@@ -2,6 +2,7 @@ import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import initCallPro from './callpro/controller';
+import initChatfuel from './chatfuel/controller';
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
@@ -96,6 +97,9 @@ initCallPro(app);
 
 // init twitter
 initTwitter(app);
+
+// init chatfuel
+initChatfuel(app);
 
 // init nylas
 initNylas(app);
