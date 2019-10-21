@@ -10,7 +10,14 @@ import receiveMessage from './receiveMessage';
 import receivePost from './receivePost';
 
 import { FACEBOOK_POST_TYPES } from './constants';
-import { getPageAccessToken, getPageAccessTokenFromMap, getPageList, sendReply, subscribePage } from './utils';
+import {
+  generateAttachmentMessages,
+  getPageAccessToken,
+  getPageAccessTokenFromMap,
+  getPageList,
+  sendReply,
+  subscribePage,
+} from './utils';
 
 const init = async app => {
   app.get('/fblogin', loginMiddleware);
@@ -111,30 +118,25 @@ const init = async app => {
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
-    const { recipientId } = conversation;
-
-    let attachment: { url?: string; type?: string; payload?: { url: string } } = {};
-
-    if (attachments && attachments.length > 0) {
-      attachment = {
-        type: 'file',
-        payload: {
-          url: attachments[0].url,
-        },
-      };
-    }
-
-    const data = {
-      recipient: { id: conversation.senderId },
-      message: {
-        text: content,
-        attachment,
-      },
-    };
+    const { recipientId, senderId } = conversation;
 
     try {
-      const response = await sendReply('me/messages', data, recipientId, integrationId);
-      res.json(response);
+      if (content) {
+        const response = await sendReply(
+          'me/messages',
+          { recipient: { id: senderId }, message: { text: content } },
+          recipientId,
+          integrationId,
+        );
+
+        return res.json(response);
+      }
+
+      for (const message of generateAttachmentMessages(attachments)) {
+        await sendReply('me/messages', { recipient: { id: senderId }, message }, recipientId, integrationId);
+      }
+
+      return res.json({ status: 'success' });
     } catch (e) {
       return next(new Error(e));
     }
@@ -230,7 +232,9 @@ const init = async app => {
 
             const pageId = activity.recipient.id;
 
-            const integration = await Integrations.getIntegration({ facebookPageIds: { $in: [pageId] } });
+            const integration = await Integrations.getIntegration({
+              $and: [{ facebookPageIds: { $in: pageId } }, { kind: 'facebook-messenger' }],
+            });
 
             await Accounts.getAccount({ _id: integration.accountId });
 
