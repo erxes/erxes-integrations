@@ -85,9 +85,32 @@ const setNylasToken = (accessToken: string) => {
 const getClientConfig = (kind: string): string[] => {
   const providers = {
     gmail: [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })],
+    office365: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
   };
 
   return providers[kind];
+};
+
+const getProviderSettings = (kind: string, refreshToken: string) => {
+  const DOMAIN = getEnv({ name: 'DOMAIN' });
+
+  const [clientId, clientSecret] = getClientConfig(kind);
+
+  switch (kind) {
+    case 'gmail':
+      return {
+        google_client_id: clientId,
+        google_client_secret: clientSecret,
+        google_refresh_token: refreshToken,
+      };
+    case 'office365':
+      return {
+        microsoft_client_id: clientId,
+        microsoft_client_secret: clientSecret,
+        microsoft_refresh_token: refreshToken,
+        redirect_uri: `${DOMAIN}/nylas/create-integration`,
+      };
+  }
 };
 
 /**
@@ -95,7 +118,7 @@ const getClientConfig = (kind: string): string[] => {
  * @param {String} kind
  * @returns {Object} configs
  */
-const getProviderSettings = (kind: string) => {
+const getProviderConfigs = (kind: string) => {
   const gmail = {
     params: {
       access_type: 'offline',
@@ -107,7 +130,21 @@ const getProviderSettings = (kind: string) => {
     },
   };
 
-  const providers = { gmail };
+  const office365 = {
+    params: {
+      scope: MICROSOFT_SCOPES,
+    },
+    urls: {
+      authUrl: MICROSOFT_OAUTH_AUTH_URL,
+      tokenUrl: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+    },
+    requestParams: {
+      headerType: 'application/x-www-form-urlencoded',
+      dataType: 'form-url-encoded',
+    },
+  };
+
+  const providers = { gmail, office365 };
 
   return providers[kind];
 };
@@ -203,12 +240,13 @@ const decryptPassword = (password: string): string => {
 export {
   setNylasToken,
   nylasSendMessage,
-  getProviderSettings,
-  getClientConfig,
+  getProviderConfigs,
   nylasRequest,
   checkCredentials,
   buildEmailAddress,
   verifyNylasSignature,
   encryptPassword,
   decryptPassword,
+  getProviderSettings,
+  getClientConfig,
 };

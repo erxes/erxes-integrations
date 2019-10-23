@@ -5,7 +5,7 @@ import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { getEmailFromAccessToken } from './api';
 import { AUTHORIZED_REDIRECT_URL } from './constants';
-import { checkCredentials, encryptPassword, getClientConfig, getProviderSettings } from './utils';
+import { checkCredentials, encryptPassword, getClientConfig, getProviderConfigs } from './utils';
 
 // loading config
 dotenv.config();
@@ -45,7 +45,7 @@ const getOAuthCredentials = async (req, res, next) => {
 
   const redirectUri = `${DOMAIN}/nylas/oauth2/callback`;
 
-  const { params, urls, requestParams } = getProviderSettings(kind);
+  const { params, urls, requestParams } = getProviderConfigs(kind);
 
   if (!req.query.code) {
     if (!req.query.error) {
