@@ -81,7 +81,7 @@ const integrateProviderToNylas = async (args: IIntegrateProvider) => {
   const code = await getNylasCode({
     provider: kind,
     settings,
-    name: 'erxes',
+    name: email,
     email_address: email,
     client_id: NYLAS_CLIENT_ID,
     ...(scopes ? { scopes } : {}),

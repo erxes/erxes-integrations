@@ -5,7 +5,7 @@ interface IRequestParams {
   url?: string;
   path?: string;
   headerType?: string;
-  dataType?: string;
+  headerParams?: { [key: string]: string };
   method: string;
   params?: { [key: string]: string };
   body?: { [key: string]: string | string[] };
@@ -24,7 +24,7 @@ export const checkConcurrentError = (e: any, name: string) => {
 /**
  * Send request
  */
-export const sendRequest = ({ url, headerType, dataType, method, body, params }: IRequestParams): Promise<any> => {
+export const sendRequest = ({ url, headerType, headerParams, method, body, params }: IRequestParams): Promise<any> => {
   return new Promise((resolve, reject) => {
     const DOMAIN = getEnv({ name: 'DOMAIN' });
 
@@ -42,10 +42,13 @@ export const sendRequest = ({ url, headerType, dataType, method, body, params }:
     request({
       uri: url,
       method,
-      headers: { 'Content-Type': headerType || 'application/json', origin: DOMAIN },
-      body,
+      headers: {
+        'Content-Type': headerType || 'application/json',
+        ...headerParams,
+        origin: DOMAIN,
+      },
+      ...(headerType && headerType.includes('form') ? { form: body } : { body }),
       qs: params,
-      dataType: dataType || 'json',
       json: true,
     })
       .then(res => {

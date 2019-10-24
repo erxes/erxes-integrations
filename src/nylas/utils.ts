@@ -3,7 +3,14 @@ import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
 import { getEnv } from '../utils';
-import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES } from './constants';
+import {
+  GOOGLE_OAUTH_ACCESS_TOKEN_URL,
+  GOOGLE_OAUTH_AUTH_URL,
+  GOOGLE_SCOPES,
+  MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+  MICROSOFT_OAUTH_AUTH_URL,
+  MICROSOFT_SCOPES,
+} from './constants';
 import { IMessageDraft } from './types';
 
 // load config
@@ -83,12 +90,14 @@ const setNylasToken = (accessToken: string) => {
  * @returns void
  */
 const getClientConfig = (kind: string): string[] => {
-  const providers = {
-    gmail: [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })],
-    office365: [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })],
-  };
-
-  return providers[kind];
+  switch (kind) {
+    case 'gmail': {
+      return [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })];
+    }
+    case 'office365': {
+      return [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })];
+    }
+  }
 };
 
 const getProviderSettings = (kind: string, refreshToken: string) => {
@@ -108,7 +117,7 @@ const getProviderSettings = (kind: string, refreshToken: string) => {
         microsoft_client_id: clientId,
         microsoft_client_secret: clientSecret,
         microsoft_refresh_token: refreshToken,
-        redirect_uri: `${DOMAIN}/nylas/create-integration`,
+        redirect_uri: `${DOMAIN}/nylas/oauth2/callback`,
       };
   }
 };
@@ -119,34 +128,34 @@ const getProviderSettings = (kind: string, refreshToken: string) => {
  * @returns {Object} configs
  */
 const getProviderConfigs = (kind: string) => {
-  const gmail = {
-    params: {
-      access_type: 'offline',
-      scope: GOOGLE_SCOPES,
-    },
-    urls: {
-      authUrl: GOOGLE_OAUTH_AUTH_URL,
-      tokenUrl: GOOGLE_OAUTH_ACCESS_TOKEN_URL,
-    },
-  };
-
-  const office365 = {
-    params: {
-      scope: MICROSOFT_SCOPES,
-    },
-    urls: {
-      authUrl: MICROSOFT_OAUTH_AUTH_URL,
-      tokenUrl: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
-    },
-    requestParams: {
-      headerType: 'application/x-www-form-urlencoded',
-      dataType: 'form-url-encoded',
-    },
-  };
-
-  const providers = { gmail, office365 };
-
-  return providers[kind];
+  switch (kind) {
+    case 'gmail': {
+      return {
+        params: {
+          access_type: 'offline',
+          scope: GOOGLE_SCOPES,
+        },
+        urls: {
+          authUrl: GOOGLE_OAUTH_AUTH_URL,
+          tokenUrl: GOOGLE_OAUTH_ACCESS_TOKEN_URL,
+        },
+      };
+    }
+    case 'office365': {
+      return {
+        params: {
+          scope: MICROSOFT_SCOPES,
+        },
+        urls: {
+          authUrl: MICROSOFT_OAUTH_AUTH_URL,
+          tokenUrl: MICROSOFT_OAUTH_ACCESS_TOKEN_URL,
+        },
+        otherParams: {
+          headerType: 'application/x-www-form-urlencoded',
+        },
+      };
+    }
+  }
 };
 
 /**
