@@ -58,7 +58,7 @@ const sendMessage = (accessToken: string, args: IMessageDraft) => nylasSendMessa
  * @param {String} accessToken
  * @returns {Promise} email
  */
-const getUserEmailFromGoogle = async (accessToken: string) => {
+const getUserEmailFromGoogle = async (accessToken: string): Promise<string> => {
   const data = { access_token: accessToken, fields: ['email'] };
 
   const { email } = await sendRequest({
@@ -75,7 +75,7 @@ const getUserEmailFromGoogle = async (accessToken: string) => {
  * @param {String} accessToken
  * @returns {Promise} email
  */
-const getUserEmailFromO365 = async (accessToken: string) => {
+const getUserEmailFromO365 = async (accessToken: string): Promise<string> => {
   const { mail } = await sendRequest({
     url: `${MICROSOFT_GRAPH_URL}/me`,
     method: 'GET',
