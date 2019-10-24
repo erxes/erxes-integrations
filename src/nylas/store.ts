@@ -1,3 +1,4 @@
+import * as sanitizeHtml from 'sanitize-html';
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
 import { fetchMainApi } from '../utils';
@@ -196,8 +197,8 @@ const createOrGetNylasConversationMessage = async ({
   // fields to save on api
   const api = {
     customerId,
-    content: message.subject,
     conversationId: erxesApiId,
+    content: sanitizeHtml(message.body || ''),
   };
 
   const conversationMessage = await getOrCreate({
