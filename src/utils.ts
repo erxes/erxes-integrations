@@ -74,7 +74,7 @@ export const sendRequest = ({ url, method, body, params }: IRequestParams): Prom
  * @returns {String} striped text
  */
 export const cleanHtml = (body: string) => {
-  return sanitizeHtml(body || '').replace(/^(.{11}[^\s]*).*/, '$1');
+  return sanitizeHtml(body || '').replace(/^(.{20}[^\s]*).*/, '$1');
 };
 
 /**
