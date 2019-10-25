@@ -1,7 +1,6 @@
-import * as sanitizeHtml from 'sanitize-html';
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
-import { fetchMainApi } from '../utils';
+import { fetchMainApi, cleanHtml } from '../utils';
 import { checkConcurrentError } from '../utils';
 import {
   NylasGmailConversationMessages,
@@ -198,7 +197,7 @@ const createOrGetNylasConversationMessage = async ({
   const api = {
     customerId,
     conversationId: erxesApiId,
-    content: sanitizeHtml(message.body || ''),
+    content: cleanHtml(message.body),
   };
 
   const conversationMessage = await getOrCreate({

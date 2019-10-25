@@ -1,5 +1,4 @@
-import * as sanitizeHtml from 'sanitize-html';
-import { fetchMainApi } from '../utils';
+import { cleanHtml, fetchMainApi } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './models';
 import { buildEmail } from './util';
 
@@ -159,7 +158,7 @@ const createOrGetConversationMessage = async (args: {
           payload: JSON.stringify({
             conversationId: erxesApiId,
             customerId: customerErxesApiId,
-            content: sanitizeHtml(doc.body),
+            content: cleanHtml(doc.body),
           }),
         },
       });
