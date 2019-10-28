@@ -1,6 +1,6 @@
 import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
-import { fetchMainApi, cleanHtml } from '../utils';
+import { cleanHtml, fetchMainApi } from '../utils';
 import { checkConcurrentError } from '../utils';
 import {
   NylasGmailConversationMessages,
