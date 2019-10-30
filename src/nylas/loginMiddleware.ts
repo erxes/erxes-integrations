@@ -121,21 +121,25 @@ const authProvider = async (req, res, next) => {
     return next('Missing email or password config');
   }
 
-  const doc = { name: email, email, password: encryptPassword(password) };
+  const doc = {
+    name: email,
+    email,
+    password: encryptPassword(password),
+    ...(kind === 'nylas-imap' ? otherParams : {}),
+  };
 
   debugNylas(`Creating account with email: ${email}`);
 
-  if (kind === 'nylas-outlook') {
-    await Accounts.create({ kind: 'outlook', ...doc });
-
-    return res.redirect(AUTHORIZED_REDIRECT_URL);
+  switch (kind) {
+    case 'nylas-outlook':
+      doc.kind = 'outlook';
+      break;
+    case 'nylas-imap':
+      doc.kind = 'imap';
+      break;
   }
 
-  await Accounts.create({
-    kind: 'imap',
-    ...doc,
-    ...otherParams,
-  });
+  await Accounts.create(doc);
 
   return res.redirect(AUTHORIZED_REDIRECT_URL);
 };
