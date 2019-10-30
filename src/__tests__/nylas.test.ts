@@ -3,8 +3,7 @@ import { accountFactory, integrationFactory } from '../factories';
 import { buildEmail } from '../gmail/util';
 import { Accounts, Integrations } from '../models';
 import * as api from '../nylas/api';
-import { NylasGmailCustomers } from '../nylas/models';
-import { createOrGetNylasCustomer } from '../nylas/store';
+import { createOrGetNylasCustomer, updateAccount } from '../nylas/store';
 import * as tracker from '../nylas/tracker';
 import { buildEmailAddress } from '../nylas/utils';
 import { cleanHtml } from '../utils';
@@ -12,6 +11,7 @@ import './setup.ts';
 
 describe('Nylas gmail test', () => {
   let _integrationId;
+  let _accountId;
 
   const attachmentDoc = {
     name: 'test',
@@ -31,6 +31,7 @@ describe('Nylas gmail test', () => {
     });
 
     _integrationId = integration._id;
+    _accountId = account._id;
   });
 
   afterEach(async () => {
@@ -90,6 +91,15 @@ describe('Nylas gmail test', () => {
     };
 
     await createOrGetNylasCustomer(doc);
+  });
+
+  test('Update account', async () => {
+    await updateAccount(_accountId, 'askljdklwj', 'qwejoiqwej');
+
+    const account = await Accounts.findOne({ _id: _accountId });
+
+    expect(account.uid).toEqual('askljdklwj');
+    expect(account.nylasToken).toEqual('qwejoiqwej');
   });
 
   test('Get user email', async () => {
