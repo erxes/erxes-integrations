@@ -206,7 +206,10 @@ const nylasSendMessage = async (accessToken: string, args: IMessageDraft) => {
 
   return draft
     .send()
-    .then(message => debugNylas(`${message.id} message was sent`))
+    .then(message => {
+      debugNylas(`${message.id} message was sent`);
+      return message.id;
+    })
     .catch(error => debugNylas(error.message));
 };
 
