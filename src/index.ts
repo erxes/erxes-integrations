@@ -75,15 +75,16 @@ app.post('/accounts/remove', async (req, res) => {
   const { _id } = req.body;
 
   try {
-    await removeIntegration(_id);
+    const integrationId = await removeIntegration(_id);
+
     await Accounts.deleteOne({ _id });
+
+    debugResponse(debugIntegrations, req);
+
+    return res.json({ erxesApiId: integrationId });
   } catch (e) {
     return res.json({ status: e.message });
   }
-
-  debugResponse(debugIntegrations, req);
-
-  return res.json({ status: 'removed' });
 });
 
 // init bots

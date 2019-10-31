@@ -205,5 +205,9 @@ export const removeIntegration = async (id: string) => {
     await ChatfuelConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
-  return integration.remove();
+  const integrationErxesApiId = integration.erxesApiId;
+
+  await integration.remove();
+
+  return integrationErxesApiId;
 };
