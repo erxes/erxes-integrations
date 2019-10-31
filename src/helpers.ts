@@ -39,6 +39,9 @@ import {
   NylasOutlookConversationMessages,
   NylasOutlookConversations,
   NylasOutlookCustomers,
+  NylasYahooConversationMessages,
+  NylasYahooConversations,
+  NylasYahooCustomers,
 } from './nylas/models';
 import { unsubscribe } from './twitter/api';
 import {
@@ -174,6 +177,19 @@ export const removeIntegration = async (id: string) => {
     await NylasOutlookCustomers.deleteMany(selector);
     await NylasOutlookConversations.deleteMany(selector);
     await NylasOutlookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+
+    // Cancel nylas subscription
+    await enableOrDisableAccount(account.uid, false);
+  }
+
+  if (kind === 'yahoo') {
+    debugNylas('Removing nylas-yahoo entries');
+
+    const conversationIds = await NylasYahooConversations.find(selector).distinct('_id');
+
+    await NylasYahooCustomers.deleteMany(selector);
+    await NylasYahooConversations.deleteMany(selector);
+    await NylasYahooConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
     // Cancel nylas subscription
     await enableOrDisableAccount(account.uid, false);
