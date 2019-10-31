@@ -44,7 +44,7 @@ const connectYahooAndOutlookToNylas = async (kind: string, account: IAccount & {
     email,
     kind,
     scopes: 'email',
-    settings: { email, password: decryptPassword(password) },
+    settings: { username: email, password: decryptPassword(password) },
   });
 
   await updateAccount(account._id, account_id, access_token);
