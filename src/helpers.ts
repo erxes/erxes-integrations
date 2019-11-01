@@ -53,56 +53,47 @@ import {
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
  */
-export const removeIntegration = async (id: string) => {
-  const integration = await Integrations.findOne({
-    $or: [{ erxesApiId: id }, { accountId: id }],
-  });
+export const removeIntegration = async (integrationId: string) => {
+  const integration = await Integrations.findOne({ _id: integrationId });
 
   if (!integration) {
     return;
   }
 
   const { _id, kind, accountId, erxesApiId } = integration;
-
   const account = await Accounts.findOne({ _id: accountId });
 
   const ids = [];
   const erxesApiIds = [];
   const selector = { integrationId: _id };
 
-  if (kind.includes('facebook') && account) {
-    const facebookIntegrations = await Integrations.find({ accountId });
+  if (kind.includes('facebook')) {
+    ids.push(_id);
+    erxesApiIds.push(integration.erxesApiId);
 
-    for (const facebookIntegration of facebookIntegrations) {
-      ids.push(facebookIntegration._id);
-      erxesApiIds.push(facebookIntegration.erxesApiId);
+    debugFacebook('Removing  entries');
 
-      debugFacebook('Removing facebook entries');
+    for (const pageId of integration.facebookPageIds) {
+      let pageTokenResponse;
 
-      for (const pageId of facebookIntegration.facebookPageIds) {
-        let pageTokenResponse;
-
-        try {
-          pageTokenResponse = await getPageAccessToken(pageId, account.token);
-        } catch (e) {
-          debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
-        }
-
-        await FacebookPosts.deleteMany({ recipientId: pageId });
-        await FacebookComments.deleteMany({ recipientId: pageId });
-        await unsubscribePage(pageId, pageTokenResponse);
+      try {
+        pageTokenResponse = await getPageAccessToken(pageId, account.token);
+      } catch (e) {
+        debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
       }
 
-      const conversationIds = await FacebookConversations.find(selector).distinct('_id');
-
-      await FacebookCustomers.deleteMany({ integrationId: id });
-      await FacebookConversations.deleteMany(selector);
-      await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+      await FacebookPosts.deleteMany({ recipientId: pageId });
+      await FacebookComments.deleteMany({ recipientId: pageId });
+      await unsubscribePage(pageId, pageTokenResponse);
     }
 
-    await Integrations.deleteMany({ _id: ids });
+    const conversationIds = await FacebookConversations.find(selector).distinct('_id');
 
-    return erxesApiIds;
+    await FacebookCustomers.deleteMany({ integrationId: id });
+    await FacebookConversations.deleteMany(selector);
+    await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+
+    await Integrations.deleteOne({ _id: integrationId });
   }
 
   if (kind === 'gmail' && !account.nylasToken) {
@@ -218,4 +209,35 @@ export const removeIntegration = async (id: string) => {
   await Integrations.deleteOne({ _id });
 
   return erxesApiId;
+};
+
+/**
+ * Remove integration by integrationId(erxesApiId) or accountId
+ */
+export const removeAccount = async (_id: string) => {
+  const account = await Accounts.findOne({ _id });
+
+  if (!account) {
+    return;
+  }
+
+  const erxesApiIds = [];
+
+  if (account.kind === 'facebook') {
+    const facebookIntegrations = await Integrations.find({ accountId: account._id });
+
+    for (const fbIntegration of facebookIntegrations) {
+      erxesApiIds.push(await removeIntegration(fbIntegration._id));
+    }
+
+    return erxesApiIds;
+  }
+
+  const integration = await Integrations.findOne({ accountId: account._id });
+
+  if (!integration) {
+    return [];
+  }
+
+  return await removeIntegration(integration._id);
 };
