@@ -1,4 +1,10 @@
 pipeline:
+  ping:
+    image: mongo:3.6
+    commands:
+      - sleep 15
+      - mongo --host mongo
+
   test:
     image: node:10.16.0-slim
     environment:
