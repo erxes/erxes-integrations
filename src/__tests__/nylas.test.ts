@@ -10,7 +10,7 @@ import { cleanHtml } from '../utils';
 import './setup.ts';
 
 describe('Nylas gmail test', () => {
-  let accountId;
+  let accountId: string;
 
   const attachmentDoc = {
     name: 'test',

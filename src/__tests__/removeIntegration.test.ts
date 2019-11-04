@@ -17,10 +17,10 @@ import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCust
 import './setup.ts';
 
 describe('Facebook remove integration test', async () => {
-  let integrationId1;
-  let erxesApiId1;
-  let erxesApiId2;
-  let accountId;
+  let integrationId1: string;
+  let erxesApiId1: string;
+  let erxesApiId2: string;
+  let accountId: string;
 
   beforeEach(async () => {
     const account = await accountFactory({ kind: 'facebook' });
@@ -103,9 +103,9 @@ describe('Facebook remove integration test', async () => {
 });
 
 describe('Nylas remove integration test', () => {
-  let integrationId;
-  let erxesApiId;
-  let accountId;
+  let integrationId: string;
+  let erxesApiId: string;
+  let accountId: string;
 
   beforeEach(async () => {
     const doc = { kind: 'gmail', email: 'user@mail.com' };
