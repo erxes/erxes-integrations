@@ -18,7 +18,6 @@ import './setup.ts';
 
 describe('Facebook remove integration test', async () => {
   let _integrationId1;
-  let _integrationId2;
   let _erxesApiId1;
   let _erxesApiId2;
   let _accountId;
@@ -42,7 +41,6 @@ describe('Facebook remove integration test', async () => {
     _erxesApiId1 = integration1.erxesApiId;
     _erxesApiId2 = integration2.erxesApiId;
     _integrationId1 = integration1._id;
-    _integrationId2 = integration2._id;
   });
 
   afterEach(async () => {
