@@ -1,4 +1,4 @@
-import { Conversations, Customers } from './facebook/models';
+import { ConversationMessages, Conversations, Customers } from './facebook/models';
 import { Accounts } from './models';
 import Integrations from './models/Integrations';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from './nylas/models';
@@ -64,6 +64,12 @@ export const facebookConversationFactory = (params: { senderId: string; recipien
   });
 
   return conversation.save();
+};
+
+export const facebookConversationMessagFactory = (params: { conversationId?: string }) => {
+  const message = new ConversationMessages({ conversationId: params.conversationId || '' });
+
+  return message.save();
 };
 
 // Nylas gmail customer ===================

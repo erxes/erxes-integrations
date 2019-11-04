@@ -53,8 +53,8 @@ import {
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
  */
-export const removeIntegration = async (integrationId: string) => {
-  const integration = await Integrations.findOne({ _id: integrationId });
+export const removeIntegration = async (id: string): Promise<string> => {
+  const integration = await Integrations.findOne({ erxesApiId: id });
 
   if (!integration) {
     return;
@@ -63,14 +63,9 @@ export const removeIntegration = async (integrationId: string) => {
   const { _id, kind, accountId, erxesApiId } = integration;
   const account = await Accounts.findOne({ _id: accountId });
 
-  const ids = [];
-  const erxesApiIds = [];
   const selector = { integrationId: _id };
 
   if (kind.includes('facebook')) {
-    ids.push(_id);
-    erxesApiIds.push(integration.erxesApiId);
-
     debugFacebook('Removing  entries');
 
     for (const pageId of integration.facebookPageIds) {
@@ -89,11 +84,11 @@ export const removeIntegration = async (integrationId: string) => {
 
     const conversationIds = await FacebookConversations.find(selector).distinct('_id');
 
-    await FacebookCustomers.deleteMany({ integrationId: id });
+    await FacebookCustomers.deleteMany({ integrationId: _id });
     await FacebookConversations.deleteMany(selector);
     await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    await Integrations.deleteOne({ _id: integrationId });
+    await Integrations.deleteOne({ _id });
   }
 
   if (kind === 'gmail' && !account.nylasToken) {
@@ -214,7 +209,7 @@ export const removeIntegration = async (integrationId: string) => {
 /**
  * Remove integration by integrationId(erxesApiId) or accountId
  */
-export const removeAccount = async (_id: string) => {
+export const removeAccount = async (_id: string): Promise<string | string[]> => {
   const account = await Accounts.findOne({ _id });
 
   if (!account) {
@@ -227,7 +222,7 @@ export const removeAccount = async (_id: string) => {
     const facebookIntegrations = await Integrations.find({ accountId: account._id });
 
     for (const fbIntegration of facebookIntegrations) {
-      erxesApiIds.push(await removeIntegration(fbIntegration._id));
+      erxesApiIds.push(await removeIntegration(fbIntegration.erxesApiId));
     }
 
     return erxesApiIds;
@@ -239,5 +234,5 @@ export const removeAccount = async (_id: string) => {
     return [];
   }
 
-  return await removeIntegration(integration._id);
+  return await removeIntegration(integration.erxesApiId);
 };

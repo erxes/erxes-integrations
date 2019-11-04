@@ -1,18 +1,110 @@
 import * as sinon from 'sinon';
+import { ConversationMessages, Conversations, Customers } from '../facebook/models';
 import {
   accountFactory,
+  facebookConversationFactory,
+  facebookConversationMessagFactory,
+  facebookCustomerFactory,
   integrationFactory,
   nylasGmailConversationFactory,
   nylasGmailConversationMessageFactory,
   nylasGmailCustomerFactory,
 } from '../factories';
-import { removeIntegration } from '../helpers';
+import { removeAccount, removeIntegration } from '../helpers';
 import { Accounts, Integrations } from '../models';
 import * as auth from '../nylas/auth';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from '../nylas/models';
 import './setup.ts';
 
-describe('Nylas gmail test', () => {
+describe('Facebook remove integration test', async () => {
+  let _integrationId1;
+  let _integrationId2;
+  let _erxesApiId1;
+  let _erxesApiId2;
+  let _accountId;
+
+  beforeEach(async () => {
+    const account = await accountFactory({ kind: 'facebook' });
+
+    const integration1 = await integrationFactory({
+      kind: 'facebook',
+      accountId: account._id,
+      erxesApiId: 'jaskjda',
+    });
+
+    const integration2 = await integrationFactory({
+      kind: 'facebook',
+      accountId: account._id,
+      erxesApiId: 'asljkdas',
+    });
+
+    _accountId = account._id;
+    _erxesApiId1 = integration1.erxesApiId;
+    _erxesApiId2 = integration2.erxesApiId;
+    _integrationId1 = integration1._id;
+    _integrationId2 = integration2._id;
+  });
+
+  afterEach(async () => {
+    await Integrations.remove({});
+    await Accounts.remove({});
+
+    // entries
+    await Conversations.remove({});
+    await ConversationMessages.remove({});
+    await Customers.remove({});
+  });
+
+  const entryFactory = async () => {
+    const customer = await facebookCustomerFactory({ userId: '_id' });
+    const conversation = await facebookConversationFactory({ senderId: '_id', recipientId: 'pageId' });
+    const message = await facebookConversationMessagFactory({ conversationId: conversation._id });
+
+    return {
+      customerId: customer._id,
+      conversationId: conversation._id,
+      messageId: message._id,
+    };
+  };
+
+  test('Remove facebook by accountId', async () => {
+    const { customerId, conversationId, messageId } = await entryFactory();
+
+    const erxesApiIds = await removeAccount(_accountId);
+
+    // Remove integration
+    expect(erxesApiIds[0]).toEqual(_erxesApiId1);
+    expect(erxesApiIds[1]).toEqual(_erxesApiId2);
+
+    expect(await Integrations.find({ kind: 'facebook' })).toEqual([]);
+
+    // Remove entries
+    expect(await Conversations.findOne({ _id: customerId })).toBe(null);
+    expect(await ConversationMessages.findOne({ _id: conversationId })).toBe(null);
+    expect(await Customers.findOne({ _id: messageId })).toBe(null);
+  });
+
+  test('Remove facebook integartion by integartionId', async () => {
+    const { customerId, conversationId, messageId } = await entryFactory();
+
+    expect(await Conversations.findOne({ _id: conversationId }).count()).toEqual(1);
+    expect(await ConversationMessages.findOne({ _id: messageId }).count()).toEqual(1);
+    expect(await Customers.findOne({ _id: customerId }).count()).toEqual(1);
+
+    const erxesApiId = await removeIntegration(_erxesApiId1);
+
+    // Remove integration
+    expect(erxesApiId).toEqual(_erxesApiId1);
+    expect(await Integrations.findOne({ _id: _integrationId1 })).toBe(null);
+
+    // Remove entries
+    expect(await Conversations.findOne({ _id: customerId })).toBe(null);
+    expect(await ConversationMessages.findOne({ _id: conversationId })).toBe(null);
+    expect(await Customers.findOne({ _id: messageId })).toBe(null);
+  });
+});
+
+describe('Nylas remove integration test', () => {
   let _integrationId;
   let _erxesApiId;
   let _accountId;
@@ -68,7 +160,7 @@ describe('Nylas gmail test', () => {
     const { customerId, conversationId, messageId } = await entryFactory();
 
     const mock = sinon.stub(auth, 'enableOrDisableAccount').callsFake();
-    const erxesApiId = await removeIntegration(_accountId);
+    const erxesApiId = await removeAccount(_accountId);
 
     // Remove integration
     expect(erxesApiId).toEqual(_erxesApiId);
