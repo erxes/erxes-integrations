@@ -218,21 +218,11 @@ export const removeAccount = async (_id: string): Promise<string | string[]> => 
 
   const erxesApiIds = [];
 
-  if (account.kind === 'facebook') {
-    const facebookIntegrations = await Integrations.find({ accountId: account._id });
+  const integrations = await Integrations.find({ accountId: account._id });
 
-    for (const fbIntegration of facebookIntegrations) {
-      erxesApiIds.push(await removeIntegration(fbIntegration.erxesApiId));
-    }
-
-    return erxesApiIds;
+  for (const integration of integrations) {
+    erxesApiIds.push(await removeIntegration(integration.erxesApiId));
   }
 
-  const integration = await Integrations.findOne({ accountId: account._id });
-
-  if (!integration) {
-    return [];
-  }
-
-  return await removeIntegration(integration.erxesApiId);
+  return erxesApiIds;
 };
