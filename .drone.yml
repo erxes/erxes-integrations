@@ -7,6 +7,7 @@ pipeline:
       - yarn -v
       - yarn install
       - yarn lint
+      - yarn test
 
   build:
     image: node:10.16.0-slim
