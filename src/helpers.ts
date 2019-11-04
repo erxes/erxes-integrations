@@ -51,7 +51,7 @@ import {
 } from './twitter/models';
 
 /**
- * Remove integration by integrationId(erxesApiId) or accountId
+ * Remove integration integrationId
  */
 export const removeIntegration = async (id: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: id });
@@ -207,7 +207,7 @@ export const removeIntegration = async (id: string): Promise<string> => {
 };
 
 /**
- * Remove integration by integrationId(erxesApiId) or accountId
+ * Remove integration by or accountId
  */
 export const removeAccount = async (_id: string): Promise<string | string[]> => {
   const account = await Accounts.findOne({ _id });

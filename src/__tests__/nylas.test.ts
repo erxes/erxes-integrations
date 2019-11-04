@@ -10,7 +10,7 @@ import { cleanHtml } from '../utils';
 import './setup.ts';
 
 describe('Nylas gmail test', () => {
-  let _accountId;
+  let accountId;
 
   const attachmentDoc = {
     name: 'test',
@@ -29,7 +29,7 @@ describe('Nylas gmail test', () => {
       erxesApiId: 'alkjdlkj',
     });
 
-    _accountId = account._id;
+    accountId = account._id;
   });
 
   afterEach(async () => {
@@ -74,9 +74,9 @@ describe('Nylas gmail test', () => {
   });
 
   test('Update account', async () => {
-    await updateAccount(_accountId, 'askljdklwj', 'qwejoiqwej');
+    await updateAccount(accountId, 'askljdklwj', 'qwejoiqwej');
 
-    const account = await Accounts.findOne({ _id: _accountId });
+    const account = await Accounts.findOne({ _id: accountId });
 
     expect(account.uid).toEqual('askljdklwj');
     expect(account.nylasToken).toEqual('qwejoiqwej');
