@@ -1,6 +1,8 @@
 pipeline:
   test:
     image: node:10.16.0-slim
+    environment:
+      - TEST_MONGO_URL=mongodb://mongo/test
     commands:
       - node -v
       - npm -v
