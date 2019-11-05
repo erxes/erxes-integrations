@@ -1,16 +1,31 @@
 import * as sinon from 'sinon';
-import { accountFactory, integrationFactory } from '../factories';
+import {
+  accountFactory,
+  integrationFactory,
+  nylasGmailConversationFactory,
+  nylasGmailConversationMessageFactory,
+  nylasGmailCustomerFactory,
+} from '../factories';
 import { buildEmail } from '../gmail/util';
 import { Accounts, Integrations } from '../models';
 import * as api from '../nylas/api';
+import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from '../nylas/models';
+import {
+  createOrGetNylasConversation as storeConversation,
+  createOrGetNylasConversationMessage as storeMessage,
+  createOrGetNylasCustomer as storeCustomer,
+} from '../nylas/store';
 import { updateAccount } from '../nylas/store';
 import * as tracker from '../nylas/tracker';
 import { buildEmailAddress } from '../nylas/utils';
+import * as utils from '../utils';
 import { cleanHtml } from '../utils';
 import './setup.ts';
 
 describe('Nylas gmail test', () => {
   let accountId: string;
+  let integrationId: string;
+  let erxesApiId: string;
 
   const attachmentDoc = {
     name: 'test',
@@ -23,18 +38,96 @@ describe('Nylas gmail test', () => {
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
     const account = await accountFactory({ ...doc, nylasToken: 'askldjaslkjdlak' });
-    await integrationFactory({
+    const integration = await integrationFactory({
       ...doc,
       accountId: account._id,
       erxesApiId: 'alkjdlkj',
     });
 
     accountId = account._id;
+    integrationId = integration._id;
+    erxesApiId = integration.erxesApiId;
   });
 
   afterEach(async () => {
     await Integrations.remove({});
     await Accounts.remove({});
+
+    // Remove entries
+    await NylasGmailConversationMessages.remove({});
+    await NylasGmailConversations.remove({});
+    await NylasGmailCustomers.remove({});
+  });
+
+  const entryFactory = async () => {
+    const customer = await nylasGmailCustomerFactory({
+      integrationId,
+    });
+
+    const conversation = await nylasGmailConversationFactory({
+      customerId: customer._id,
+      integrationId,
+    });
+
+    const message = await nylasGmailConversationMessageFactory({
+      conversationId: conversation._id,
+      messageId: '123',
+    });
+
+    return {
+      customerId: customer._id,
+      conversationId: conversation._id,
+      messageId: message._id,
+    };
+  };
+
+  test('Store compose function create or get nylas customer, conversation, message', async () => {
+    await entryFactory();
+
+    const doc = {
+      kind: 'gmail',
+      toEmail: 'test@mail.com',
+      integrationIds: {
+        id: integrationId,
+        erxesApiId,
+      },
+      message: {
+        id: 'asjdlasjkkdl',
+        account_id: 'account_id',
+        to: [{ name: 'to', email: 'touser@mail.com' }],
+        replyTo: [{ name: 'replyTo', email: 'replyuser@mail.com' }],
+        cc: [{ name: 'cc', email: 'cc@mail.com' }],
+        bcc: [{ name: 'bcc', email: 'bcc@mail.com' }],
+        body: 'body',
+        from: [
+          {
+            name: 'from',
+            email: 'test@gmail.com',
+          },
+        ],
+        thread_id: 'thread_id',
+        subject: 'subject',
+      },
+    };
+
+    const mock = sinon.stub(utils, 'fetchMainApi').callsFake(() => Promise.resolve({ _id: 'erxesApiId123' }));
+
+    await utils.compose(
+      storeMessage,
+      storeConversation,
+      storeCustomer,
+    )(doc);
+
+    const customer = await NylasGmailCustomers.findOne({ email: 'test@gmail.com' });
+    const conversation = await NylasGmailConversations.findOne({ threadId: 'thread_id' });
+    const message = await NylasGmailConversationMessages.findOne({ accountId: 'account_id' });
+
+    expect(customer.erxesApiId).toEqual('erxesApiId123');
+    expect(conversation.threadId).toEqual('thread_id');
+    expect(message.messageId).toEqual('asjdlasjkkdl');
+    expect(message.accountId).toEqual('account_id');
+
+    mock.restore();
   });
 
   test('Send message', async () => {
