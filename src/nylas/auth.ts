@@ -171,6 +171,8 @@ const getNylasAccessToken = async data => {
 
 export {
   revokeAccount,
+  getNylasAccessToken,
+  getNylasCode,
   enableOrDisableAccount,
   integrateProviderToNylas,
   connectProviderToNylas,

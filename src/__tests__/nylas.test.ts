@@ -9,15 +9,17 @@ import {
 import { buildEmail } from '../gmail/util';
 import { Accounts, Integrations } from '../models';
 import * as api from '../nylas/api';
+import * as auth from '../nylas/auth';
 import { NylasGmailConversationMessages, NylasGmailConversations, NylasGmailCustomers } from '../nylas/models';
+import { updateAccount } from '../nylas/store';
 import {
   createOrGetNylasConversation as storeConversation,
   createOrGetNylasConversationMessage as storeMessage,
   createOrGetNylasCustomer as storeCustomer,
 } from '../nylas/store';
-import { updateAccount } from '../nylas/store';
 import * as tracker from '../nylas/tracker';
 import { buildEmailAddress } from '../nylas/utils';
+import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import { cleanHtml } from '../utils';
 import './setup.ts';
@@ -37,7 +39,10 @@ describe('Nylas gmail test', () => {
   beforeEach(async () => {
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
-    const account = await accountFactory({ ...doc, nylasToken: 'askldjaslkjdlak' });
+    const account = await accountFactory({
+      ...doc,
+      nylasToken: 'askldjaslkjdlak',
+    });
     const integration = await integrationFactory({
       ...doc,
       accountId: account._id,
@@ -141,7 +146,9 @@ describe('Nylas gmail test', () => {
       files: [attachmentDoc],
     };
 
-    const mock = sinon.stub(api, 'sendMessage').callsFake(() => '123y7819u39');
+    const mock = sinon.stub(nylasUtils, 'nylasSendMessage').callsFake(() => {
+      return Promise.resolve('123y7819u39');
+    });
 
     expect(await api.sendMessage('asjdlasjd', doc)).toEqual('123y7819u39');
 
@@ -154,6 +161,24 @@ describe('Nylas gmail test', () => {
     const attachment = (await api.uploadFile(attachmentDoc)) as any;
 
     expect(attachment.id).toEqual('812739');
+
+    mock.restore();
+  });
+
+  test('Connect provider to nylas', async () => {
+    const account = await Accounts.findOne({ _id: accountId });
+
+    const mock = sinon.stub(utils, 'sendRequest');
+
+    mock.onCall(0).returns('code');
+    mock.onCall(1).returns({ access_token: 'access_token123', account_id: 'account_id' });
+
+    await auth.connectProviderToNylas('gmail', account);
+
+    const updatedAccount = await Accounts.findOne({ _id: accountId });
+
+    expect(updatedAccount.nylasToken).toEqual('access_token123');
+    expect(updatedAccount.uid).toEqual('account_id');
 
     mock.restore();
   });
@@ -176,13 +201,20 @@ describe('Nylas gmail test', () => {
   });
 
   test('Get user email', async () => {
-    const mock1 = sinon.stub(api, 'getUserEmailFromGoogle').callsFake(() => Promise.resolve('test1@mail.com'));
-    const mock2 = sinon.stub(api, 'getUserEmailFromO365').callsFake(() => Promise.resolve('test2@mail.com'));
+    const mock1 = sinon.stub(utils, 'sendRequest').callsFake(() => {
+      return Promise.resolve({ email: 'test1@mail.com' });
+    });
 
     expect(await api.getUserEmailFromGoogle('klasjdlkj')).toEqual('test1@mail.com');
-    expect(await api.getUserEmailFromO365('askjsdlkjasjd')).toEqual('test2@mail.com');
 
     mock1.restore();
+
+    const mock2 = sinon.stub(utils, 'sendRequest').callsFake(() => {
+      return Promise.resolve({ mail: 'test2@mail.com' });
+    });
+
+    expect(await api.getUserEmailFromO365('askjsdlkjasjd')).toEqual('test2@mail.com');
+
     mock2.restore();
   });
 
@@ -190,6 +222,32 @@ describe('Nylas gmail test', () => {
     const mock = sinon.stub(tracker, 'createWebhook').callsFake(() => 'j1o2i3as');
 
     expect(await tracker.createWebhook()).toEqual('j1o2i3as');
+
+    mock.restore();
+  });
+
+  test('Get message by id', async () => {
+    const mock = sinon.stub(nylasUtils, 'nylasRequest').callsFake(() => {
+      return Promise.resolve({ from: [{ name: 'test', email: 'user@mail.com' }] });
+    });
+
+    const message = await api.getMessages('accessToken', 'id');
+
+    expect(message.from[0].name).toEqual('test');
+    expect(message.from[0].email).toEqual('user@mail.com');
+
+    mock.restore();
+  });
+
+  test('Get messages', async () => {
+    const mock = sinon.stub(nylasUtils, 'nylasRequest').callsFake(() => {
+      return Promise.resolve({ from: [{ name: 'test', email: 'user@mail.com' }] });
+    });
+
+    const message = await api.getMessages('accessToken', '');
+
+    expect(message.from[0].name).toEqual('test');
+    expect(message.from[0].email).toEqual('user@mail.com');
 
     mock.restore();
   });
