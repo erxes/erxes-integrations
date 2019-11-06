@@ -81,9 +81,9 @@ export const facebookConversationMessagFactory = (params: { conversationId?: str
 };
 
 // Nylas gmail customer ===================
-export const nylasGmailCustomerFactory = (params: { integrationId?: string }) => {
+export const nylasGmailCustomerFactory = (params: { email: string; integrationId?: string }) => {
   const customer = new NylasGmailCustomers({
-    email: 'user@mail.com',
+    email: params.email || '',
     kind: 'gmail',
     firstName: 'firstName',
     lastName: 'lastName',
