@@ -125,7 +125,7 @@ const uploadFile = async (args: INylasAttachment) => {
     throw new Error('Failed to read file');
   }
 
-  const nylasFile = nylasInstanceWithToken({
+  const nylasFile = await nylasInstanceWithToken({
     accessToken,
     name: 'files',
     method: 'build',
@@ -145,8 +145,8 @@ const uploadFile = async (args: INylasAttachment) => {
  * @param {String} accessToken
  * @returns {Buffer} file buffer
  */
-const getAttachment = (fileId: string, accessToken: string) => {
-  const nylasFile = nylasInstanceWithToken({
+const getAttachment = async (fileId: string, accessToken: string) => {
+  const nylasFile = await nylasInstanceWithToken({
     accessToken,
     name: 'files',
     method: 'build',
