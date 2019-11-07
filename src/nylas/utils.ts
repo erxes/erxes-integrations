@@ -15,7 +15,6 @@ import {
 // load config
 dotenv.config();
 
-const { ENCRYPTION_KEY } = process.env;
 const algorithm = 'aes-256-cbc';
 
 /**
@@ -233,6 +232,8 @@ const nylasInstanceWithToken = async ({
  * @returns {String} encrypted password
  */
 const encryptPassword = (password: string): string => {
+  const { ENCRYPTION_KEY } = process.env;
+
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), iv);
 
@@ -249,6 +250,8 @@ const encryptPassword = (password: string): string => {
  * @returns {String} decrypted password
  */
 const decryptPassword = (password: string): string => {
+  const { ENCRYPTION_KEY } = process.env;
+
   const passwordParts = password.split(':');
   const ivKey = Buffer.from(passwordParts.shift(), 'hex');
 

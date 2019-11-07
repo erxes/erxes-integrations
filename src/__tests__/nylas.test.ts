@@ -41,7 +41,7 @@ describe('Nylas gmail test', () => {
   beforeEach(async () => {
     process.env.GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID';
     process.env.GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET';
-    process.env.ENCRYPTION_KEY = 'jaskldjaksjdaklsjdaklsjdlkasjdss';
+    process.env.ENCRYPTION_KEY = 'aksljdklwjdaklsjdkwljaslkdjwkljd';
 
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
