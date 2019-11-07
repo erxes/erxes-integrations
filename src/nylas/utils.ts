@@ -192,6 +192,10 @@ const nylasFileRequest = (nylasFile: any, method: string) => {
  * Get Nylas SDK instrance
  */
 const nylasInstance = (name: string, method: string, options?: any, action?: string) => {
+  if (!action) {
+    return Nylas[name][method](options);
+  }
+
   return Nylas[name][method](options)[action]();
 };
 
