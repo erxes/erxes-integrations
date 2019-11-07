@@ -8,7 +8,7 @@ import {
   createOrGetNylasCustomer as storeCustomer,
 } from './store';
 import { IMessageDraft, INylasAttachment } from './types';
-import { nylasFileRequest, nylasInstanceWithToken, nylasRequest, setNylasToken } from './utils';
+import { nylasFileRequest, nylasInstanceWithToken, nylasRequest } from './utils';
 
 /**
  * Build message and send API request
