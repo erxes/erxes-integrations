@@ -175,6 +175,21 @@ const nylasRequest = ({
 };
 
 /**
+ * Nylas file request
+ */
+const nylasFileRequest = (nylasFile: any, method: string) => {
+  return new Promise((resolve, reject) => {
+    nylasFile[method]((err, file) => {
+      if (err) {
+        reject(err);
+      }
+
+      return resolve(file);
+    });
+  });
+};
+
+/**
  * Get Nylas SDK instrance
  */
 const nylasInstance = (name: string, method: string, options?: any, action?: string) => {
@@ -203,7 +218,13 @@ const nylasInstanceWithToken = async ({
     return;
   }
 
-  return nylas[name][method](options)[action]();
+  const instance = nylas[name][method](options);
+
+  if (!action) {
+    return instance;
+  }
+
+  return instance[action]();
 };
 
 /**
@@ -243,6 +264,7 @@ const decryptPassword = (password: string): string => {
 };
 
 export {
+  nylasFileRequest,
   setNylasToken,
   getProviderConfigs,
   nylasRequest,

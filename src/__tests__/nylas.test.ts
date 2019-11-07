@@ -41,6 +41,7 @@ describe('Nylas gmail test', () => {
   beforeEach(async () => {
     process.env.GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID';
     process.env.GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET';
+    process.env.ENCRYPTION_KEY = 'jaskldjaksjdaklsjdaklsjdlkasjdss';
 
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
@@ -63,6 +64,7 @@ describe('Nylas gmail test', () => {
   afterEach(async () => {
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
+    delete process.env.ENCRYPTION_KEY;
 
     await Integrations.remove({});
     await Accounts.remove({});
@@ -286,11 +288,16 @@ describe('Nylas gmail test', () => {
   });
 
   test('Get attachment', async () => {
-    const mock = sinon.stub(api, 'getAttachment').callsFake(() => Promise.resolve('data'));
+    expect.assertions(1);
+    const mock1 = sinon.stub(Nylas, 'clientCredentials').callsFake(() => Promise.resolve(true));
+    const mock2 = sinon.stub(nylasUtils, 'nylasInstanceWithToken').callsFake(() => Promise.resolve({}));
+    const mock3 = sinon.stub(nylasUtils, 'nylasFileRequest').callsFake(() => Promise.resolve('data'));
 
     expect(await api.getAttachment('fileId', 'aklsjd')).toEqual('data');
 
-    mock.restore();
+    mock1.restore();
+    mock2.restore();
+    mock3.restore();
   });
 
   test('Update account', async () => {

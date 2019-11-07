@@ -8,7 +8,7 @@ import {
   createOrGetNylasCustomer as storeCustomer,
 } from './store';
 import { IMessageDraft, INylasAttachment } from './types';
-import { nylasInstanceWithToken, nylasRequest, setNylasToken } from './utils';
+import { nylasFileRequest, nylasInstanceWithToken, nylasRequest, setNylasToken } from './utils';
 
 /**
  * Build message and send API request
@@ -125,23 +125,18 @@ const uploadFile = async (args: INylasAttachment) => {
     throw new Error('Failed to read file');
   }
 
-  const nylas = setNylasToken(accessToken);
-
-  const nylasFile = nylas.files.build({
-    data: buffer,
-    filename: name,
-    contentType: type,
+  const nylasFile = nylasInstanceWithToken({
+    accessToken,
+    name: 'files',
+    method: 'build',
+    options: {
+      data: buffer,
+      filename: name,
+      contentType: type,
+    },
   });
 
-  return new Promise((resolve, reject) => {
-    nylasFile.upload((err, file) => {
-      if (err) {
-        reject(err);
-      }
-
-      return resolve(JSON.parse(file));
-    });
-  });
+  return nylasFileRequest(nylasFile, 'upload');
 };
 
 /**
@@ -151,19 +146,14 @@ const uploadFile = async (args: INylasAttachment) => {
  * @returns {Buffer} file buffer
  */
 const getAttachment = (fileId: string, accessToken: string) => {
-  const nylas = setNylasToken(accessToken);
-
-  const nylasFile = nylas.files.build({ id: fileId });
-
-  return new Promise((resolve, reject) => {
-    nylasFile.download((err, file) => {
-      if (err) {
-        reject(err);
-      }
-
-      return resolve(file);
-    });
+  const nylasFile = nylasInstanceWithToken({
+    accessToken,
+    name: 'files',
+    method: 'build',
+    options: { id: fileId },
   });
+
+  return nylasFileRequest(nylasFile, 'download');
 };
 
 export { uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getAttachment };
