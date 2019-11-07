@@ -153,7 +153,7 @@ export interface INylasConversationMessage {
   // Message type
   messageId: string;
   subject: string;
-  accountId: string;
+  account_id: string;
   replyTo: [IEmail];
   to: [IEmail];
   from: [IEmail];
