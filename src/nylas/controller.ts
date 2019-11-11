@@ -176,7 +176,7 @@ const init = async app => {
     const headerOptions = { 'Content-Type': contentType };
 
     if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(contentType)) {
-      Object.assign(headerOptions, { 'Content-Disposition': 'attachment;filename=' + filename });
+      headerOptions['Content-Disposition'] = `attachment;filename=${filename}`;
     }
 
     res.writeHead(200, headerOptions);
