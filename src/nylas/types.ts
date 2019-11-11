@@ -47,7 +47,7 @@ export interface IIntegrateProvider {
   email: string;
   kind: string;
   settings: IProviderSettings;
-  scopes?: string;
+  scopes?: string | string[];
 }
 
 export interface IProviderSettings {
