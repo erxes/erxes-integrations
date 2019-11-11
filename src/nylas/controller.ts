@@ -169,15 +169,19 @@ const init = async app => {
 
     const response: { body?: Buffer } = await getAttachment(attachmentId, account.nylasToken);
 
-    const attachment = { data: response.body, filename };
-
-    if (!attachment) {
+    if (!response) {
       return next('Attachment not found');
     }
 
-    res.writeHead(200, { 'Content-Type': contentType });
+    const headerOptions = { 'Content-Type': contentType };
 
-    return res.end(attachment.data, 'base64');
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(contentType)) {
+      Object.assign(headerOptions, { 'Content-Disposition': 'attachment;filename=' + filename });
+    }
+
+    res.writeHead(200, headerOptions);
+
+    return res.end(response.body, 'base64');
   });
 
   app.post('/nylas/send', async (req, res, next) => {
