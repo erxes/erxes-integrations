@@ -175,27 +175,9 @@ const init = async app => {
       return next('Attachment not found');
     }
 
-    if (
-      [
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-        'text/csv',
-        'application/msword',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/pdf',
-      ].includes(contentType)
-    ) {
-      res.writeHead(200, { 'Content-Type': contentType });
-      return res.end(attachment.data, 'Base64');
-    }
+    res.writeHead(200, { 'Content-Type': contentType });
 
-    res.attachment(attachment.filename);
-    res.write(attachment.data, 'base64');
-
-    return res.end();
+    return res.end(attachment.data, 'base64');
   });
 
   app.post('/nylas/send', async (req, res, next) => {
