@@ -85,7 +85,7 @@ export const cleanHtml = (body: string) => {
     allowedAttributes: {},
   }).trim();
 
-  return clean.substring(0, 35);
+  return clean.substring(0, 50);
 };
 
 /**
