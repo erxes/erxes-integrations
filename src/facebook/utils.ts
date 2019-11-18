@@ -153,7 +153,7 @@ export const sendReply = async (url: string, data: any, recipientId: string, int
     }
 
     if (e.message.includes('does not exist')) {
-      throw new Error('This customer deleted this comment');
+      throw new Error('Comment has been deleted by the customer');
     }
 
     throw new Error(e.message);
