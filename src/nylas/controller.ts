@@ -153,7 +153,7 @@ const init = async app => {
   });
 
   app.get('/nylas/get-attachment', async (req, res, next) => {
-    const { attachmentId, integrationId, filename } = req.query;
+    const { attachmentId, integrationId, filename, contentType } = req.query;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
@@ -169,16 +169,19 @@ const init = async app => {
 
     const response: { body?: Buffer } = await getAttachment(attachmentId, account.nylasToken);
 
-    const attachment = { data: response.body, filename };
-
-    if (!attachment) {
+    if (!response) {
       return next('Attachment not found');
     }
 
-    res.attachment(attachment.filename);
-    res.write(attachment.data, 'base64');
+    const headerOptions = { 'Content-Type': contentType };
 
-    return res.end();
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(contentType)) {
+      headerOptions['Content-Disposition'] = `attachment;filename=${filename}`;
+    }
+
+    res.writeHead(200, headerOptions);
+
+    return res.end(response.body, 'base64');
   });
 
   app.post('/nylas/send', async (req, res, next) => {
