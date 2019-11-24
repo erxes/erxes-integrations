@@ -80,7 +80,12 @@ export const sendRequest = ({ url, headerType, headerParams, method, body, param
  * @returns {String} striped text
  */
 export const cleanHtml = (body: string) => {
-  return sanitizeHtml(body || '').replace(/^(.{20}[^\s]*).*/, '$1');
+  const clean = sanitizeHtml(body || '', {
+    allowedTags: [],
+    allowedAttributes: {},
+  }).trim();
+
+  return clean.substring(0, 50);
 };
 
 /**
