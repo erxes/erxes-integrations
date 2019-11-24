@@ -27,6 +27,7 @@ const connectProviderToNylas = async (kind: string, account: IAccount & { _id: s
     email,
     kind,
     settings,
+    ...(kind === 'gmail' ? { scopes: 'email' } : {}),
   });
 
   await updateAccount(account._id, account_id, access_token);
