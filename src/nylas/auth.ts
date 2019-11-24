@@ -1,12 +1,11 @@
 import * as dotenv from 'dotenv';
-import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
 import { IAccount } from '../models/Accounts';
 import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { updateAccount } from './store';
 import { IIntegrateProvider } from './types';
-import { decryptPassword, getProviderSettings } from './utils';
+import { decryptPassword, getProviderSettings, nylasInstance } from './utils';
 
 // loading config
 dotenv.config();
@@ -56,7 +55,7 @@ const connectYahooAndOutlookToNylas = async (kind: string, account: IAccount & {
  * @param {String} kind
  * @param {Object} account
  */
-const connectImapToNylas = async (kind: string, account: IAccount & { _id: string }) => {
+const connectImapToNylas = async (account: IAccount & { _id: string }) => {
   const { imapHost, imapPort, smtpHost, smtpPort } = account;
 
   if (!imapHost || !imapPort || !smtpHost || !smtpPort) {
@@ -69,7 +68,7 @@ const connectImapToNylas = async (kind: string, account: IAccount & { _id: strin
 
   const { access_token, account_id } = await integrateProviderToNylas({
     email,
-    kind,
+    kind: 'imap',
     scopes: 'email',
     settings: {
       imap_username: email,
@@ -97,19 +96,27 @@ const connectImapToNylas = async (kind: string, account: IAccount & { _id: strin
 const integrateProviderToNylas = async (args: IIntegrateProvider) => {
   const { email, kind, settings, scopes } = args;
 
-  const code = await getNylasCode({
-    provider: kind,
-    settings,
-    name: email,
-    email_address: email,
-    client_id: NYLAS_CLIENT_ID,
-    ...(scopes ? { scopes } : {}),
+  const { code } = await sendRequest({
+    url: CONNECT_AUTHORIZE_URL,
+    method: 'post',
+    body: {
+      provider: kind,
+      settings,
+      name: email,
+      email_address: email,
+      client_id: NYLAS_CLIENT_ID,
+      ...(scopes ? { scopes } : {}),
+    },
   });
 
-  return getNylasAccessToken({
-    code,
-    client_id: NYLAS_CLIENT_ID,
-    client_secret: NYLAS_CLIENT_SECRET,
+  return sendRequest({
+    url: CONNECT_TOKEN_URL,
+    method: 'post',
+    body: {
+      code,
+      client_id: NYLAS_CLIENT_ID,
+      client_secret: NYLAS_CLIENT_SECRET,
+    },
   });
 };
 
@@ -121,57 +128,16 @@ const integrateProviderToNylas = async (args: IIntegrateProvider) => {
 const enableOrDisableAccount = async (accountId: string, enable: boolean) => {
   debugNylas(`${enable} account with uid: ${accountId}`);
 
-  const account = await Nylas.accounts.find(accountId);
+  return nylasInstance('accounts', 'find', accountId).then(account => {
+    if (enable) {
+      return account.upgrade();
+    }
 
-  if (enable) {
-    return account.upgrade();
-  }
-
-  return account.downgrade();
-};
-
-/**
- * Revoke nylas account
- * @param {String} token
- */
-const revokeAccount = async (_token: string) => {
-  return Nylas.accounts
-    .first()
-    .then(account => account.revokeAll())
-    .then(res => debugNylas(res))
-    .catch(e => debugNylas(e.message));
-};
-
-/**
- * Get nylas code for accessToken
- * @param {Object} params
- * @returns {Promise} code
- */
-const getNylasCode = async data => {
-  const { code } = await sendRequest({
-    url: CONNECT_AUTHORIZE_URL,
-    method: 'post',
-    body: data,
-  });
-
-  return code;
-};
-
-/**
- * Get nylas accesstoken
- * @param {Object} data
- * @param {Promise} accessToken
- */
-const getNylasAccessToken = async data => {
-  return sendRequest({
-    url: CONNECT_TOKEN_URL,
-    method: 'post',
-    body: data,
+    return account.downgrade();
   });
 };
 
 export {
-  revokeAccount,
   enableOrDisableAccount,
   integrateProviderToNylas,
   connectProviderToNylas,
