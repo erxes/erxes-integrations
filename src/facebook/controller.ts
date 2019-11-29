@@ -202,6 +202,10 @@ const init = async app => {
 
     const customer = await Customers.findOne({ erxesApiId: customerId });
 
+    if (!customer) {
+      res.end();
+    }
+
     const result = await Comments.aggregate([
       { $match: { senderId: customer.userId } },
       { $lookup: { from: 'posts_facebooks', localField: 'postId', foreignField: 'postId', as: 'post' } },
@@ -240,7 +244,7 @@ const init = async app => {
     limit = parseInt(limit, 10);
 
     if (senderId !== 'undefined') {
-      const customer = await Customers.findOne({ erxesApiId: senderId });
+      const customer = await Customers.getCustomer({ erxesApiId: senderId });
 
       query.senderId = customer.userId;
     } else {
