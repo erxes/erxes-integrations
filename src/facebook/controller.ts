@@ -231,7 +231,9 @@ const init = async app => {
 
     const { postId, commentId, senderId } = req.query;
 
-    const query: { postId: string; parentId?: string; senderId?: string } = { postId };
+    const post = await Posts.getPost({ erxesApiId: postId });
+
+    const query: { postId: string; parentId?: string; senderId?: string } = { postId: post.postId };
 
     let { limit } = req.query;
 
