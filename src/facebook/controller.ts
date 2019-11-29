@@ -240,7 +240,8 @@ const init = async app => {
     limit = parseInt(limit, 10);
 
     if (senderId !== 'undefined') {
-      query.senderId = senderId;
+      const customer = await Customers.findOne({ erxesApiId: senderId });
+      query.senderId = customer.userId;
     } else {
       query.parentId = commentId !== 'undefined' ? commentId : null;
     }
