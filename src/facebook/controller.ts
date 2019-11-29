@@ -241,6 +241,7 @@ const init = async app => {
 
     if (senderId !== 'undefined') {
       const customer = await Customers.findOne({ erxesApiId: senderId });
+
       query.senderId = customer.userId;
     } else {
       query.parentId = commentId !== 'undefined' ? commentId : null;
