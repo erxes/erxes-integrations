@@ -181,7 +181,7 @@ const init = async app => {
   });
 
   app.get('/facebook/get-post', async (req, res) => {
-    debugFacebook(`Request to get postata with: ${JSON.stringify(req.query)}`);
+    debugFacebook(`Request to get post data with: ${JSON.stringify(req.query)}`);
 
     const { erxesApiId } = req.query;
 
@@ -203,7 +203,7 @@ const init = async app => {
     const customer = await Customers.findOne({ erxesApiId: customerId });
 
     if (!customer) {
-      res.end();
+      return res.end();
     }
 
     const result = await Comments.aggregate([
@@ -244,8 +244,11 @@ const init = async app => {
     limit = parseInt(limit, 10);
 
     if (senderId !== 'undefined') {
-      const customer = await Customers.getCustomer({ erxesApiId: senderId });
+      const customer = await Customers.findOne({ erxesApiId: senderId });
 
+      if (!customer) {
+        return res.end();
+      }
       query.senderId = customer.userId;
     } else {
       query.parentId = commentId !== 'undefined' ? commentId : null;
