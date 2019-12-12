@@ -214,7 +214,7 @@ const init = async app => {
     }
 
     try {
-      const { resolve, to, cc, bcc, body, threadId, subject, attachments, replyToMessageId } = params;
+      const { shouldResolve, to, cc, bcc, body, threadId, subject, attachments, replyToMessageId } = params;
 
       const doc = {
         to: buildEmailAddress(to),
@@ -231,7 +231,7 @@ const init = async app => {
 
       debugNylas('Successfully sent message');
 
-      if (resolve) {
+      if (shouldResolve) {
         debugNylas('Resolve this message ======');
 
         return res.json({ status: 'ok' });
