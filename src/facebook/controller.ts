@@ -47,7 +47,7 @@ const init = async app => {
       // send domain to core endpoints
       try {
         await sendRequest({
-          url: ENDPOINT_URL,
+          url: `${ENDPOINT_URL}/register-endpoint`,
           method: 'POST',
           body: {
             domain: DOMAIN,
