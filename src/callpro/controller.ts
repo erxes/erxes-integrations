@@ -129,6 +129,7 @@ const init = async app => {
             customerId: customer.erxesApiId,
             content: disp,
             integrationId: integration.erxesApiId,
+            owner,
           }),
         },
       });
