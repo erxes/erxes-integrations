@@ -298,6 +298,7 @@ const init = async app => {
         $addFields: {
           commentCount: { $size: '$replies' },
           'customer.avatar': '$customer.profilePic',
+          'customer._id': '$customer.erxesApiId',
           conversationId: '$post.erxesApiId',
         },
       },

@@ -54,8 +54,8 @@ import { getEnv, sendRequest } from './utils';
 /**
  * Remove integration integrationId
  */
-export const removeIntegration = async (id: string): Promise<string> => {
-  const integration = await Integrations.findOne({ erxesApiId: id });
+export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
+  const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
 
   if (!integration) {
     return;
@@ -90,7 +90,7 @@ export const removeIntegration = async (id: string): Promise<string> => {
 
     const conversationIds = await FacebookConversations.find(selector).distinct('_id');
 
-    await FacebookCustomers.deleteMany({ integrationId: _id });
+    await FacebookCustomers.deleteMany({ integrationId: integrationErxesApiId });
     await FacebookConversations.deleteMany(selector);
     await FacebookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
@@ -152,8 +152,6 @@ export const removeIntegration = async (id: string): Promise<string> => {
   // Remove from core =========
   const ENDPOINT_URL = getEnv({ name: 'ENDPOINT_URL' });
   const DOMAIN = getEnv({ name: 'DOMAIN' });
-
-  console.log(integrationRemoveBy);
 
   if (ENDPOINT_URL) {
     // send domain to core endpoints
