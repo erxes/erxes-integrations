@@ -1,14 +1,19 @@
 import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
+import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
-import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
 
 dotenv.config();
 
 const { NODE_ENV, RABBITMQ_HOST = 'amqp://localhost' } = process.env;
 
+let conn;
+let channel;
+
 const handleRunCronMessage = async () => {
+  const watchPushNotification = require('./gmail/watch');
+
   if (NODE_ENV === 'test') {
     return;
   }
@@ -54,11 +59,53 @@ const handleRunCronMessage = async () => {
   }
 };
 
+export const sendRPCMessage = async (message): Promise<any> => {
+  const response = await new Promise((resolve, reject) => {
+    const correlationId = uuid();
+
+    return channel.assertQueue('', { exclusive: true }).then(q => {
+      channel.consume(
+        q.queue,
+        msg => {
+          if (!msg) {
+            return reject(new Error('consumer cancelled by rabbitmq'));
+          }
+
+          if (msg.properties.correlationId === correlationId) {
+            const res = JSON.parse(msg.content.toString());
+
+            if (res.status === 'ok') {
+              resolve(res.data);
+            } else {
+              reject(res.errorMessage);
+            }
+
+            channel.deleteQueue(q.queue);
+          }
+        },
+        { noAck: true },
+      );
+
+      channel.sendToQueue('rpc_queue', Buffer.from(JSON.stringify(message)), {
+        correlationId,
+        replyTo: q.queue,
+      });
+    });
+  });
+
+  return response;
+};
+
+export const sendMessage = async (data?: any) => {
+  await channel.assertQueue('erxes-integrations-notification');
+  await channel.sendToQueue('erxes-integrations-notification', Buffer.from(JSON.stringify(data || {})));
+};
+
 const initConsumer = async () => {
   // Consumer
   try {
-    const conn = await amqplib.connect(RABBITMQ_HOST);
-    const channel = await conn.createChannel();
+    conn = await amqplib.connect(RABBITMQ_HOST);
+    channel = await conn.createChannel();
 
     await channel.assertQueue('erxes-api:run-integrations-cronjob');
 

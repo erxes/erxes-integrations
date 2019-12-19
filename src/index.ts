@@ -8,7 +8,7 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeAccount, removeIntegration } from './helpers';
-import './messageQueue';
+import './messageBroker';
 import Accounts from './models/Accounts';
 import initNylas from './nylas/controller';
 import { init } from './startup';
