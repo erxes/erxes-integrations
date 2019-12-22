@@ -2,6 +2,7 @@ import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
+import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
 
 dotenv.config();
@@ -12,8 +13,6 @@ let conn;
 let channel;
 
 const handleRunCronMessage = async () => {
-  const watchPushNotification = require('./gmail/watch');
-
   if (NODE_ENV === 'test') {
     return;
   }
