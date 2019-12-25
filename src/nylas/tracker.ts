@@ -28,8 +28,7 @@ export const createWebhook = async () => {
     debugNylas(`Successfully created a webhook id: ${nylasWebhook.id}`);
   } catch (e) {
     if (e.message.includes('already exists')) {
-      debugNylas('Nylas webhook callback url already exists');
-      return;
+      return debugNylas('Nylas webhook callback url already exists');
     }
 
     debugNylas(`Error occured while creating webhook: ${e.message}`);

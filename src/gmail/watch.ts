@@ -8,6 +8,7 @@ import { syncPartially } from './receiveEmails';
 import { ICredentials, IPubsubMessage } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
+const USE_NATIVE_GMAIL = getEnv({ name: 'USE_NATIVE_GMAIL', defaultValue: 'false' });
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
 const GOOGLE_GMAIL_TOPIC = getEnv({ name: 'GOOGLE_GMAIL_TOPIC', defaultValue: 'gmail_topic' });
 const GOOGLE_APPLICATION_CREDENTIALS = getEnv({ name: 'GOOGLE_APPLICATION_CREDENTIALS', defaultValue: '' });
@@ -20,24 +21,24 @@ const GOOGLE_GMAIL_SUBSCRIPTION_NAME = getEnv({
  * Create topic and subscription for gmail
  */
 export const trackGmail = async () => {
+  if (USE_NATIVE_GMAIL === 'false') {
+    return debugGmail('USE_NATIVE_GMAIL env is false, if you want to use native gmail set true in .env');
+  }
+
   if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC || !GOOGLE_APPLICATION_CREDENTIALS || !GOOGLE_GMAIL_SUBSCRIPTION_NAME) {
-    debugGmail(`
+    return debugGmail(`
       Error Google: Failed to create google pubsub topic following config missing
       GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID || 'Not defined'}
       GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC || 'Not defined'}
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS || 'Not defined'}
       GOOGLE_GMAIL_SUBSCRIPTION_NAME: ${GOOGLE_GMAIL_SUBSCRIPTION_NAME || 'Not defined'}
     `);
-
-    return;
   }
 
   const googleCredExists = fs.existsSync(GOOGLE_APPLICATION_CREDENTIALS);
 
   if (!googleCredExists) {
-    debugGmail('Error Google: Google credentials file not found');
-
-    return;
+    return debugGmail('Error Google: Google credentials file not found');
   }
 
   const pubsubClient: PubSub = new PubSub({
