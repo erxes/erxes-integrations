@@ -2,7 +2,7 @@ import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
-import { receiveRpcMessage } from './facebook/receiveRpcMessage';
+import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
 
@@ -107,18 +107,18 @@ const initConsumer = async () => {
     conn = await amqplib.connect(RABBITMQ_HOST);
     channel = await conn.createChannel();
 
-    await channel.assertQueue('erxes-api:send-rpc-integrations');
+    await channel.assertQueue('erxes-api:integrations-notification');
 
-    channel.consume('erxes-api:send-rpc-integrations', async msg => {
+    channel.consume('erxes-api:integrations-notification', async msg => {
       if (msg) {
         const content = JSON.parse(msg.content.toString());
         const { type } = content;
 
-        debugBase(`Received rpc queue message ${msg.content.toString()}`);
+        debugBase(`Received message from api ${msg.content.toString()}`);
 
         switch (type) {
           case 'facebook':
-            await receiveRpcMessage(content);
+            await handleFacebookMessage(content);
           case 'cronjob':
             await handleRunCronMessage();
         }
