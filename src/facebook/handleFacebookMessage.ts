@@ -14,7 +14,7 @@ const sendSuccess = data => ({
 /*
  * Handle requests from erxes api
  */
-export const receiveRpcMessage = async msg => {
+export const handleFacebookMessage = async msg => {
   const { action, payload } = msg;
   const doc = JSON.parse(payload || '{}');
 
