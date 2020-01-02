@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
 import { watchPushNotification } from './gmail/watch';
+import { removeAccount } from './helpers';
 import { Integrations } from './models';
 
 dotenv.config();
@@ -73,7 +74,7 @@ export const sendRPCMessage = async (message): Promise<any> => {
           if (msg.properties.correlationId === correlationId) {
             const res = JSON.parse(msg.content.toString());
 
-            if (res.status === 'ok') {
+            if (res.status === 'success') {
               resolve(res.data);
             } else {
               reject(res.errorMessage);
@@ -85,7 +86,7 @@ export const sendRPCMessage = async (message): Promise<any> => {
         { noAck: true },
       );
 
-      channel.sendToQueue('rpc_queue', Buffer.from(JSON.stringify(message)), {
+      channel.sendToQueue('rpc_queue:erxes-integrations', Buffer.from(JSON.stringify(message)), {
         correlationId,
         replyTo: q.queue,
       });
@@ -111,6 +112,34 @@ const initConsumer = async () => {
     channel.consume('erxes-api:run-integrations-cronjob', async msg => {
       if (msg) {
         await handleRunCronMessage();
+        channel.ack(msg);
+      }
+    });
+
+    // listen for rpc queue =========
+    await channel.assertQueue('rpc_queue:erxes-api');
+
+    channel.consume('rpc_queue:erxes-api', async msg => {
+      if (msg !== null) {
+        debugBase(`Received rpc queue message ${msg.content.toString()}`);
+
+        const parsedObject = JSON.parse(msg.content.toString());
+
+        const { action, data } = parsedObject;
+
+        let response = { status: 'error', data: {} };
+
+        if (action === 'remove-account') {
+          response = {
+            status: 'success',
+            data: removeAccount(data._id),
+          };
+        }
+
+        channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
+          correlationId: msg.properties.correlationId,
+        });
+
         channel.ack(msg);
       }
     });
