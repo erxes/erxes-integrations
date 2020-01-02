@@ -297,7 +297,7 @@ describe('Facebook test', () => {
 
     await facebookConversationFactory({ senderId: '123', recipientId: '123' });
 
-    const conversation = await Conversations.getConversation({ senderId: '123' }, true);
+    const conversation = await Conversations.getConversation({ senderId: '123' });
 
     expect(conversation.senderId).toEqual('123');
   });
