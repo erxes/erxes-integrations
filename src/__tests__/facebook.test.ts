@@ -1,6 +1,7 @@
 import * as sinon from 'sinon';
 import { Comments, ConversationMessages, Conversations, Customers, Posts } from '../facebook/models';
 import receiveMessage from '../facebook/receiveMessage';
+import receivePost from '../facebook/receivePost';
 import * as store from '../facebook/store';
 import {
   accountFactory,
@@ -270,6 +271,26 @@ describe('Facebook test', () => {
     expect(conversationMessage.mid).toEqual('mid');
 
     mock.restore();
+  });
+
+  // recivePost
+
+  test('Receive post', async () => {
+    try {
+      await receivePost(postParams, 'pageId123456');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    await facebookCustomerFactory({ userId: 'userId' });
+    const post = await facebookPostFactory({ postId: 'postId' });
+
+    postParams.from.id = 'userId';
+    postParams.post_id = post.postId;
+
+    await receivePost(postParams, 'pageId123');
+
+    expect(await Posts.find({ postId: post.postId }).countDocuments()).toBe(1);
   });
 
   // model  test
