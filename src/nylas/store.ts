@@ -106,12 +106,19 @@ const createOrGetNylasCustomer = async ({ kind, toEmail, integrationIds, message
     ...common,
   };
 
-  const customer = await getOrCreate({
-    kind,
-    collectionName: 'customers',
-    selector: { email },
-    fields: { doc, api },
-  });
+  let customer;
+
+  try {
+    customer = await getOrCreate({
+      kind,
+      collectionName: 'customers',
+      selector: { email },
+      fields: { doc, api },
+    });
+  } catch (e) {
+    debugNylas(`Failed to getOrCreate customer: ${e.message}`);
+    throw new Error(e);
+  }
 
   return {
     kind,
@@ -167,12 +174,19 @@ const createOrGetNylasConversation = async ({
     createdAt,
   };
 
-  const conversation = await getOrCreate({
-    kind,
-    collectionName: 'conversations',
-    fields: { doc, api },
-    selector: { threadId: message.thread_id },
-  });
+  let conversation;
+
+  try {
+    conversation = await getOrCreate({
+      kind,
+      collectionName: 'conversations',
+      fields: { doc, api },
+      selector: { threadId: message.thread_id },
+    });
+  } catch (e) {
+    debugNylas(`Failed to getOrCreate conversation: ${e.message}`);
+    throw new Error(e);
+  }
 
   return {
     kind,
@@ -237,12 +251,19 @@ const createOrGetNylasConversationMessage = async ({
     createdAt,
   };
 
-  const conversationMessage = await getOrCreate({
-    kind,
-    collectionName: 'conversationMessages',
-    selector: { messageId: message.id },
-    fields: { doc, api },
-  });
+  let conversationMessage;
+
+  try {
+    conversationMessage = await getOrCreate({
+      kind,
+      collectionName: 'conversationMessages',
+      selector: { messageId: message.id },
+      fields: { doc, api },
+    });
+  } catch (e) {
+    debugNylas(`Failed to getOrCreate conversationMessage: ${e.message}`);
+    throw new Error(e);
+  }
 
   return conversationMessage;
 };
