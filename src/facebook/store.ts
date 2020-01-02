@@ -6,7 +6,7 @@ import { Accounts, Integrations } from '../models';
 import { getFacebookUser, getFacebookUserProfilePic } from './utils';
 
 export const generatePostDoc = (postParams: IPostParams, pageId: string, userId: string) => {
-  const { post_id, id, video_id, link, photo_id, photos, created_time, message } = postParams;
+  const { post_id, id, link, photos, created_time, message } = postParams;
 
   const doc = {
     postId: post_id || id,
@@ -18,16 +18,7 @@ export const generatePostDoc = (postParams: IPostParams, pageId: string, userId:
   };
 
   if (link) {
-    // Posted video
-    if (video_id) {
-      doc.attachments = [link];
-
-      // Posted photo
-    } else if (photo_id) {
-      doc.attachments = [link];
-    } else {
-      doc.attachments = [link];
-    }
+    doc.attachments = [link];
   }
 
   // Posted multiple image
@@ -162,7 +153,7 @@ export const getOrCreateCustomer = async (pageId: string, userId: string, kind: 
     return customer;
   }
   // create customer
-  const fbUser = await getFacebookUser(pageId, facebookPageTokensMap, userId);
+  const fbUser = (await getFacebookUser(pageId, facebookPageTokensMap, userId)) || {};
   const fbUserProfilePic =
     fbUser.profile_pic || (await getFacebookUserProfilePic(pageId, facebookPageTokensMap, userId));
 

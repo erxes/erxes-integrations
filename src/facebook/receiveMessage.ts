@@ -67,12 +67,16 @@ const receiveMessage = async (activity: Activity) => {
 
   if (!conversationMessage) {
     // save on integrations db
-    await ConversationMessages.create({
-      conversationId: conversation._id,
-      mid: message.mid,
-      timestamp,
-      content: text,
-    });
+    try {
+      await ConversationMessages.create({
+        conversationId: conversation._id,
+        mid: message.mid,
+        timestamp,
+        content: text,
+      });
+    } catch (e) {
+      throw new Error(e.message.includes('duplicate') ? 'Concurrent request: conversation message duplication' : e);
+    }
 
     // save message on api
     try {
