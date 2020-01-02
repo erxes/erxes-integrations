@@ -2,6 +2,7 @@ import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
+import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
 import { removeAccount } from './helpers';
 import { Integrations } from './models';
@@ -107,11 +108,22 @@ const initConsumer = async () => {
     conn = await amqplib.connect(RABBITMQ_HOST);
     channel = await conn.createChannel();
 
-    await channel.assertQueue('erxes-api:run-integrations-cronjob');
+    await channel.assertQueue('erxes-api:integrations-notification');
 
-    channel.consume('erxes-api:run-integrations-cronjob', async msg => {
+    channel.consume('erxes-api:integrations-notification', async msg => {
       if (msg) {
-        await handleRunCronMessage();
+        const content = JSON.parse(msg.content.toString());
+        const { type } = content;
+
+        debugBase(`Received message from api ${msg.content.toString()}`);
+
+        switch (type) {
+          case 'facebook':
+            await handleFacebookMessage(content);
+          case 'cronjob':
+            await handleRunCronMessage();
+        }
+
         channel.ack(msg);
       }
     });
