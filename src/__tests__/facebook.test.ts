@@ -178,7 +178,7 @@ describe('Facebook test', () => {
   });
 
   test('Create or get comment', async () => {
-    const mock = sinon.stub(message, 'sendRPCMessage').callsFake(() => {
+    const mock = sinon.stub(message, 'sendMessage').callsFake(() => {
       return Promise.resolve({ _id: '123456789' });
     });
 
