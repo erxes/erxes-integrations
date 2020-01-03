@@ -10,7 +10,6 @@ import { getCredentialsByEmailAccountId } from '../gmail/util';
 import * as watch from '../gmail/watch';
 import * as messageBroker from '../messageBroker';
 import { Accounts } from '../models';
-import * as utils from '../utils';
 import './setup.ts';
 
 describe('Gmail test', () => {
