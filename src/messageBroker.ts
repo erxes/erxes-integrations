@@ -98,8 +98,8 @@ export const sendRPCMessage = async (message): Promise<any> => {
 };
 
 export const sendMessage = async (data?: any) => {
-  await channel.assertQueue('erxes-integrations-notification');
-  await channel.sendToQueue('erxes-integrations-notification', Buffer.from(JSON.stringify(data || {})));
+  await channel.assertQueue('integrationsNotification');
+  await channel.sendToQueue('integrationsNotification', Buffer.from(JSON.stringify(data || {})));
 };
 
 const initConsumer = async () => {
