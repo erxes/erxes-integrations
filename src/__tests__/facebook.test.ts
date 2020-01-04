@@ -170,7 +170,6 @@ describe('Facebook test', () => {
     try {
       await store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId');
     } catch (e) {
-      console.log(e);
       expect(await Posts.find({}).countDocuments()).toBe(0);
     }
 
@@ -222,7 +221,6 @@ describe('Facebook test', () => {
     try {
       await receiveMessage(activity);
     } catch (e) {
-      console.log(e);
       expect(await Conversations.find({}).countDocuments()).toBe(0);
     }
 
@@ -258,7 +256,6 @@ describe('Facebook test', () => {
     try {
       await receiveMessage(activity);
     } catch (e) {
-      console.log(e);
       expect(await ConversationMessages.find({}).countDocuments()).toBe(0);
     }
 
