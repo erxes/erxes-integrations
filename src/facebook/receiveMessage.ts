@@ -80,7 +80,7 @@ const receiveMessage = async (activity: Activity) => {
 
     // save message on api
     try {
-      await sendMessage({
+      await sendRPCMessage({
         action: 'create-conversation-message',
         metaInfo: 'replaceContent',
         payload: JSON.stringify({
