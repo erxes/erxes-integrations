@@ -228,7 +228,7 @@ describe('Facebook test', () => {
   });
 
   test('Receive message conversationMessage with mongo error', async () => {
-    const mock = sinon.stub(message, 'sendRPCMessage').callsFake(() => {
+    const mock = sinon.stub(message, 'sendMessage').callsFake(() => {
       return Promise.resolve({ _id: '123456789' });
     });
 
@@ -247,7 +247,7 @@ describe('Facebook test', () => {
   });
 
   test('Receive message conversationMessage rabbitmq error', async () => {
-    const mock = sinon.stub(message, 'sendRPCMessage').callsFake(() => {
+    const mock = sinon.stub(message, 'sendMessage').callsFake(() => {
       throw new Error();
     });
 
