@@ -1,5 +1,5 @@
 import { Activity } from 'botbuilder';
-import { sendMessage, sendRPCMessage } from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import Integrations from '../models/Integrations';
 import { ConversationMessages, Conversations } from './models';
 import { getOrCreateCustomer } from './store';
