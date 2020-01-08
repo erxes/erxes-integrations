@@ -16,8 +16,8 @@
       "value": "MONGO_URL"
     },
     "DOMAIN": {
-      "description": "Integration domain",
-      "value": "https://bat-erxes-api.herokuapp.com"
+      "description": "Integration app domain",
+      "value": "https://erxes-integration.herokuapp.com"
     },
     "MAIN_APP_DOMAIN": {
       "description": "erxes app domain",
@@ -25,7 +25,7 @@
     },
     "MAIN_API_DOMAIN": {
       "description": "erxes-api domain",
-      "value": "https://bat-erxes-api.herokuapp.com"
+      "value": "https://erxes-api.herokuapp.com"
     },
     "FACEBOOK_APP_ID": {
       "description": "FACEBOOK APP ID",
