@@ -4,5 +4,5 @@
 .git*
 .prettierrc
 Dockerfile*
-src
+#src
 *.tar.gz
