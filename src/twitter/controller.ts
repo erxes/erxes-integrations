@@ -42,11 +42,11 @@ const init = async app => {
     return res.redirect(url);
   });
 
-  app.get('/twitter/webhook', (req, res) => {
+  app.get('/twitter/webhook', async (req, res) => {
     const crc_token = req.query.crc_token;
 
     if (crc_token) {
-      const hash = twitterUtils.getChallengeResponse(crc_token, twitterUtils.twitterConfig.oauth.consumer_secret);
+      const hash = twitterUtils.getChallengeResponse(crc_token);
 
       res.status(200);
       return res.json({
