@@ -245,8 +245,8 @@ const nylasInstanceWithToken = async ({
  * @param {String} password
  * @returns {String} encrypted password
  */
-const encryptPassword = (password: string): string => {
-  const { ENCRYPTION_KEY } = process.env;
+const encryptPassword = async (password: string): Promise<string> => {
+  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
 
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), iv);
@@ -263,8 +263,8 @@ const encryptPassword = (password: string): string => {
  * @param {String} password
  * @returns {String} decrypted password
  */
-const decryptPassword = (password: string): string => {
-  const { ENCRYPTION_KEY } = process.env;
+const decryptPassword = async (password: string): Promise<string> => {
+  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
 
   const passwordParts = password.split(':');
   const ivKey = Buffer.from(passwordParts.shift(), 'hex');

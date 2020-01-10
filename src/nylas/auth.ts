@@ -42,7 +42,7 @@ const connectYahooAndOutlookToNylas = async (kind: string, account: IAccount & {
     email,
     kind,
     scopes: 'email',
-    settings: { username: email, password: decryptPassword(password) },
+    settings: { username: email, password: await decryptPassword(password) },
   });
 
   await updateAccount(account._id, account_id, access_token, billing_state);
@@ -62,7 +62,7 @@ const connectImapToNylas = async (account: IAccount & { _id: string }) => {
 
   const { email, password } = account;
 
-  const decryptedPassword = decryptPassword(password);
+  const decryptedPassword = await decryptPassword(password);
 
   const { access_token, account_id, billing_state } = await integrateProviderToNylas({
     email,

@@ -49,7 +49,7 @@ describe('Nylas gmail test', () => {
     const account = await accountFactory({
       ...doc,
       nylasToken: 'askldjaslkjdlak',
-      password: nylasUtils.encryptPassword('password'),
+      password: await nylasUtils.encryptPassword('password'),
     });
     const integration = await integrationFactory({
       ...doc,
@@ -117,7 +117,7 @@ describe('Nylas gmail test', () => {
       smtpHost: 'smtp',
       smtpPort: 132,
       imapPort: 231,
-      password: nylasUtils.encryptPassword('ajsdlk'),
+      password: await nylasUtils.encryptPassword('ajsdlk'),
     });
 
     const mock = sinon.stub(utils, 'sendRequest');
@@ -374,9 +374,9 @@ describe('Nylas gmail test', () => {
     );
   });
 
-  test('Encrypt and Decrypt password', () => {
-    const pass1 = nylasUtils.encryptPassword('Hello World');
-    const pass2 = nylasUtils.encryptPassword('World Hello');
+  test('Encrypt and Decrypt password', async () => {
+    const pass1 = await nylasUtils.encryptPassword('Hello World');
+    const pass2 = await nylasUtils.encryptPassword('World Hello');
 
     const decryptPass1 = nylasUtils.decryptPassword(pass1);
     const decryptPass2 = nylasUtils.decryptPassword(pass2);
