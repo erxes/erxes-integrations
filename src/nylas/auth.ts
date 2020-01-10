@@ -5,12 +5,10 @@ import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { updateAccount } from './store';
 import { IIntegrateProvider } from './types';
-import { decryptPassword, getProviderSettings, nylasInstance } from './utils';
+import { decryptPassword, getNylasConfig, getProviderSettings, nylasInstance } from './utils';
 
 // loading config
 dotenv.config();
-
-const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
 /**
  * Connect provider to nylas
@@ -97,6 +95,8 @@ const integrateProviderToNylas = async (args: IIntegrateProvider) => {
   const { email, kind, settings, scopes } = args;
 
   let code;
+
+  const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = await getNylasConfig();
 
   try {
     const codeResponse = await sendRequest({

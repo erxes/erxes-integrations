@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
-import { getEnv } from '../utils';
+import { getConfig, getEnv } from '../utils';
 import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
@@ -23,6 +23,14 @@ const algorithm = 'aes-256-cbc';
  */
 const checkCredentials = () => {
   return Nylas.clientCredentials();
+};
+
+const getNylasConfig = async () => {
+  return {
+    NYLAS_CLIENT_ID: await getConfig('NYLAS_CLIENT_ID'),
+    NYLAS_CLIENT_SECRET: await getConfig('NYLAS_CLIENT_SECRET'),
+    NYLAS_WEBHOOK_CALLBACK_URL: await getConfig('NYLAS_WEBHOOK_CALLBACK_URL'),
+  };
 };
 
 /**
@@ -275,6 +283,7 @@ export {
   getProviderConfigs,
   nylasRequest,
   checkCredentials,
+  getNylasConfig,
   buildEmailAddress,
   encryptPassword,
   decryptPassword,
