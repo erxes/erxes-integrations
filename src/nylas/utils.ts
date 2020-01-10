@@ -81,21 +81,24 @@ const setNylasToken = (accessToken: string) => {
  * for selected provider
  * @returns void
  */
-const getClientConfig = (kind: string): string[] => {
+const getClientConfig = async (kind: string): Promise<string[]> => {
+  const { MICROSOFT_CLIENT_ID } = await getConfig('MICROSOFT_CLIENT_ID');
+  const { MICROSOFT_CLIENT_SECRET } = await getConfig('MICROSOFT_CLIENT_SECRET');
+
   switch (kind) {
     case 'gmail': {
       return [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })];
     }
     case 'office365': {
-      return [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })];
+      return [MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET];
     }
   }
 };
 
-const getProviderSettings = (kind: string, refreshToken: string) => {
+const getProviderSettings = async (kind: string, refreshToken: string) => {
   const DOMAIN = getEnv({ name: 'DOMAIN', defaultValue: '' });
 
-  const [clientId, clientSecret] = getClientConfig(kind);
+  const [clientId, clientSecret] = await getClientConfig(kind);
 
   switch (kind) {
     case 'gmail':

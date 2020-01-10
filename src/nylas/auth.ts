@@ -18,7 +18,7 @@ dotenv.config();
 const connectProviderToNylas = async (kind: string, account: IAccount & { _id: string }) => {
   const { email, tokenSecret } = account;
 
-  const settings = getProviderSettings(kind, tokenSecret);
+  const settings = await getProviderSettings(kind, tokenSecret);
 
   const { access_token, account_id, billing_state } = await integrateProviderToNylas({
     email,
