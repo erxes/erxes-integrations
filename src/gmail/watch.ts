@@ -2,7 +2,6 @@ import { PubSub } from '@google-cloud/pubsub';
 import * as fs from 'fs';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
-import { getConfig } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { syncPartially } from './receiveEmails';
 import { ICredentials, IPubsubMessage } from './types';
