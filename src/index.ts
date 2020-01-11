@@ -17,6 +17,16 @@ import initTwitter from './twitter/controller';
 // load environment variables
 dotenv.config();
 
+const {
+  USE_NATIVE_GMAIL = 'false',
+  FACEBOOK_APP_ID,
+  FACEBOOK_APP_SECRET,
+  NYLAS_CLIENT_ID,
+  NYLAS_CLIENT_SECRET,
+  TWITTER_CONSUMER_KEY,
+  TWITTER_CONSUMER_SECRET,
+} = process.env;
+
 connect();
 
 const app = express();
@@ -36,7 +46,9 @@ app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 
 // Intentionally placing this route above raw bodyParser
 // File upload in nylas controller is not working with rawParser
-initNylas(app);
+if (NYLAS_CLIENT_ID && NYLAS_CLIENT_SECRET) {
+  initNylas(app);
+}
 
 app.use(bodyParser.raw({ limit: '10mb', verify: rawBodySaver, type: '*/*' }));
 
@@ -74,20 +86,37 @@ app.get('/accounts', async (req, res) => {
   return res.json(accounts);
 });
 
-// init bots
-initFacebook(app);
+function initIntegrations() {
+  if (USE_NATIVE_GMAIL === 'false') {
+    debugIntegrations('USE_NATIVE_GMAIL env is false, if you want to use native gmail set true in .env');
+  } else {
+    // init gmail
+    initGmail(app);
+  }
 
-// init gmail
-initGmail(app);
+  if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
+    debugIntegrations('Facebook configuration is missing check your .env');
+  } else {
+    // init bots
+    initFacebook(app);
+  }
 
-// init callpro
-initCallPro(app);
+  if (!TWITTER_CONSUMER_KEY || !TWITTER_CONSUMER_SECRET) {
+    debugIntegrations('Facebook configuration is missing check your .env');
+  } else {
+    // init twitter
+    initTwitter(app);
+  }
 
-// init twitter
-initTwitter(app);
+  // init callpro
+  initCallPro(app);
 
-// init chatfuel
-initChatfuel(app);
+  // init chatfuel
+  initChatfuel(app);
+}
+
+// Initialize third part integrations
+initIntegrations();
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
