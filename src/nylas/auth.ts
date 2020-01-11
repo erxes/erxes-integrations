@@ -5,12 +5,10 @@ import { sendRequest } from '../utils';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
 import { updateAccount } from './store';
 import { IIntegrateProvider } from './types';
-import { decryptPassword, getProviderSettings, nylasInstance } from './utils';
+import { decryptPassword, getNylasConfig, getProviderSettings, nylasInstance } from './utils';
 
 // loading config
 dotenv.config();
-
-const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 
 /**
  * Connect provider to nylas
@@ -20,7 +18,7 @@ const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = process.env;
 const connectProviderToNylas = async (kind: string, account: IAccount & { _id: string }) => {
   const { email, tokenSecret } = account;
 
-  const settings = getProviderSettings(kind, tokenSecret);
+  const settings = await getProviderSettings(kind, tokenSecret);
 
   const { access_token, account_id, billing_state } = await integrateProviderToNylas({
     email,
@@ -44,7 +42,7 @@ const connectYahooAndOutlookToNylas = async (kind: string, account: IAccount & {
     email,
     kind,
     scopes: 'email',
-    settings: { username: email, password: decryptPassword(password) },
+    settings: { username: email, password: await decryptPassword(password) },
   });
 
   await updateAccount(account._id, account_id, access_token, billing_state);
@@ -64,7 +62,7 @@ const connectImapToNylas = async (account: IAccount & { _id: string }) => {
 
   const { email, password } = account;
 
-  const decryptedPassword = decryptPassword(password);
+  const decryptedPassword = await decryptPassword(password);
 
   const { access_token, account_id, billing_state } = await integrateProviderToNylas({
     email,
@@ -97,6 +95,8 @@ const integrateProviderToNylas = async (args: IIntegrateProvider) => {
   const { email, kind, settings, scopes } = args;
 
   let code;
+
+  const { NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET } = await getNylasConfig();
 
   try {
     const codeResponse = await sendRequest({

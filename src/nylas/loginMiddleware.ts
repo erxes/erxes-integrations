@@ -34,7 +34,7 @@ const getOAuthCredentials = async (req, res, next) => {
     return next('Nylas not configured, check your env');
   }
 
-  const [clientId, clientSecret] = getClientConfig(kind);
+  const [clientId, clientSecret] = await getClientConfig(kind);
 
   if (!clientId || !clientSecret) {
     return next(`Missing config check your env of ${kind}`);

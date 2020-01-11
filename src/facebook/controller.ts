@@ -2,7 +2,7 @@ import { FacebookAdapter } from 'botbuilder-adapter-facebook-erxes';
 import { debugBase, debugFacebook, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import Integrations from '../models/Integrations';
-import { getEnv, sendRequest } from '../utils';
+import { getConfig, getEnv, sendRequest } from '../utils';
 import loginMiddleware from './loginMiddleware';
 import { Comments, Customers, Posts } from './models';
 import receiveComment from './receiveComment';
@@ -235,7 +235,8 @@ const init = async app => {
     return res.json(result.reverse());
   });
 
-  const { FACEBOOK_VERIFY_TOKEN, FACEBOOK_APP_SECRET } = process.env;
+  const FACEBOOK_VERIFY_TOKEN = await getConfig('FACEBOOK_VERIFY_TOKEN');
+  const FACEBOOK_APP_SECRET = await getConfig('FACEBOOK_APP_SECRET');
 
   if (!FACEBOOK_VERIFY_TOKEN || !FACEBOOK_APP_SECRET) {
     return debugBase('Invalid facebook config');

@@ -10,6 +10,7 @@ import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
 import './messageBroker';
 import Accounts from './models/Accounts';
+import Configs from './models/Configs';
 import initNylas from './nylas/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
@@ -52,9 +53,35 @@ if (NYLAS_CLIENT_ID && NYLAS_CLIENT_SECRET) {
 
 app.use(bodyParser.raw({ limit: '10mb', verify: rawBodySaver, type: '*/*' }));
 
-app.post('/integrations/remove', async (req, res) => {
+app.use((req, _res, next) => {
   debugRequest(debugIntegrations, req);
 
+  next();
+});
+
+app.post('/update-configs', async (req, res) => {
+  const { configsMap } = req.body;
+
+  try {
+    await Configs.updateConfigs(configsMap);
+  } catch (e) {
+    return res.json({ status: e.message });
+  }
+
+  debugResponse(debugIntegrations, req);
+
+  return res.json({ status: 'ok' });
+});
+
+app.get('/configs', async (req, res) => {
+  const configs = await Configs.find({});
+
+  debugResponse(debugIntegrations, req, JSON.stringify(configs));
+
+  return res.json(configs);
+});
+
+app.post('/integrations/remove', async (req, res) => {
   const { integrationId } = req.body;
 
   try {
@@ -69,8 +96,6 @@ app.post('/integrations/remove', async (req, res) => {
 });
 
 app.get('/accounts', async (req, res) => {
-  debugRequest(debugIntegrations, req);
-
   let { kind } = req.query;
 
   if (kind.includes('nylas')) {

@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
-import { getEnv } from '../utils';
+import { getConfig, getEnv } from '../utils';
 import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
@@ -23,6 +23,14 @@ const algorithm = 'aes-256-cbc';
  */
 const checkCredentials = () => {
   return Nylas.clientCredentials();
+};
+
+const getNylasConfig = async () => {
+  return {
+    NYLAS_CLIENT_ID: await getConfig('NYLAS_CLIENT_ID'),
+    NYLAS_CLIENT_SECRET: await getConfig('NYLAS_CLIENT_SECRET'),
+    NYLAS_WEBHOOK_CALLBACK_URL: await getConfig('NYLAS_WEBHOOK_CALLBACK_URL'),
+  };
 };
 
 /**
@@ -73,21 +81,26 @@ const setNylasToken = (accessToken: string) => {
  * for selected provider
  * @returns void
  */
-const getClientConfig = (kind: string): string[] => {
+const getClientConfig = async (kind: string): Promise<string[]> => {
+  const { MICROSOFT_CLIENT_ID } = await getConfig('MICROSOFT_CLIENT_ID');
+  const { MICROSOFT_CLIENT_SECRET } = await getConfig('MICROSOFT_CLIENT_SECRET');
+  const { GOOGLE_CLIENT_ID } = await getConfig('GOOGLE_CLIENT_ID');
+  const { GOOGLE_CLIENT_SECRET } = await getConfig('GOOGLE_CLIENT_SECRET');
+
   switch (kind) {
     case 'gmail': {
-      return [getEnv({ name: 'GOOGLE_CLIENT_ID' }), getEnv({ name: 'GOOGLE_CLIENT_SECRET' })];
+      return [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET];
     }
     case 'office365': {
-      return [getEnv({ name: 'MICROSOFT_CLIENT_ID' }), getEnv({ name: 'MICROSOFT_CLIENT_SECRET' })];
+      return [MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET];
     }
   }
 };
 
-const getProviderSettings = (kind: string, refreshToken: string) => {
+const getProviderSettings = async (kind: string, refreshToken: string) => {
   const DOMAIN = getEnv({ name: 'DOMAIN', defaultValue: '' });
 
-  const [clientId, clientSecret] = getClientConfig(kind);
+  const [clientId, clientSecret] = await getClientConfig(kind);
 
   switch (kind) {
     case 'gmail':
@@ -234,8 +247,8 @@ const nylasInstanceWithToken = async ({
  * @param {String} password
  * @returns {String} encrypted password
  */
-const encryptPassword = (password: string): string => {
-  const { ENCRYPTION_KEY } = process.env;
+const encryptPassword = async (password: string): Promise<string> => {
+  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
 
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), iv);
@@ -252,8 +265,8 @@ const encryptPassword = (password: string): string => {
  * @param {String} password
  * @returns {String} decrypted password
  */
-const decryptPassword = (password: string): string => {
-  const { ENCRYPTION_KEY } = process.env;
+const decryptPassword = async (password: string): Promise<string> => {
+  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
 
   const passwordParts = password.split(':');
   const ivKey = Buffer.from(passwordParts.shift(), 'hex');
@@ -275,6 +288,7 @@ export {
   getProviderConfigs,
   nylasRequest,
   checkCredentials,
+  getNylasConfig,
   buildEmailAddress,
   encryptPassword,
   decryptPassword,

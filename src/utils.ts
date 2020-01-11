@@ -1,6 +1,7 @@
 import * as request from 'request-promise';
 import * as sanitizeHtml from 'sanitize-html';
 import { debugBase, debugExternalRequests } from './debuggers';
+import Configs from './models/Configs';
 import { IProviderSettings } from './nylas/types';
 
 interface IRequestParams {
@@ -142,4 +143,14 @@ export const downloadAttachment = urlOrName => {
       reject(e);
     }
   });
+};
+
+export const getConfig = async (code, defaultValue?) => {
+  const config = await Configs.findOne({ code });
+
+  if (!config) {
+    return defaultValue;
+  }
+
+  return config.value || defaultValue;
 };
