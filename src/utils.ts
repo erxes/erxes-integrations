@@ -3,6 +3,7 @@ import * as sanitizeHtml from 'sanitize-html';
 import { debugBase, debugExternalRequests } from './debuggers';
 import Configs from './models/Configs';
 import { IProviderSettings } from './nylas/types';
+import { get, set } from './redisClient';
 
 interface IRequestParams {
   url?: string;
@@ -145,12 +146,35 @@ export const downloadAttachment = urlOrName => {
   });
 };
 
-export const getConfig = async (code, defaultValue?) => {
-  const config = await Configs.findOne({ code });
+export const getConfigs = async () => {
+  const configsCache = await get('configs');
 
-  if (!config) {
+  if (configsCache && configsCache !== '{}') {
+    return JSON.parse(configsCache);
+  }
+
+  const configsMap = {};
+  const configs = await Configs.find({});
+
+  for (const config of configs) {
+    configsMap[config.code] = config.value;
+  }
+
+  set('configs', JSON.stringify(configsMap));
+
+  return configsMap;
+};
+
+export const getConfig = async (code, defaultValue?) => {
+  const configs = await getConfigs();
+
+  if (!configs[code]) {
     return defaultValue;
   }
 
-  return config.value || defaultValue;
+  return configs[code];
+};
+
+export const resetConfigsCache = () => {
+  set('configs', '');
 };

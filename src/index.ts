@@ -12,8 +12,12 @@ import './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
 import initNylas from './nylas/controller';
+import { initRedis } from './redisClient';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
+import { resetConfigsCache } from './utils';
+
+initRedis();
 
 // load environment variables
 dotenv.config();
@@ -52,6 +56,8 @@ app.post('/update-configs', async (req, res) => {
 
   try {
     await Configs.updateConfigs(configsMap);
+
+    resetConfigsCache();
   } catch (e) {
     return res.json({ status: e.message });
   }
