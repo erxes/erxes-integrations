@@ -2,6 +2,7 @@ import * as Nylas from 'nylas';
 import * as sinon from 'sinon';
 import {
   accountFactory,
+  configFactory,
   integrationFactory,
   nylasGmailConversationFactory,
   nylasGmailConversationMessageFactory,
@@ -10,6 +11,7 @@ import {
 import { buildEmail } from '../gmail/util';
 import * as messageBroker from '../messageBroker';
 import { Accounts, Integrations } from '../models';
+import Configs from '../models/Configs';
 import * as api from '../nylas/api';
 import * as auth from '../nylas/auth';
 import { GOOGLE_OAUTH_ACCESS_TOKEN_URL, GOOGLE_OAUTH_AUTH_URL, GOOGLE_SCOPES } from '../nylas/constants';
@@ -40,9 +42,9 @@ describe('Nylas gmail test', () => {
   };
 
   beforeEach(async () => {
-    process.env.GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID';
-    process.env.GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET';
-    process.env.ENCRYPTION_KEY = 'aksljdklwjdaklsjdkwljaslkdjwkljd';
+    await configFactory({ code: 'GOOGLE_CLIENT_ID', value: 'GOOGLE_CLIENT_ID' });
+    await configFactory({ code: 'GOOGLE_CLIENT_SECRET', value: 'GOOGLE_CLIENT_SECRET' });
+    await configFactory({ code: 'ENCRYPTION_KEY', value: 'aksljdklwjdaklsjdkwljaslkdjwkljd' });
 
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
@@ -63,12 +65,9 @@ describe('Nylas gmail test', () => {
   });
 
   afterEach(async () => {
-    delete process.env.GOOGLE_CLIENT_ID;
-    delete process.env.GOOGLE_CLIENT_SECRET;
-    delete process.env.ENCRYPTION_KEY;
-
     await Integrations.remove({});
     await Accounts.remove({});
+    await Configs.remove({});
 
     // Remove entries
     await NylasGmailConversationMessages.remove({});
@@ -129,7 +128,7 @@ describe('Nylas gmail test', () => {
 
     const updatedAccount = await Accounts.findOne({ _id: account._id });
 
-    const password = nylasUtils.decryptPassword(account.password);
+    const password = await nylasUtils.decryptPassword(account.password);
 
     expect(updatedAccount.nylasToken).toEqual('ajdalsj');
     expect(updatedAccount.uid).toEqual('account_id');
@@ -150,7 +149,7 @@ describe('Nylas gmail test', () => {
 
     const updatedAccount = await Accounts.findOne({ _id: accountId });
 
-    const password = nylasUtils.decryptPassword(account.password);
+    const password = await nylasUtils.decryptPassword(account.password);
 
     expect(updatedAccount.nylasToken).toEqual('access_token123');
     expect(updatedAccount.uid).toEqual('account_id');
@@ -362,8 +361,8 @@ describe('Nylas gmail test', () => {
     expect(clientSecret).toEqual('GOOGLE_CLIENT_SECRET');
   });
 
-  test('Get provider settings', () => {
-    const settings = nylasUtils.getProviderSettings('gmail', 'refreshToken');
+  test('Get provider settings', async () => {
+    const settings = await nylasUtils.getProviderSettings('gmail', 'refreshToken');
 
     expect(JSON.stringify(settings)).toEqual(
       JSON.stringify({
@@ -378,8 +377,8 @@ describe('Nylas gmail test', () => {
     const pass1 = await nylasUtils.encryptPassword('Hello World');
     const pass2 = await nylasUtils.encryptPassword('World Hello');
 
-    const decryptPass1 = nylasUtils.decryptPassword(pass1);
-    const decryptPass2 = nylasUtils.decryptPassword(pass2);
+    const decryptPass1 = await nylasUtils.decryptPassword(pass1);
+    const decryptPass2 = await nylasUtils.decryptPassword(pass2);
 
     expect(decryptPass1).toEqual('Hello World');
     expect(decryptPass2).toEqual('World Hello');

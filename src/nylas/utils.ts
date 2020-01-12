@@ -82,10 +82,10 @@ const setNylasToken = (accessToken: string) => {
  * @returns void
  */
 const getClientConfig = async (kind: string): Promise<string[]> => {
-  const { MICROSOFT_CLIENT_ID } = await getConfig('MICROSOFT_CLIENT_ID');
-  const { MICROSOFT_CLIENT_SECRET } = await getConfig('MICROSOFT_CLIENT_SECRET');
-  const { GOOGLE_CLIENT_ID } = await getConfig('GOOGLE_CLIENT_ID');
-  const { GOOGLE_CLIENT_SECRET } = await getConfig('GOOGLE_CLIENT_SECRET');
+  const MICROSOFT_CLIENT_ID = await getConfig('MICROSOFT_CLIENT_ID');
+  const MICROSOFT_CLIENT_SECRET = await getConfig('MICROSOFT_CLIENT_SECRET');
+  const GOOGLE_CLIENT_ID = await getConfig('GOOGLE_CLIENT_ID');
+  const GOOGLE_CLIENT_SECRET = await getConfig('GOOGLE_CLIENT_SECRET');
 
   switch (kind) {
     case 'gmail': {
@@ -248,7 +248,7 @@ const nylasInstanceWithToken = async ({
  * @returns {String} encrypted password
  */
 const encryptPassword = async (password: string): Promise<string> => {
-  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
+  const ENCRYPTION_KEY = await getConfig('ENCRYPTION_KEY', '');
 
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), iv);
@@ -266,7 +266,7 @@ const encryptPassword = async (password: string): Promise<string> => {
  * @returns {String} decrypted password
  */
 const decryptPassword = async (password: string): Promise<string> => {
-  const { ENCRYPTION_KEY } = await getConfig('ENCRYPTION_KEY');
+  const ENCRYPTION_KEY = await getConfig('ENCRYPTION_KEY', '');
 
   const passwordParts = password.split(':');
   const ivKey = Buffer.from(passwordParts.shift(), 'hex');

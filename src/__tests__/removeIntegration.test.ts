@@ -30,6 +30,12 @@ describe('Facebook remove integration test', async () => {
       erxesApiId: 'jaskjda',
     });
 
+    await integrationFactory({
+      kind: 'facebook',
+      accountId: account._id,
+      erxesApiId: 'asljkdas',
+    });
+
     accountId = account._id;
     erxesApiId1 = integration1.erxesApiId;
     integrationId1 = integration1._id;
