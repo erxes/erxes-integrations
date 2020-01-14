@@ -10,8 +10,6 @@ const init = async app => {
     const { integrationId, data } = req.body;
     const { phoneNumber } = JSON.parse(data);
 
-    console.log(data);
-
     // Check existing Integration
     const integration = await Integrations.findOne({ kind: 'callpro', phoneNumber }).lean();
 
