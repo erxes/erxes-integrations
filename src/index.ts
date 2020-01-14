@@ -4,6 +4,7 @@ import * as express from 'express';
 import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect } from './connection';
+import initDaily from './daily/controller';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
@@ -88,6 +89,9 @@ initTwitter(app);
 
 // init chatfuel
 initChatfuel(app);
+
+// init chatfuel
+initDaily(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
