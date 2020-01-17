@@ -4,7 +4,6 @@ import * as express from 'express';
 import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect } from './connection';
-import initDaily from './daily/controller';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
@@ -14,6 +13,7 @@ import Accounts from './models/Accounts';
 import initNylas from './nylas/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
+import initDaily from './videoCall/controller';
 
 // load environment variables
 dotenv.config();
