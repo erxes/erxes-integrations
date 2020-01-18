@@ -127,7 +127,7 @@ function initIntegrations() {
   }
 
   if (!TWITTER_CONSUMER_KEY || !TWITTER_CONSUMER_SECRET) {
-    debugIntegrations('Facebook configuration is missing check your .env');
+    debugIntegrations('Twitter configuration is missing check your .env');
   } else {
     // init twitter
     initTwitter(app);
