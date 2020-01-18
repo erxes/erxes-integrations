@@ -72,7 +72,7 @@ export interface INylasConversation {
   kind: string;
   unread: boolean;
   draftId?: string;
-  isDraft?: boolean;
+  type: string;
 }
 
 export interface INylasConversationDocument extends INylasConversation, Document {}
@@ -90,7 +90,10 @@ const conversationCommonSchema = {
   unread: Boolean,
   createdAt: field({ type: Date, index: true, default: new Date() }),
   draftId: String,
-  isDraft: Boolean,
+  type: {
+    type: String,
+    enum: ['SENT', 'DRAFT', 'REPLY'],
+  },
 };
 
 export interface INylasConversatonModel extends Model<INylasConversationDocument> {}

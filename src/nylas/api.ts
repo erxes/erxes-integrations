@@ -52,7 +52,7 @@ const getMessageById = (...args: string[]) => buildMessage('find', ...args);
  * @param {String} action - send | save
  * @returns {Promise} message object response
  */
-const sendMessage = (accessToken: string, args: IMessageDraft, action: string) => {
+const draftMessage = (accessToken: string, args: IMessageDraft, action: string) => {
   return nylasInstanceWithToken({
     accessToken,
     name: 'drafts',
@@ -210,4 +210,4 @@ const removeDraft = async ({
   return 'success';
 };
 
-export { removeDraft, uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getAttachment };
+export { removeDraft, uploadFile, syncMessages, draftMessage, getMessageById, getMessages, getAttachment };

@@ -5,7 +5,7 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendRequest } from '../utils';
-import { getAttachment, removeDraft, sendMessage, syncMessages, uploadFile } from './api';
+import { getAttachment, removeDraft, draftMessage, syncMessages, uploadFile } from './api';
 import {
   connectImapToNylas,
   connectProviderToNylas,
@@ -218,7 +218,7 @@ const init = async app => {
     try {
       const doc = buildMessageParams(params);
 
-      const draft = await sendMessage(account.nylasToken, doc, 'save');
+      const draft = await draftMessage(account.nylasToken, doc, 'save');
 
       // @TODO
       // Save draft message
@@ -340,7 +340,7 @@ const init = async app => {
 
       const doc = buildMessageParams(restParams);
 
-      const message = await sendMessage(account.nylasToken, doc, 'send');
+      const message = await draftMessage(account.nylasToken, doc, 'send');
 
       debugNylas('Successfully sent message');
 

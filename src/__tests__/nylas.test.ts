@@ -244,7 +244,7 @@ describe('Nylas gmail test', () => {
       return Promise.resolve('123y7819u39');
     });
 
-    expect(await api.sendMessage('asjdlasjd', doc)).toEqual('123y7819u39');
+    expect(await api.draftMessage('asjdlasjd', doc, 'send')).toEqual('123y7819u39');
 
     mock.restore();
   });
