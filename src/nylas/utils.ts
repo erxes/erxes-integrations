@@ -11,6 +11,7 @@ import {
   MICROSOFT_OAUTH_AUTH_URL,
   MICROSOFT_SCOPES,
 } from './constants';
+import { IMessageParams } from './types';
 
 // load config
 dotenv.config();
@@ -43,6 +44,29 @@ const buildEmailAddress = (emailStr: string[]) => {
     })
     .filter(email => email !== undefined);
 };
+
+/**
+ * Build message doc from params
+ */
+const buildMessageParams = ({
+  to,
+  cc,
+  bcc,
+  subject,
+  body,
+  threadId,
+  attachments,
+  replyToMessageId,
+}: IMessageParams) => ({
+  to: buildEmailAddress(to),
+  cc: buildEmailAddress(cc),
+  bcc: buildEmailAddress(bcc),
+  subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
+  body,
+  threadId,
+  files: attachments,
+  replyToMessageId,
+});
 
 /**
  * Set token for nylas and
@@ -282,4 +306,5 @@ export {
   getClientConfig,
   nylasInstance,
   nylasInstanceWithToken,
+  buildMessageParams,
 };

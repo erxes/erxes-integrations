@@ -71,6 +71,8 @@ export interface INylasConversation {
   integrationId: string;
   kind: string;
   unread: boolean;
+  draftId?: string;
+  isDraft?: boolean;
 }
 
 export interface INylasConversationDocument extends INylasConversation, Document {}
@@ -87,6 +89,8 @@ const conversationCommonSchema = {
   integrationId: String,
   unread: Boolean,
   createdAt: field({ type: Date, index: true, default: new Date() }),
+  draftId: String,
+  isDraft: Boolean,
 };
 
 export interface INylasConversatonModel extends Model<INylasConversationDocument> {}

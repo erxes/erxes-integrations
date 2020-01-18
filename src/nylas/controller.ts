@@ -5,17 +5,18 @@ import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendRequest } from '../utils';
-import { getAttachment, sendMessage, syncMessages, uploadFile } from './api';
+import { getAttachment, removeDraft, sendMessage, syncMessages, uploadFile } from './api';
 import {
   connectImapToNylas,
   connectProviderToNylas,
   connectYahooAndOutlookToNylas,
   enableOrDisableAccount,
 } from './auth';
+import { NYLAS_API_URL } from './constants';
 import { authProvider, getOAuthCredentials } from './loginMiddleware';
 import { NYLAS_MODELS } from './store';
 import { createWebhook } from './tracker';
-import { buildEmailAddress } from './utils';
+import { buildMessageParams, nylasInstanceWithToken } from './utils';
 
 // load config
 dotenv.config();
@@ -194,6 +195,127 @@ const init = async app => {
     return res.end(response.body, 'base64');
   });
 
+  app.post('nylas/draft', async (req, res, next) => {
+    debugRequest(debugNylas, req);
+    debugNylas('Drafting message...');
+
+    const { data, erxesApiId } = req.body;
+
+    const params = JSON.parse(data);
+
+    const integration = await Integrations.findOne({ erxesApiId }).lean();
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    try {
+      const doc = buildMessageParams(params);
+
+      const draft = await sendMessage(account.nylasToken, doc, 'save');
+
+      // @TODO
+      // Save draft message
+
+      debugNylas('Successfully drafted the message');
+
+      return res.json({ status: 'ok' });
+    } catch (e) {
+      debugNylas(`Failed to draft message: ${e.message}`);
+
+      return next(e);
+    }
+  });
+
+  app.post('nylas/draft-send', async (req, res, next) => {
+    debugRequest(debugNylas, res);
+    debugNylas('Sending draft...');
+
+    const { draftId, erxesApiId } = req.body;
+
+    const integration = await Integrations.findOne({ erxesApiId }).lean();
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    const { nylasToken } = account;
+
+    try {
+      await nylasInstanceWithToken({
+        accessToken: nylasToken,
+        name: 'drafts',
+        method: 'find',
+        options: draftId,
+        action: 'send',
+      });
+
+      debugNylas('Successfully sent a draft');
+    } catch (e) {
+      debugNylas(`Failed to send draft message: ${e.message}`);
+
+      return next(e);
+    }
+
+    try {
+      await removeDraft({
+        accessToken: nylasToken,
+        provider: integration.kind,
+        draftId,
+      });
+    } catch (e) {
+      debugNylas(`Failed to remove draft from erxes after sending draft: ${e.message}`);
+
+      return next(e);
+    }
+  });
+
+  app.post('nylas/draft-delete', async (req, res, next) => {
+    debugRequest(debugNylas, res);
+    debugNylas('Deleting draft...');
+
+    const { draftId, erxesApiId } = req.body;
+
+    const integration = await Integrations.findOne({ erxesApiId }).lean();
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const account = await Accounts.findOne({ _id: integration.accountId }).lean();
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    try {
+      await removeDraft({
+        accessToken: account.nylasToken,
+        draftId,
+        provider: integration.kind,
+        fromNylas: true,
+      });
+
+      return res.json({ status: 'ok' });
+    } catch (e) {
+      debugNylas(`Failed to delete draft message: ${e.message}`);
+
+      return next(e);
+    }
+  });
+
   app.post('/nylas/send', async (req, res, next) => {
     debugRequest(debugNylas, req);
     debugNylas('Sending message...');
@@ -214,20 +336,11 @@ const init = async app => {
     }
 
     try {
-      const { shouldResolve, to, cc, bcc, body, threadId, subject, attachments, replyToMessageId } = params;
+      const { shouldResolve, ...restParams } = params;
 
-      const doc = {
-        to: buildEmailAddress(to),
-        cc: buildEmailAddress(cc),
-        bcc: buildEmailAddress(bcc),
-        subject: replyToMessageId && !subject.includes('Re:') ? `Re: ${subject}` : subject,
-        body,
-        threadId,
-        files: attachments,
-        replyToMessageId,
-      };
+      const doc = buildMessageParams(restParams);
 
-      const message = await sendMessage(account.nylasToken, doc);
+      const message = await sendMessage(account.nylasToken, doc, 'send');
 
       debugNylas('Successfully sent message');
 
@@ -239,7 +352,7 @@ const init = async app => {
 
       // Set mail to inbox
       await sendRequest({
-        url: `https://api.nylas.com/messages/${message.id}`,
+        url: `${NYLAS_API_URL}/messages/${message.id}`,
         method: 'PUT',
         headerParams: {
           Authorization: `Basic ${Buffer.from(`${account.nylasToken}:`).toString('base64')}`,

@@ -17,6 +17,17 @@ export interface IMapArgument {
   password: string;
 }
 
+export interface IMessageParams {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject?: string;
+  body?: string;
+  threadId?: string;
+  attachments?: INylasAttachment[];
+  replyToMessageId?: string;
+}
+
 export interface IMessageDraft {
   to?: ICommonType[];
   from?: ICommonType[];

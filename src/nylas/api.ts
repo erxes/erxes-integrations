@@ -6,6 +6,7 @@ import {
   createOrGetNylasConversation as storeConversation,
   createOrGetNylasConversationMessage as storeMessage,
   createOrGetNylasCustomer as storeCustomer,
+  NYLAS_MODELS,
 } from './store';
 import { IMessageDraft } from './types';
 import { nylasFileRequest, nylasInstanceWithToken, nylasRequest } from './utils';
@@ -48,15 +49,16 @@ const getMessageById = (...args: string[]) => buildMessage('find', ...args);
  * Send or Reply message
  * @param {String} accessToken
  * @param {Object} args - message object
+ * @param {String} action - send | save
  * @returns {Promise} message object response
  */
-const sendMessage = (accessToken: string, args: IMessageDraft) => {
+const sendMessage = (accessToken: string, args: IMessageDraft, action: string) => {
   return nylasInstanceWithToken({
     accessToken,
     name: 'drafts',
     method: 'build',
     options: args,
-    action: 'send',
+    action,
   });
 };
 
@@ -158,4 +160,54 @@ const getAttachment = async (fileId: string, accessToken: string) => {
   return nylasFileRequest(nylasFile, 'download');
 };
 
-export { uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getAttachment };
+/**
+ * Remove draft
+ * @param {String} accessToken
+ * @param {String} draftId
+ * @param {String} provider
+ * @returns {Promise} - success
+ */
+const removeDraft = async ({
+  accessToken,
+  draftId,
+  provider,
+  fromNylas = false,
+}: {
+  accessToken: string;
+  draftId: string;
+  provider: string;
+  fromNylas?: boolean;
+}) => {
+  if (fromNylas) {
+    try {
+      await nylasInstanceWithToken({
+        accessToken,
+        name: 'drafts',
+        method: 'delete',
+        options: draftId,
+      });
+
+      debugNylas('Successfully deleted a draft from Nylas');
+    } catch (e) {
+      return e;
+    }
+  }
+
+  try {
+    const { conversations, conversationMessages } = NYLAS_MODELS[provider];
+
+    const draftConversation = await conversations.findOne({ draftId });
+    const draftConversationMessage = await conversationMessages.findOne({ conversationId: draftConversation._id });
+
+    draftConversation.remove();
+    draftConversationMessage.remove();
+
+    debugNylas('Successfully deleted a draft from Erxes');
+  } catch (e) {
+    return e;
+  }
+
+  return 'success';
+};
+
+export { removeDraft, uploadFile, syncMessages, sendMessage, getMessageById, getMessages, getAttachment };
