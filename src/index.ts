@@ -5,22 +5,28 @@ import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
-import initFacebook from './facebook/controller';
-import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
 import './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
-import initNylas from './nylas/controller';
 import { initRedis } from './redisClient';
 import { init } from './startup';
-import initTwitter from './twitter/controller';
 import { resetConfigsCache } from './utils';
 
 initRedis();
 
 // load environment variables
 dotenv.config();
+
+const {
+  USE_NATIVE_GMAIL = 'false',
+  FACEBOOK_APP_ID,
+  FACEBOOK_APP_SECRET,
+  NYLAS_CLIENT_ID,
+  NYLAS_CLIENT_SECRET,
+  TWITTER_CONSUMER_KEY,
+  TWITTER_CONSUMER_SECRET,
+} = process.env;
 
 connect();
 
@@ -41,7 +47,9 @@ app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 
 // Intentionally placing this route above raw bodyParser
 // File upload in nylas controller is not working with rawParser
-initNylas(app);
+if (NYLAS_CLIENT_ID && NYLAS_CLIENT_SECRET) {
+  import('./nylas/controller').then(initNylas => initNylas.default(app));
+}
 
 app.use(bodyParser.raw({ limit: '10mb', verify: rawBodySaver, type: '*/*' }));
 
@@ -105,20 +113,37 @@ app.get('/accounts', async (req, res) => {
   return res.json(accounts);
 });
 
-// init bots
-initFacebook(app);
+function initIntegrations() {
+  if (USE_NATIVE_GMAIL === 'false') {
+    debugIntegrations('USE_NATIVE_GMAIL env is false, if you want to use native gmail set true in .env');
+  } else {
+    // init gmail
+    import('./gmail/controller').then(initGmail => initGmail.default(app));
+  }
 
-// init gmail
-initGmail(app);
+  if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
+    debugIntegrations('Facebook configuration is missing check your .env');
+  } else {
+    // init bots
+    import('./facebook/controller').then(initFacebook => initFacebook.default(app));
+  }
 
-// init callpro
-initCallPro(app);
+  if (!TWITTER_CONSUMER_KEY || !TWITTER_CONSUMER_SECRET) {
+    debugIntegrations('Twitter configuration is missing check your .env');
+  } else {
+    // init twitter
+    import('./twitter/controller').then(initTwitter => initTwitter.default(app));
+  }
 
-// init twitter
-initTwitter(app);
+  // init callpro
+  initCallPro(app);
 
-// init chatfuel
-initChatfuel(app);
+  // init chatfuel
+  initChatfuel(app);
+}
+
+// Initialize third part integrations
+initIntegrations();
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
