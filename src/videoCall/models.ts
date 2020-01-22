@@ -5,6 +5,7 @@ export interface ICallRecord {
   conversationId: string;
   roomName: string;
   kind: string;
+  privacy: string;
   status?: string;
   recordId?: string;
 }
@@ -18,6 +19,7 @@ const callRecordSchema = new Schema({
   conversationId: String,
   roomName: String,
   kind: String,
+  privacy: String,
   status: {
     type: String,
     default: 'ongoing',
