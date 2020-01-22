@@ -85,12 +85,12 @@ const init = async app => {
       try {
         const callRecord = await CallRecords.findOne({ conversationId, status: 'ongoing' });
 
-        if (callRecord) {
-          const response = await sendDailyRequest(`/api/v1/rooms/${callRecord.roomName}`, 'GET');
+        let response;
 
-          return res.json(response);
+        if (callRecord) {
+          response = await sendDailyRequest(`/api/v1/rooms/${callRecord.roomName}`, 'GET');
         } else {
-          const response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
+          response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
 
           const doc: ICallRecord = {
             conversationId,
@@ -105,8 +105,14 @@ const init = async app => {
 
           await CallRecords.createCallRecord(doc);
 
-          return res.json({ ...response, created: true, token: tokenResponse.token });
+          response = { ...response, created: true, token: tokenResponse.token };
         }
+
+        const ownerTokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
+          properties: { room_name: response.name },
+        });
+
+        return res.json({ ...response, ownerToken: ownerTokenResponse.token });
       } catch (e) {
         return next(e);
       }
