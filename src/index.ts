@@ -7,6 +7,7 @@ import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
+import initWhatsapp from './whatsapp/controller';
 import { removeIntegration } from './helpers';
 import './messageBroker';
 import Accounts from './models/Accounts';
@@ -89,6 +90,8 @@ initTwitter(app);
 // init chatfuel
 initChatfuel(app);
 
+// init whatsapp
+initWhatsapp(app);
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
