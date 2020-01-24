@@ -1,9 +1,15 @@
 import { debugIntegrations } from './debuggers';
-import { trackGmail } from './gmail/watch';
+import { getConfig } from './utils';
 
-export const init = () => {
+export const init = async () => {
+  const USE_NATIVE_GMAIL = await getConfig('USE_NATIVE_GMAIL');
+
   try {
-    trackGmail();
+    if (USE_NATIVE_GMAIL === 'true') {
+      const { trackGmail } = await import('./gmail/watch');
+
+      trackGmail();
+    }
   } catch (e) {
     debugIntegrations(e.message());
   }

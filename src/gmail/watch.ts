@@ -2,7 +2,6 @@ import { PubSub } from '@google-cloud/pubsub';
 import * as fs from 'fs';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
-import { getConfig } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { syncPartially } from './receiveEmails';
 import { ICredentials, IPubsubMessage } from './types';
@@ -12,12 +11,6 @@ import { getCredentialsByEmailAccountId, getGoogleConfigs } from './util';
  * Create topic and subscription for gmail
  */
 export const trackGmail = async () => {
-  const USE_NATIVE_GMAIL = await getConfig('USE_NATIVE_GMAIL', false);
-
-  if (USE_NATIVE_GMAIL === 'false') {
-    return debugGmail('USE_NATIVE_GMAIL env is false, if you want to use native gmail set true in .env');
-  }
-
   const {
     GOOGLE_PROJECT_ID,
     GOOGLE_GMAIL_TOPIC,
