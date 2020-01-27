@@ -2,8 +2,8 @@ import { debugDaily, debugRequest } from '../debuggers';
 import { sendRequest } from '../utils';
 import { CallRecords, ICallRecord } from './models';
 
-const DAILY_API_KEY = '757f4da5dbb05472f1c7bf8dfa1aed526b86a46c0b8ae98542dddd9a865aeb5a';
-const DAILY_END_POINT = 'https://erxes-inc.daily.co';
+const DAILY_API_KEY = process.env.DAILY_API_KEY;
+const DAILY_END_POINT = process.env.DAILY_END_POINT;
 
 const sendDailyRequest = async (url: string, method: string, body = {}) => {
   return sendRequest({
@@ -17,45 +17,10 @@ const sendDailyRequest = async (url: string, method: string, body = {}) => {
 };
 
 const init = async app => {
-  app.get('/daily/rooms', async (_req, res, next) => {
-    if (DAILY_API_KEY && DAILY_END_POINT) {
-      try {
-        const response = await sendDailyRequest('/api/v1/rooms', 'GET');
-
-        return res.json(response);
-      } catch (e) {
-        return next(e);
-      }
-    }
-  });
-
-  app.post('/daily/rooms', async (req, res, next) => {
-    if (DAILY_API_KEY && DAILY_END_POINT) {
-      try {
-        const { conversationId, privacy = 'private' } = req.query;
-
-        const response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
-
-        const doc: ICallRecord = {
-          conversationId,
-          roomName: response.name,
-          kind: 'daily',
-          privacy,
-        };
-
-        const callRecord = await CallRecords.createCallRecord(doc);
-
-        return res.json(callRecord);
-      } catch (e) {
-        return next(e);
-      }
-    }
-  });
-
   app.delete('/daily/rooms/:roomName', async (req, res, next) => {
     const { roomName } = req.params;
 
-    if (DAILY_API_KEY && DAILY_END_POINT && roomName) {
+    if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
         const callRecord = await CallRecords.findOne({ roomName, status: 'ongoing' });
 
@@ -73,7 +38,7 @@ const init = async app => {
       }
     }
 
-    return res.json({});
+    return next(new Error('No API KEY or END POINT'));
   });
 
   app.get('/daily/room', async (req, res, next) => {
@@ -81,7 +46,7 @@ const init = async app => {
 
     const { conversationId, privacy = 'private' } = req.query;
 
-    if (DAILY_API_KEY && DAILY_END_POINT && conversationId) {
+    if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
         const callRecord = await CallRecords.findOne({ conversationId, status: 'ongoing' });
 
@@ -118,13 +83,13 @@ const init = async app => {
       }
     }
 
-    return res.json({});
+    return next(new Error('No API KEY or END POINT'));
   });
 
   app.post('/daily/meeting-tokens/:roomName', async (req, res, next) => {
     const { roomName } = req.params;
 
-    if (DAILY_API_KEY && DAILY_END_POINT && roomName) {
+    if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
         const response = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
           properties: { room_name: roomName },
@@ -136,7 +101,7 @@ const init = async app => {
       }
     }
 
-    return res.json({});
+    return next(new Error('No API KEY or END POINT'));
   });
 };
 
