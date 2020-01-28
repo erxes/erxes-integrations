@@ -2,7 +2,7 @@ import { Document, Model, model, Schema } from 'mongoose';
 import { field } from '../models/utils';
 
 export interface ICallRecord {
-  conversationId: string;
+  erxesApiMessageId: string;
   roomName: string;
   kind: string;
   privacy: string;
@@ -16,7 +16,7 @@ interface ICallRecordDocument extends ICallRecord, Document {
 
 const callRecordSchema = new Schema({
   _id: field({ pkey: true }),
-  conversationId: String,
+  erxesApiMessageId: String,
   roomName: String,
   kind: String,
   privacy: String,
@@ -29,23 +29,23 @@ const callRecordSchema = new Schema({
 });
 
 interface ICallRecordModel extends Model<ICallRecordDocument> {
-  getActiveCall(conversationId: string): Promise<ICallRecordDocument> | null;
+  getActiveCall(messageId: string): Promise<ICallRecordDocument> | null;
   createCallRecord(doc: ICallRecord): Promise<ICallRecordDocument>;
-  endCallRecord(conversationId: string): Promise<ICallRecordDocument>;
+  endCallRecord(messageId: string): Promise<ICallRecordDocument>;
 }
 
 const loadCallRecordClass = () => {
   class CallRecord {
-    public static async getActiveCall(conversationId: string) {
-      return CallRecords.findOne({ conversationId, status: 'ongoing' });
+    public static async getActiveCall(messageId: string) {
+      return CallRecords.findOne({ erxesApiMessageId: messageId });
     }
 
     public static async createCallRecord(doc: ICallRecord) {
       return CallRecords.create({ ...doc, createdAt: Date.now() });
     }
 
-    public static async endCallRecord(conversationId: string) {
-      const activeCall = await CallRecords.findOne({ conversationId, status: 'ongoing' });
+    public static async endCallRecord(messageId: string) {
+      const activeCall = await CallRecords.findOne({ erxesMessageId: messageId });
 
       activeCall.status = 'end';
       activeCall.save();

@@ -41,24 +41,44 @@ const init = async app => {
     return next(new Error('No API KEY or END POINT'));
   });
 
-  app.get('/daily/room', async (req, res, next) => {
+  app.get('/daily/get-status', async (req, res, next) => {
     debugRequest(debugDaily, req);
 
-    const { conversationId, privacy = 'private' } = req.query;
+    const { messageId } = req.query;
 
     if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
-        const callRecord = await CallRecords.findOne({ conversationId, status: 'ongoing' });
+        const callRecord = await CallRecords.findOne({ erxesApiMessageId: messageId });
+
+        return res.send(callRecord ? callRecord.status : 'end');
+      } catch (e) {
+        return next(e);
+      }
+    }
+
+    return next(new Error('No API KEY or END POINT'));
+  });
+
+  app.get('/daily/room', async (req, res, next) => {
+    debugRequest(debugDaily, req);
+
+    const { messageId } = req.query;
+
+    if (DAILY_API_KEY && DAILY_END_POINT) {
+      try {
+        const callRecord = await CallRecords.findOne({ erxesApiMessageId: messageId });
 
         let response;
 
         if (callRecord) {
           response = await sendDailyRequest(`/api/v1/rooms/${callRecord.roomName}`, 'GET');
         } else {
+          const privacy = 'private';
+
           response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
 
           const doc: ICallRecord = {
-            conversationId,
+            erxesApiMessageId: messageId,
             roomName: response.name,
             kind: 'daily',
             privacy,
