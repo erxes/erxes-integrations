@@ -9,6 +9,7 @@ export interface IIntegration {
   facebookPageTokensMap?: { [key: string]: string };
   email: string;
   phoneNumber: string;
+  tenant: string;
   expiration?: string;
   gmailHistoryId?: string;
   chatfuelConfigs?: { [key: string]: string };
@@ -25,6 +26,7 @@ export const integrationSchema = new Schema({
   accountId: String,
   erxesApiId: String,
   phoneNumber: String,
+  tenant: String,
   facebookPageIds: [String],
   email: String,
   expiration: String,
