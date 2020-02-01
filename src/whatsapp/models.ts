@@ -98,6 +98,7 @@ export interface IConversationMessage {
   mid: string;
   conversationId: string;
   content: string;
+  status: string;
 }
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
@@ -107,6 +108,7 @@ export const conversationMessageSchema = new Schema({
   mid: { type: String, unique: true },
   conversationId: String,
   content: String,
+  status: String,
 });
 
 export interface IConversationMessageModel extends Model<IConversationMessageDocument> {}

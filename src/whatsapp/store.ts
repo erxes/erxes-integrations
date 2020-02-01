@@ -13,7 +13,7 @@ export interface IUser {
 
 export const getOrCreateCustomer = async (phoneNumber: string, name: string) => {
   const integration = await Integrations.getIntegration({
-    $and: [{ whatsappinstanceIds: { $in: '91510' } }, { kind: 'whatsapp' }],
+    $and: [{ whatsappinstanceIds: { $in: '95877' } }, { kind: 'whatsapp' }],
   });
 
   let customer = await Customers.findOne({ phoneNumber });
