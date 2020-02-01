@@ -11,9 +11,9 @@ export interface IUser {
   profile_image_url_https: string;
 }
 
-export const getOrCreateCustomer = async (phoneNumber: string, name: string) => {
+export const getOrCreateCustomer = async (phoneNumber: string, name: string, instanceId: string) => {
   const integration = await Integrations.getIntegration({
-    $and: [{ whatsappinstanceIds: { $in: '95877' } }, { kind: 'whatsapp' }],
+    $and: [{ whatsappinstanceIds: { $in: [instanceId] } }, { kind: 'whatsapp' }],
   });
 
   let customer = await Customers.findOne({ phoneNumber });

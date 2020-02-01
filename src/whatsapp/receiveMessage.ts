@@ -4,12 +4,12 @@ import { ConversationMessages, Conversations } from './models';
 import { getOrCreateCustomer } from './store';
 
 const receiveMessage = async requestBody => {
+  const instanceId = requestBody.instanceId;
   const integration = await Integrations.getIntegration({
-    $and: [{ whatsappinstanceIds: { $in: '95877' } }, { kind: 'whatsapp' }],
+    $and: [{ whatsappinstanceIds: { $in: [instanceId] } }, { kind: 'whatsapp' }],
   });
 
   if (requestBody.ack) {
-    console.log('ack: ', requestBody.ack);
     for (const ack of requestBody.ack) {
       await ConversationMessages.updateOne({ mid: ack.id }, { $set: { status: ack.status } });
     }
@@ -20,7 +20,7 @@ const receiveMessage = async requestBody => {
       }
 
       const phoneNumber = message.chatId.split('@', 2)[0];
-      const customer = await getOrCreateCustomer(phoneNumber, message.senderName);
+      const customer = await getOrCreateCustomer(phoneNumber, message.senderName, instanceId);
 
       let conversation = await Conversations.findOne({
         senderId: customer.id,

@@ -1,5 +1,6 @@
-import { debugResponse, debugWhatsapp } from '../debuggers';
+import { debugRequest, debugResponse, debugWhatsapp } from '../debuggers';
 
+import { Integrations } from '../models';
 import * as whatsappUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveMessage from './receiveMessage';
@@ -14,8 +15,40 @@ const init = async app => {
     res.sendStatus(200);
   });
 
+  app.post('/whatsapp/create-integration', async (req, res, next) => {
+    debugRequest(debugWhatsapp, req);
+
+    const { integrationId, data } = req.body;
+    const { instanceId, token } = JSON.parse(data);
+
+    // Check existing Integration
+
+    const integration = await Integrations.findOne({
+      $and: [{ whatsappinstanceIds: { $in: [instanceId] } }, { kind: 'whatsapp' }],
+    });
+    if (integration) {
+      return next(`Integration already exists with this instance id: ${instanceId}`);
+    }
+
+    const whatsappTokensMap = {};
+    whatsappTokensMap[instanceId] = token;
+    try {
+      await Integrations.create({
+        kind: 'whatsapp',
+        erxesApiId: integrationId,
+        whatsappinstanceIds: [instanceId],
+        whatsappTokensMap,
+      });
+    } catch (e) {
+      debugWhatsapp(`Failed to create integration: ${e}`);
+      next(e);
+    }
+
+    return res.json({ status: 'ok' });
+  });
+
   app.post('/whatsapp/reply', async (req, res) => {
-    const { attachments, conversationId, content } = req.body;
+    const { attachments, conversationId, content, integrationId } = req.body;
 
     console.log('attachments', attachments);
 
@@ -36,13 +69,12 @@ const init = async app => {
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
-    // const integration = await Integrations.findOne({ erxesApiId: integrationId });
-
-    // const account = await Accounts.findOne({ _id: integration.accountId });
+    const integration = await Integrations.findOne({ erxesApiId: integrationId });
 
     const recipientId = conversation.recipientId;
-
-    const message = await whatsappUtils.reply(recipientId, content);
+    const instanceId = integration.whatsappinstanceIds[0];
+    const token = integration.whatsappTokensMap[instanceId];
+    const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
 
     // save on integrations db
     await ConversationMessages.create({

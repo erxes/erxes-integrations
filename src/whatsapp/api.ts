@@ -7,10 +7,10 @@ interface IMessage {
   queueNumber: number;
 }
 
-export const reply = (receiverId: string, content: string): Promise<IMessage> => {
+export const reply = (receiverId: string, content: string, instanceId: string, token: string): Promise<IMessage> => {
   return new Promise((resolve, reject) => {
     const requestOptions = {
-      url: 'https://api.chat-api.com/instance95877/sendMessage?token=ok1hirnqgk84pg5g',
+      url: `https://api.chat-api.com/instance${instanceId}/sendMessage?token=${token}`,
       body: {
         chatId: receiverId,
         body: content,
