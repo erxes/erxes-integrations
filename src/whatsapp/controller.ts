@@ -4,6 +4,7 @@ import { Integrations } from '../models';
 import * as whatsappUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveMessage from './receiveMessage';
+
 const init = async app => {
   app.post('/whatsapp/webhook', async (req, res, next) => {
     try {
@@ -50,22 +51,9 @@ const init = async app => {
   app.post('/whatsapp/reply', async (req, res) => {
     const { attachments, conversationId, content, integrationId } = req.body;
 
-    console.log('attachments', attachments);
-
-    // const attachment = {
-    //   media: {
-    //     id: null,
-    //   },
-    //   type: 'media',
-    // };
-
-    // for (const attach of attachments) {
-    //   const base64 = await downloadAttachment(attach.url);
-    //   attachment.media.id = attach.url;
-
-    //   const response: any = await twitterUtils.upload(base64);
-    //   attachment.media.id = JSON.parse(response).media_id_string;
-    // }
+    if (attachments.length > 1) {
+      throw new Error('You can only attach one file');
+    }
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
@@ -74,14 +62,33 @@ const init = async app => {
     const recipientId = conversation.recipientId;
     const instanceId = integration.whatsappinstanceIds[0];
     const token = integration.whatsappTokensMap[instanceId];
-    const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
+
+    if (attachments.length !== 0) {
+      for (const attachment of attachments) {
+        const message = await whatsappUtils.sendFile(
+          recipientId,
+          attachment.url,
+          'fileName',
+          content,
+          instanceId,
+          token,
+        );
+        await ConversationMessages.create({
+          conversationId: conversation._id,
+          mid: message.id,
+          content,
+        });
+      }
+    } else {
+      const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
+      await ConversationMessages.create({
+        conversationId: conversation._id,
+        mid: message.id,
+        content,
+      });
+    }
 
     // save on integrations db
-    await ConversationMessages.create({
-      conversationId: conversation._id,
-      mid: message.id,
-      content,
-    });
 
     debugResponse(debugWhatsapp, req);
 
