@@ -29,6 +29,8 @@ const init = async app => {
 
           await CallRecords.updateOne({ _id: callRecord._id }, { $set: { status: 'end' } });
 
+          console.log('response: ', response);
+
           return res.json(response);
         }
 
@@ -38,90 +40,109 @@ const init = async app => {
       }
     }
 
-    return next(new Error('No API KEY or END POINT'));
-  });
-
-  app.get('/daily/get-status', async (req, res, next) => {
-    debugRequest(debugDaily, req);
-
-    const { messageId } = req.query;
-
-    if (DAILY_API_KEY && DAILY_END_POINT) {
-      try {
-        const callRecord = await CallRecords.findOne({ erxesApiMessageId: messageId });
-
-        return res.send(callRecord ? callRecord.status : 'end');
-      } catch (e) {
-        return next(e);
-      }
-    }
-
-    return next(new Error('No API KEY or END POINT'));
+    return next(new Error('Please configure DailyAPI'));
   });
 
   app.get('/daily/room', async (req, res, next) => {
     debugRequest(debugDaily, req);
 
-    const { messageId } = req.query;
+    const { erxesApiMessageId } = req.query;
 
     if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
-        const callRecord = await CallRecords.findOne({ erxesApiMessageId: messageId });
+        const callRecord = await CallRecords.findOne({ erxesApiMessageId });
 
-        let response;
-
+        console.log('callRecord: ', callRecord);
         if (callRecord) {
-          response = await sendDailyRequest(`/api/v1/rooms/${callRecord.roomName}`, 'GET');
-        } else {
-          const privacy = 'private';
-
-          response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
-
-          const doc: ICallRecord = {
-            erxesApiMessageId: messageId,
-            roomName: response.name,
-            kind: 'daily',
-            privacy,
+          const response = {
+            url: `${DAILY_END_POINT}/${callRecord.roomName}?t=${callRecord.token}`,
+            status: callRecord.status,
           };
 
-          const tokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
-            properties: { room_name: response.name },
+          return res.json(response);
+        }
+
+        return { url: '', status: 'end' };
+      } catch (e) {
+        return next(e);
+      }
+    }
+
+    return next(new Error('Please configure DailyAPI'));
+  });
+
+  app.get('/daily/get-active-room', async (req, res, next) => {
+    debugRequest(debugDaily, req);
+
+    const { erxesApiConversationId } = req.query;
+
+    if (DAILY_API_KEY && DAILY_END_POINT) {
+      try {
+        const callRecord = await CallRecords.findOne({ erxesApiConversationId, status: 'active' });
+
+        if (callRecord) {
+          const ownerTokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
+            properties: { room_name: callRecord.roomName },
           });
 
-          await CallRecords.createCallRecord(doc);
+          const response = {
+            url: `${DAILY_END_POINT}/${callRecord.roomName}?t=${ownerTokenResponse.token}`,
+            name: callRecord.roomName,
+          };
 
-          response = { ...response, created: true, token: tokenResponse.token };
+          return res.json(response);
         }
+
+        return res.json({});
+      } catch (e) {
+        return next(e);
+      }
+    }
+
+    return next(new Error('Please configure DailyAPI'));
+  });
+
+  // create room
+  app.post('/daily/room', async (req, res, next) => {
+    debugRequest(debugDaily, req);
+
+    const { erxesApiMessageId, erxesApiConversationId } = req.query;
+
+    if (DAILY_API_KEY && DAILY_END_POINT) {
+      try {
+        const privacy = 'private';
+
+        const response = await sendDailyRequest(`/api/v1/rooms`, 'POST', { privacy });
+
+        const tokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
+          properties: { room_name: response.name },
+        });
+
+        const doc: ICallRecord = {
+          erxesApiConversationId,
+          erxesApiMessageId,
+          roomName: response.name,
+          kind: 'daily',
+          privacy,
+          token: tokenResponse.token,
+        };
+
+        const callRecord = await CallRecords.createCallRecord(doc);
 
         const ownerTokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
           properties: { room_name: response.name },
         });
 
-        return res.json({ ...response, ownerToken: ownerTokenResponse.token });
-      } catch (e) {
-        return next(e);
-      }
-    }
-
-    return next(new Error('No API KEY or END POINT'));
-  });
-
-  app.post('/daily/meeting-tokens/:roomName', async (req, res, next) => {
-    const { roomName } = req.params;
-
-    if (DAILY_API_KEY && DAILY_END_POINT) {
-      try {
-        const response = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
-          properties: { room_name: roomName },
+        return res.json({
+          url: `${DAILY_END_POINT}/${callRecord.roomName}?t=${ownerTokenResponse.token}`,
+          name: callRecord.roomName,
         });
-
-        return res.json(response);
       } catch (e) {
         return next(e);
       }
     }
 
-    return next(new Error('No API KEY or END POINT'));
+    return next(new Error('Please configure DailyAPI'));
   });
 };
 

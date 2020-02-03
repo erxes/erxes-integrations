@@ -3,11 +3,13 @@ import { field } from '../models/utils';
 
 export interface ICallRecord {
   erxesApiMessageId: string;
+  erxesApiConversationId: string;
   roomName: string;
   kind: string;
   privacy: string;
   status?: string;
   recordId?: string;
+  token?: string;
 }
 
 interface ICallRecordDocument extends ICallRecord, Document {
@@ -17,9 +19,11 @@ interface ICallRecordDocument extends ICallRecord, Document {
 const callRecordSchema = new Schema({
   _id: field({ pkey: true }),
   erxesApiMessageId: String,
+  erxesApiConversationId: String,
   roomName: String,
   kind: String,
   privacy: String,
+  token: String,
   status: {
     type: String,
     default: 'ongoing',
