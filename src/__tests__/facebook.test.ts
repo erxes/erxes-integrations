@@ -150,14 +150,15 @@ describe('Facebook test', () => {
       return Promise.resolve({ _id: '123456789' });
     });
 
-    const post = await store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId');
-
-    expect(post.erxesApiId).toEqual('123456789');
-    expect(post.postId).toEqual(postParams.post_id);
-
-    await store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId');
-
-    expect(await Posts.countDocuments()).toEqual(1);
+    try {
+      await Promise.all([
+        store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId'),
+        store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId'),
+        store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId'),
+      ]);
+    } catch (e) {
+      expect(await Posts.find({}).countDocuments()).toBe(1);
+    }
 
     mock.restore();
   });
@@ -166,6 +167,8 @@ describe('Facebook test', () => {
     const mock = sinon.stub(message, 'sendRPCMessage').callsFake(() => {
       throw new Error();
     });
+
+    postParams.post_id = '123';
 
     try {
       await store.getOrCreatePost(postParams, 'pageId123', postParams.from.id, 'customerErxesApiId');
