@@ -33,28 +33,13 @@ const callRecordSchema = new Schema({
 });
 
 interface ICallRecordModel extends Model<ICallRecordDocument> {
-  getActiveCall(messageId: string): Promise<ICallRecordDocument> | null;
   createCallRecord(doc: ICallRecord): Promise<ICallRecordDocument>;
-  endCallRecord(messageId: string): Promise<ICallRecordDocument>;
 }
 
 const loadCallRecordClass = () => {
   class CallRecord {
-    public static async getActiveCall(messageId: string) {
-      return CallRecords.findOne({ erxesApiMessageId: messageId });
-    }
-
     public static async createCallRecord(doc: ICallRecord) {
       return CallRecords.create({ ...doc, createdAt: Date.now() });
-    }
-
-    public static async endCallRecord(messageId: string) {
-      const activeCall = await CallRecords.findOne({ erxesMessageId: messageId });
-
-      activeCall.status = 'end';
-      activeCall.save();
-
-      return activeCall;
     }
   }
 

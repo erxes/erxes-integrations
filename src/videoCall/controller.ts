@@ -29,9 +29,7 @@ const init = async app => {
 
           await CallRecords.updateOne({ _id: callRecord._id }, { $set: { status: 'end' } });
 
-          console.log('response: ', response);
-
-          return res.json(response);
+          return res.json(response.deleted);
         }
 
         return res.json({});
@@ -52,7 +50,6 @@ const init = async app => {
       try {
         const callRecord = await CallRecords.findOne({ erxesApiMessageId });
 
-        console.log('callRecord: ', callRecord);
         if (callRecord) {
           const response = {
             url: `${DAILY_END_POINT}/${callRecord.roomName}?t=${callRecord.token}`,
@@ -78,7 +75,7 @@ const init = async app => {
 
     if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
-        const callRecord = await CallRecords.findOne({ erxesApiConversationId, status: 'active' });
+        const callRecord = await CallRecords.findOne({ erxesApiConversationId, status: 'ongoing' });
 
         if (callRecord) {
           const ownerTokenResponse = await sendDailyRequest(`/api/v1/meeting-tokens/`, 'POST', {
@@ -106,7 +103,7 @@ const init = async app => {
   app.post('/daily/room', async (req, res, next) => {
     debugRequest(debugDaily, req);
 
-    const { erxesApiMessageId, erxesApiConversationId } = req.query;
+    const { erxesApiMessageId, erxesApiConversationId } = req.body;
 
     if (DAILY_API_KEY && DAILY_END_POINT) {
       try {
