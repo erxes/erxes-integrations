@@ -7,13 +7,14 @@ import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
-import initWhatsapp from './whatsapp/controller';
 import { removeIntegration } from './helpers';
 import './messageBroker';
 import Accounts from './models/Accounts';
 import initNylas from './nylas/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
+import initDaily from './videoCall/controller';
+import initWhatsapp from './whatsapp/controller';
 
 // load environment variables
 dotenv.config();
@@ -92,6 +93,9 @@ initChatfuel(app);
 
 // init whatsapp
 initWhatsapp(app);
+// init chatfuel
+initDaily(app);
+
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
