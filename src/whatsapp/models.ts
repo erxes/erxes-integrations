@@ -52,9 +52,10 @@ export interface IConversation {
   erxesApiId?: string;
   timestamp: Date;
   senderId: string;
-  recipientId: string;
+  instanceId: string;
   content: string;
   integrationId: string;
+  recipientId: string;
 }
 
 export interface IConversationDocument extends IConversation, Document {}
@@ -63,13 +64,14 @@ export const conversationSchema = new Schema({
   _id: field({ pkey: true }),
   erxesApiId: String,
   timestamp: Date,
-  senderId: { type: String, index: true },
-  recipientId: { type: String, index: true },
-  integrationId: String,
+  senderId: String,
+  instanceId: String,
   content: String,
+  integrationId: String,
+  recipientId: String,
 });
 
-conversationSchema.index({ senderId: 1, recipientId: 1 }, { unique: true });
+// conversationSchema.index({ instanceId: 1, recipientId: 1 }, { unique: true });
 
 export interface IConversationModel extends Model<IConversationDocument> {
   getConversation(selector): Promise<IConversationDocument>;

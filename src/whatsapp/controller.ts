@@ -25,25 +25,24 @@ const init = async app => {
     // Check existing Integration
 
     const integration = await Integrations.findOne({
-      $and: [{ whatsappinstanceIds: { $in: [instanceId] } }, { kind: 'whatsapp' }],
+      $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
     });
     if (integration) {
       return next(`Integration already exists with this instance id: ${instanceId}`);
     }
 
-    const whatsappTokensMap = {};
-    whatsappTokensMap[instanceId] = token;
     try {
       await Integrations.create({
         kind: 'whatsapp',
         erxesApiId: integrationId,
-        whatsappinstanceIds: [instanceId],
-        whatsappTokensMap,
+        whatsappinstanceId: instanceId,
+        whatsappToken: token,
       });
     } catch (e) {
       debugWhatsapp(`Failed to create integration: ${e}`);
       next(e);
     }
+    await whatsappUtils.setupInstance(instanceId, token);
 
     return res.json({ status: 'ok' });
   });
@@ -60,15 +59,15 @@ const init = async app => {
     const integration = await Integrations.findOne({ erxesApiId: integrationId });
 
     const recipientId = conversation.recipientId;
-    const instanceId = integration.whatsappinstanceIds[0];
-    const token = integration.whatsappTokensMap[instanceId];
+    const instanceId = conversation.instanceId;
+    const token = integration.whatsappToken;
 
     if (attachments.length !== 0) {
       for (const attachment of attachments) {
         const message = await whatsappUtils.sendFile(
           recipientId,
           attachment.url,
-          'fileName',
+          attachment.name,
           content,
           instanceId,
           token,

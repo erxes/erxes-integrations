@@ -13,8 +13,8 @@ export interface IIntegration {
   expiration?: string;
   gmailHistoryId?: string;
   chatfuelConfigs?: { [key: string]: string };
-  whatsappinstanceIds?: string[];
-  whatsappTokensMap?: { [key: string]: string };
+  whatsappinstanceId?: string;
+  whatsappToken?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {}
@@ -39,11 +39,8 @@ export const integrationSchema = new Schema({
     type: Object,
     default: {},
   }),
-  whatsappinstanceIds: [String],
-  whatsappTokensMap: field({
-    type: Object,
-    default: {},
-  }),
+  whatsappinstanceId: String,
+  whatsappToken: String,
 });
 
 export interface IIntegrationModel extends Model<IIntegrationDocument> {

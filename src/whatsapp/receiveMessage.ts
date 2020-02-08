@@ -6,7 +6,7 @@ import { getOrCreateCustomer } from './store';
 const receiveMessage = async requestBody => {
   const instanceId = requestBody.instanceId;
   const integration = await Integrations.getIntegration({
-    $and: [{ whatsappinstanceIds: { $in: [instanceId] } }, { kind: 'whatsapp' }],
+    $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
   });
 
   if (requestBody.ack) {
@@ -24,7 +24,7 @@ const receiveMessage = async requestBody => {
 
       let conversation = await Conversations.findOne({
         senderId: customer.id,
-        recipientId: message.chatId,
+        instanceId,
       });
 
       if (!conversation) {
@@ -35,6 +35,7 @@ const receiveMessage = async requestBody => {
             recipientId: message.chatId,
             content: message.body,
             integrationId: integration._id,
+            instanceId,
           });
         } catch (e) {
           throw new Error(e.message.includes('duplicate') ? 'Concurrent request: conversation duplication' : e);
@@ -83,6 +84,7 @@ const receiveMessage = async requestBody => {
         if (message.type !== 'chat') {
           const attachment = { type: message.type, url: message.body };
           attachments = [attachment];
+          message.body = '';
         }
 
         if (message.caption) {
