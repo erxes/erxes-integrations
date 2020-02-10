@@ -25,7 +25,7 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
     customer = await Customers.create({
       phoneNumber,
       name,
-      integrationId: integration.erxesApiId,
+      integrationId: integration.id,
     });
   } catch (e) {
     throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);

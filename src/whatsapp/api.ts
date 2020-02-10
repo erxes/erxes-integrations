@@ -67,25 +67,17 @@ export const sendFile = (
 };
 
 export const setupInstance = (instanceId: string, token: string): Promise<ISettings> => {
-  return new Promise((resolve, reject) => {
-    const requestOptions = {
-      url: `https://api.chat-api.com/instance${instanceId}/settings?token=${token}`,
-      body: {
-        webhookUrl: `${getEnv({ name: 'CHAT_API_WEBHOOK_ENV' })}/whatsapp/webhook`,
-        ackNotificationsOn: true,
-        chatUpdateOn: true,
-        videoUploadOn: true,
-        statusNotificationsOn: true,
-      },
-      json: true,
-    };
-    request
-      .post(requestOptions)
-      .then(res => {
-        resolve(res);
-      })
-      .catch(e => {
-        reject(e);
-      });
-  });
+  const requestOptions = {
+    url: `https://api.chat-api.com/instance${instanceId}/settings?token=${token}`,
+    body: {
+      webhookUrl: `${getEnv({ name: 'CHAT_API_WEBHOOK_ENV' })}/whatsapp/webhook`,
+      ackNotificationsOn: true,
+      chatUpdateOn: true,
+      videoUploadOn: true,
+      statusNotificationsOn: true,
+    },
+    json: true,
+  };
+
+  return request.post(requestOptions);
 };

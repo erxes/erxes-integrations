@@ -119,13 +119,16 @@ loadCustomerClass();
 
 loadConversationClass();
 
+// tslint:disable-next-line:variable-name
 export const Customers = model<ICustomerDocument, ICustomerModel>('customers_whatsapp', customerSchema);
 
+// tslint:disable-next-line:variable-name
 export const Conversations = model<IConversationDocument, IConversationModel>(
   'conversations_whatsapp',
   conversationSchema,
 );
 
+// tslint:disable-next-line:variable-name
 export const ConversationMessages = model<IConversationMessageDocument, IConversationMessageModel>(
   'conversation_messages_whatsapp',
   conversationMessageSchema,

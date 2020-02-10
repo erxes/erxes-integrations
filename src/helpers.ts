@@ -4,7 +4,7 @@ import {
   Conversations as ChatfuelConversations,
   Customers as ChatfuelCustomers,
 } from './chatfuel/models';
-import { debugCallPro, debugFacebook, debugGmail, debugNylas, debugTwitter } from './debuggers';
+import { debugCallPro, debugFacebook, debugGmail, debugNylas, debugTwitter, debugWhatsapp } from './debuggers';
 import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
@@ -46,6 +46,11 @@ import {
   Customers as TwitterCustomers,
 } from './twitter/models';
 import { getEnv, sendRequest } from './utils';
+import {
+  ConversationMessages as WhatsappConversationMessages,
+  Conversations as WhatsappConversations,
+  Customers as WhatsappCustomers,
+} from './whatsapp/models';
 
 /**
  * Remove integration integrationId
@@ -142,6 +147,16 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await TwitterConversationMessages.deleteMany(selector);
     await TwitterConversations.deleteMany(selector);
     await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'whatsapp') {
+    debugWhatsapp('Removing whatsapp entries');
+
+    const conversationIds = await WhatsappConversations.find(selector).distinct('_id');
+
+    await WhatsappConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    await WhatsappConversations.deleteMany(selector);
+    await WhatsappCustomers.deleteMany(selector);
   }
 
   // Remove from core =========
