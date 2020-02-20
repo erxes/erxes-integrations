@@ -1,8 +1,4 @@
-import {
-  ConversationMessages as CallProConversationMessages,
-  Conversations as CallProConversations,
-  Customers as CallProCustomers,
-} from './callpro/models';
+import { Conversations as CallProConversations, Customers as CallProCustomers } from './callpro/models';
 import {
   ConversationMessages as ChatfuelConversationMessages,
   Conversations as ChatfuelConversations,
@@ -128,13 +124,12 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   if (kind === 'callpro') {
     debugCallPro('Removing callpro entries');
 
-    const conversationIds = await CallProConversations.find(selector).distinct('_id');
+    await CallProConversations.find(selector).distinct('_id');
 
     integrationRemoveBy = { phoneNumber: integration.phoneNumber };
 
     await CallProCustomers.deleteMany(selector);
     await CallProConversations.deleteMany(selector);
-    await CallProConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   if (kind === 'twitter-dm') {
@@ -255,4 +250,23 @@ export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string 
   }
 
   return { erxesApiIds };
+};
+
+/**
+ * Remove customer from api
+ */
+
+export const removeCustomers = async msg => {
+  const { customerIds } = msg;
+  const selector = { erxesApiId: { $in: customerIds } };
+
+  await FacebookCustomers.deleteMany(selector);
+  await NylasGmailCustomers.deleteMany(selector);
+  await NylasOutlookCustomers.deleteMany(selector);
+  await NylasOffice365Customers.deleteMany(selector);
+  await NylasYahooCustomers.deleteMany(selector);
+  await NylasImapCustomers.deleteMany(selector);
+  await ChatfuelCustomers.deleteMany(selector);
+  await CallProCustomers.deleteMany(selector);
+  await TwitterCustomers.deleteMany(selector);
 };

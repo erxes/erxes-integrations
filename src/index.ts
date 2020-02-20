@@ -11,6 +11,7 @@ import Configs from './models/Configs';
 import { initRedis } from './redisClient';
 import { init } from './startup';
 import { getConfigs, resetConfigsCache } from './utils';
+import initDaily from './videoCall/controller';
 
 initRedis();
 
@@ -136,6 +137,9 @@ function initIntegrations() {
 
 // Initialize third part integrations
 initIntegrations();
+
+// init chatfuel
+initDaily(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
