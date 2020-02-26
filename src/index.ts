@@ -4,13 +4,18 @@ import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
+import initFacebook from './facebook/controller';
+import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
+import './messageBroker';
 import './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
+import initNylas from './nylas/controller';
 import { initRedis } from './redisClient';
 import { init } from './startup';
-import { getConfigs, resetConfigsCache } from './utils';
+import initTwitter from './twitter/controller';
+import { resetConfigsCache } from './utils';
 import initDaily from './videoCall/controller';
 
 initRedis();
@@ -34,11 +39,7 @@ app.use(bodyParser.json({ limit: '10mb', verify: rawBodySaver }));
 
 // Intentionally placing this route above raw bodyParser
 // File upload in nylas controller is not working with rawParser
-getConfigs().then(({ NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET }) => {
-  if (NYLAS_CLIENT_ID && NYLAS_CLIENT_SECRET) {
-    import('./nylas/controller').then(initNylas => initNylas.default(app));
-  }
-});
+initNylas(app);
 
 app.use(bodyParser.raw({ limit: '10mb', verify: rawBodySaver, type: '*/*' }));
 
@@ -102,41 +103,20 @@ app.get('/accounts', async (req, res) => {
   return res.json(accounts);
 });
 
-function initIntegrations() {
-  // init callpro
-  initCallPro(app);
+// init bots
+initFacebook(app);
 
-  // init chatfuel
-  initChatfuel(app);
+// init gmail
+initGmail(app);
 
-  getConfigs().then(
-    ({ USE_NATIVE_GMAIL, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET }) => {
-      if (USE_NATIVE_GMAIL === 'false') {
-        debugIntegrations('USE_NATIVE_GMAIL env is false, if you want to use native gmail set true in .env');
-      } else {
-        // init gmail
-        import('./gmail/controller').then(initGmail => initGmail.default(app));
-      }
+// init callpro
+initCallPro(app);
 
-      if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
-        debugIntegrations('Facebook configuration is missing check your .env');
-      } else {
-        // init bots
-        import('./facebook/controller').then(initFacebook => initFacebook.default(app));
-      }
+// init twitter
+initTwitter(app);
 
-      if (!TWITTER_CONSUMER_KEY || !TWITTER_CONSUMER_SECRET) {
-        debugIntegrations('Twitter configuration is missing check your .env');
-      } else {
-        // init twitter
-        import('./twitter/controller').then(initTwitter => initTwitter.default(app));
-      }
-    },
-  );
-}
-
-// Initialize third part integrations
-initIntegrations();
+// init chatfuel
+initChatfuel(app);
 
 // init chatfuel
 initDaily(app);
