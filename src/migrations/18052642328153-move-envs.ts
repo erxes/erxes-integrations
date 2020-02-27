@@ -31,6 +31,9 @@ const ENVS = [
 
   'MICROSOFT_CLIENT_ID',
   'MICROSOFT_CLIENT_SECRET',
+
+  'DAILY_API_KEY',
+  'DAILY_END_POINT',
 ];
 
 module.exports.up = async () => {

@@ -293,6 +293,6 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
       await createNylasWebhook();
     }
   } catch (e) {
-    return e;
+    throw e;
   }
 };

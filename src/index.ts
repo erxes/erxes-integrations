@@ -47,13 +47,13 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.post('/update-configs', async (req, res) => {
+app.post('/update-configs', async (req, res, next) => {
   const { configsMap } = req.body;
 
   try {
     await updateIntegrationConfigs(configsMap);
   } catch (e) {
-    return res.json({ status: e.message });
+    return next(e);
   }
 
   debugResponse(debugIntegrations, req);

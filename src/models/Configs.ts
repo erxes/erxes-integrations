@@ -33,7 +33,7 @@ export const loadClass = () => {
       const config = await Configs.findOne({ code });
 
       if (!config) {
-        throw new Error('Config not found');
+        return { value: '' };
       }
 
       return config;
