@@ -7,11 +7,10 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration } from './helpers';
-import './messageBroker';
-import './messageBroker';
+import { initConsumer } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
-import initNylas from './nylas/controller';
+import { initNylas } from './nylas/controller';
 import { initRedis } from './redisClient';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
@@ -20,7 +19,7 @@ import initDaily from './videoCall/controller';
 
 initRedis();
 
-connect();
+initConsumer();
 
 const app = express();
 
@@ -130,8 +129,11 @@ app.use((error, _req, res, _next) => {
 const { PORT } = process.env;
 
 app.listen(PORT, () => {
-  debugInit(`Integrations server is running on port ${PORT}`);
+  connect().then(() => {
+    // Initialize startup
 
-  // Initialize startup
-  init();
+    init();
+  });
+
+  debugInit(`Integrations server is running on port ${PORT}`);
 });

@@ -14,13 +14,12 @@ import {
 } from './auth';
 import { authProvider, getOAuthCredentials } from './loginMiddleware';
 import { NYLAS_MODELS } from './store';
-import { createWebhook } from './tracker';
 import { buildEmailAddress, getNylasConfig } from './utils';
 
 // load config
 dotenv.config();
 
-const init = async app => {
+export const initNylas = async app => {
   app.get('/nylas/oauth2/callback', getOAuthCredentials);
   app.post('/nylas/auth/callback', authProvider);
 
@@ -279,7 +278,7 @@ const verifyNylasSignature = async req => {
  * Setup the Nylas API
  * @returns void
  */
-const setupNylas = async () => {
+export const setupNylas = async () => {
   const { NYLAS_CLIENT_SECRET, NYLAS_CLIENT_ID } = await getNylasConfig();
 
   if (!NYLAS_CLIENT_ID || !NYLAS_CLIENT_SECRET) {
@@ -297,9 +296,3 @@ const setupNylas = async () => {
     clientSecret: NYLAS_CLIENT_SECRET,
   });
 };
-
-// setup
-setupNylas();
-createWebhook();
-
-export default init;

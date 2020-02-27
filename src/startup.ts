@@ -1,4 +1,8 @@
 import { debugIntegrations } from './debuggers';
+import { trackGmail } from './gmail/watch';
+import { setupNylas } from './nylas/controller';
+import { createWebhook } from './nylas/tracker';
+import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
 
 export const init = async () => {
@@ -6,11 +10,19 @@ export const init = async () => {
 
   try {
     if (USE_NATIVE_GMAIL === 'true') {
-      const { trackGmail } = await import('./gmail/watch');
-
-      trackGmail();
+      await trackGmail();
     }
+
+    const TWITTER_CONSUMER_KEY = getConfig({ name: 'TWITTER_CONSUMER_KEY' });
+
+    if (TWITTER_CONSUMER_KEY) {
+      await twitterApi.registerWebhook();
+    }
+
+    // nylas setup
+    setupNylas();
+    createWebhook();
   } catch (e) {
-    debugIntegrations(e.message());
+    debugIntegrations(e.message);
   }
 };
