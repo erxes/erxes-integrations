@@ -21,7 +21,9 @@ import {
 import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
-import { enableOrDisableAccount } from './nylas/auth';
+import Configs from './models/Configs';
+import { enableOrDisableAccount, removeExistingNylasWebhook } from './nylas/auth';
+import { setupNylas } from './nylas/controller';
 import {
   NylasGmailConversationMessages,
   NylasGmailConversations,
@@ -39,17 +41,15 @@ import {
   NylasYahooConversations,
   NylasYahooCustomers,
 } from './nylas/models';
+import { createNylasWebhook } from './nylas/tracker';
 import { unsubscribe } from './twitter/api';
 import {
   ConversationMessages as TwitterConversationMessages,
   Conversations as TwitterConversations,
   Customers as TwitterCustomers,
 } from './twitter/models';
-import { getEnv, sendRequest } from './utils';
+import { getEnv, resetConfigsCache, sendRequest } from './utils';
 
-/**
- * Remove integration integrationId
- */
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
 
@@ -231,9 +231,6 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   return erxesApiId;
 };
 
-/**
- * Remove integration by or accountId
- */
 export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string | string[] }> => {
   const account = await Accounts.findOne({ _id });
 
@@ -252,12 +249,8 @@ export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string 
   return { erxesApiIds };
 };
 
-/**
- * Remove customer from api
- */
-
-export const removeCustomers = async msg => {
-  const { customerIds } = msg;
+export const removeCustomers = async params => {
+  const { customerIds } = params;
   const selector = { erxesApiId: { $in: customerIds } };
 
   await FacebookCustomers.deleteMany(selector);
@@ -269,4 +262,42 @@ export const removeCustomers = async msg => {
   await ChatfuelCustomers.deleteMany(selector);
   await CallProCustomers.deleteMany(selector);
   await TwitterCustomers.deleteMany(selector);
+};
+
+export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
+  try {
+    const codes = Object.keys(configsMap);
+
+    for (const code of codes) {
+      if (!code) {
+        continue;
+      }
+
+      const prevConfig = (await Configs.findOne({ code })) || { value: [] };
+
+      const value = configsMap[code];
+      const doc = { code, value };
+
+      await Configs.createOrUpdateConfig(doc);
+
+      resetConfigsCache();
+
+      const updatedConfig = await Configs.getConfig(code);
+      const isPrevConfigValueUpdated = prevConfig.value.toString() !== updatedConfig.value.toString();
+
+      if (['NYLAS_CLIENT_ID', 'NYLAS_CLIENT_SECRET'].includes(code) && isPrevConfigValueUpdated) {
+        await setupNylas();
+
+        await removeExistingNylasWebhook();
+        await createNylasWebhook();
+      }
+
+      if (code === 'NYLAS_WEBHOOK_CALLBACK_URL' && isPrevConfigValueUpdated) {
+        await removeExistingNylasWebhook();
+        await createNylasWebhook();
+      }
+    }
+  } catch (e) {
+    return e;
+  }
 };

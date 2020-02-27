@@ -3,10 +3,7 @@ import { getConfig } from '../utils';
 import { MESSAGE_WEBHOOKS } from './constants';
 import { checkCredentials, nylasInstance } from './utils';
 
-/**
- * Create webhook for specific triggers
- */
-export const createWebhook = async () => {
+export const createNylasWebhook = async () => {
   debugNylas('Creating Nylas webhook');
 
   const NYLAS_WEBHOOK_CALLBACK_URL = await getConfig('NYLAS_WEBHOOK_CALLBACK_URL');

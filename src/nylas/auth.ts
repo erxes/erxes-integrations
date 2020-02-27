@@ -1,8 +1,8 @@
 import * as dotenv from 'dotenv';
 import { debugNylas } from '../debuggers';
 import Accounts, { IAccount } from '../models/Accounts';
-import { sendRequest } from '../utils';
-import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL } from './constants';
+import { getConfig, sendRequest } from '../utils';
+import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL, NYLAS_API_URL } from './constants';
 import { updateAccount } from './store';
 import { IIntegrateProvider } from './types';
 import { decryptPassword, getNylasConfig, getProviderSettings, nylasInstance } from './utils';
@@ -157,7 +157,45 @@ const enableOrDisableAccount = async (accountId: string, enable: boolean) => {
   return Accounts.updateOne({ uid: accountId }, { $set: { billingState: enable ? 'paid' : 'cancelled' } });
 };
 
+const removeExistingNylasWebhook = async (): Promise<void> => {
+  const NYLAS_CLIENT_ID = await getConfig('NYLAS_CLIENT_ID');
+  const NYLAS_CLIENT_SECRET = await getConfig('NYLAS_CLIENT_SECRET');
+
+  debugNylas('Getting existing Nylas webhook');
+
+  try {
+    const existingWebhooks = await sendRequest({
+      url: `${NYLAS_API_URL}/a/${NYLAS_CLIENT_ID}/webhooks`,
+      method: 'get',
+      headerParams: {
+        Authorization: `Basic ${Buffer.from(`${NYLAS_CLIENT_SECRET}:`).toString('base64')}`,
+      },
+    });
+
+    if (!existingWebhooks || existingWebhooks.length === 0) {
+      return debugNylas(`No existing Nylas webhook found with NYLAS_CLIENT_ID: ${NYLAS_CLIENT_ID}`);
+    }
+
+    debugNylas(`Found: ${existingWebhooks.length} Nylas webhooks`);
+
+    for (const webhook of existingWebhooks) {
+      await sendRequest({
+        url: `${NYLAS_API_URL}/a/${NYLAS_CLIENT_ID}/webhooks/${webhook.id}`,
+        method: 'delete',
+        headerParams: {
+          Authorization: `Basic ${Buffer.from(`${NYLAS_CLIENT_SECRET}:`).toString('base64')}`,
+        },
+      });
+    }
+
+    debugNylas(`Successfully removed existing Nylas webhooks`);
+  } catch (e) {
+    debugNylas(e.message);
+  }
+};
+
 export {
+  removeExistingNylasWebhook,
   enableOrDisableAccount,
   integrateProviderToNylas,
   connectProviderToNylas,

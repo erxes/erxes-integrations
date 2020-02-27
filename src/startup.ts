@@ -1,7 +1,7 @@
 import { debugGmail, debugNylas, debugTwitter } from './debuggers';
 import { trackGmail } from './gmail/watch';
 import { setupNylas } from './nylas/controller';
-import { createWebhook } from './nylas/tracker';
+import { createNylasWebhook } from './nylas/tracker';
 import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
 
@@ -28,7 +28,7 @@ export const init = async () => {
 
   try {
     await setupNylas();
-    await createWebhook();
+    await createNylasWebhook();
   } catch (e) {
     debugNylas(e.message);
   }

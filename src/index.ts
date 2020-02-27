@@ -6,7 +6,7 @@ import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
-import { removeIntegration } from './helpers';
+import { removeIntegration, updateIntegrationConfigs } from './helpers';
 import { initConsumer } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
@@ -14,7 +14,6 @@ import { initNylas } from './nylas/controller';
 import { initRedis } from './redisClient';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
-import { resetConfigsCache } from './utils';
 import initDaily from './videoCall/controller';
 
 initRedis();
@@ -52,9 +51,7 @@ app.post('/update-configs', async (req, res) => {
   const { configsMap } = req.body;
 
   try {
-    await Configs.updateConfigs(configsMap);
-
-    resetConfigsCache();
+    await updateIntegrationConfigs(configsMap);
   } catch (e) {
     return res.json({ status: e.message });
   }
