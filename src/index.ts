@@ -131,7 +131,6 @@ const { PORT } = process.env;
 app.listen(PORT, () => {
   connect().then(() => {
     // Initialize startup
-
     init();
   });
 

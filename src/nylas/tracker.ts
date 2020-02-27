@@ -9,7 +9,7 @@ import { checkCredentials, nylasInstance } from './utils';
 export const createWebhook = async () => {
   debugNylas('Creating Nylas webhook');
 
-  const NYLAS_WEBHOOK_CALLBACK_URL = getConfig('NYLAS_WEBHOOK_CALLBACK_URL');
+  const NYLAS_WEBHOOK_CALLBACK_URL = await getConfig('NYLAS_WEBHOOK_CALLBACK_URL');
 
   if (!checkCredentials()) {
     return debugNylas('Nylas is not configured');
