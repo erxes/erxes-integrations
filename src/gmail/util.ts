@@ -1,6 +1,6 @@
 import { debugGmail } from '../debuggers';
 import Accounts, { IAccount } from '../models/Accounts';
-import { getConfig } from '../utils';
+import { getCommonGoogleConfigs, getConfig } from '../utils';
 import { getAuth, gmailClient } from './auth';
 import { ICredentials } from './types';
 
@@ -229,10 +229,19 @@ export const buildEmail = (rawString: string) => {
 };
 
 export const getGoogleConfigs = async () => {
+  const {
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_PROJECT_ID,
+    GOOGLE_APPLICATION_CREDENTIALS,
+  } = await getCommonGoogleConfigs();
+
   return {
-    GOOGLE_PROJECT_ID: await getConfig('GOOGLE_PROJECT_ID'),
+    GOOGLE_PROJECT_ID,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
     GOOGLE_GMAIL_TOPIC: await getConfig('GOOGLE_GMAIL_TOPIC', 'gmail_topic'),
-    GOOGLE_APPLICATION_CREDENTIALS: await getConfig('GOOGLE_APPLICATION_CREDENTIALS', ''),
+    GOOGLE_APPLICATION_CREDENTIALS,
     GOOGLE_GMAIL_SUBSCRIPTION_NAME: await getConfig('GOOGLE_GMAIL_SUBSCRIPTION_NAME', 'gmail_topic_subscription'),
   };
 };

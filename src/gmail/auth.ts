@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
-import { getConfig, getEnv } from '../utils';
+import { getEnv } from '../utils';
 import { SCOPES_GMAIL } from './constant';
 import { ICredentials } from './types';
 import { getGoogleConfigs } from './util';
@@ -11,10 +11,8 @@ const gmail: any = google.gmail('v1');
 export const gmailClient = gmail.users;
 
 const getOauthClient = async () => {
-  const {} = await getGoogleConfigs();
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
 
-  const GOOGLE_CLIENT_ID = await getConfig('GOOGLE_CLIENT_ID');
-  const GOOGLE_CLIENT_SECRET = await getConfig('GOOGLE_CLIENT_SECRET');
   const GMAIL_REDIRECT_URL = `${getEnv({ name: 'DOMAIN' })}/gmaillogin`;
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {

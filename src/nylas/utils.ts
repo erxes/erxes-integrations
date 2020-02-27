@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
+import { getGoogleConfigs } from '../gmail/util';
 import { getConfig, getEnv } from '../utils';
 import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
@@ -84,8 +85,7 @@ const setNylasToken = (accessToken: string) => {
 const getClientConfig = async (kind: string): Promise<string[]> => {
   const MICROSOFT_CLIENT_ID = await getConfig('MICROSOFT_CLIENT_ID');
   const MICROSOFT_CLIENT_SECRET = await getConfig('MICROSOFT_CLIENT_SECRET');
-  const GOOGLE_CLIENT_ID = await getConfig('GOOGLE_CLIENT_ID');
-  const GOOGLE_CLIENT_SECRET = await getConfig('GOOGLE_CLIENT_SECRET');
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
 
   switch (kind) {
     case 'gmail': {
