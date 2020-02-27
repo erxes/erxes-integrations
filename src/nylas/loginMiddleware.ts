@@ -141,23 +141,13 @@ const authProvider = async (req, res, next) => {
   const doc = {
     name: email,
     email,
-    password: encryptPassword(password),
+    password: await encryptPassword(password),
     ...(kind === 'nylas-imap' ? otherParams : {}),
   };
 
   debugNylas(`Creating account with email: ${email}`);
 
-  switch (kind) {
-    case 'nylas-outlook':
-      doc.kind = 'outlook';
-      break;
-    case 'nylas-yahoo':
-      doc.kind = 'yahoo';
-      break;
-    case 'nylas-imap':
-      doc.kind = 'imap';
-      break;
-  }
+  doc.kind = kind.replace('nylas-', '');
 
   await Accounts.create(doc);
 
