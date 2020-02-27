@@ -266,36 +266,31 @@ export const removeCustomers = async params => {
 
 export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   try {
-    const codes = Object.keys(configsMap);
+    const prevNylasClientId = await Configs.getConfig('NYLAS_CLIENT_ID');
+    const prevNylasClientSecret = await Configs.getConfig('NYLAS_CLIENT_SECRET');
+    const prevNylasWebhook = await Configs.getConfig('NYLAS_WEBHOOK_CALLBACK_URL');
 
-    for (const code of codes) {
-      if (!code) {
-        continue;
-      }
+    await Configs.updateConfigs(configsMap);
 
-      const prevConfig = (await Configs.findOne({ code })) || { value: [] };
+    resetConfigsCache();
 
-      const value = configsMap[code];
-      const doc = { code, value };
+    const updatedNylasClientId = await Configs.getConfig('NYLAS_CLIENT_ID');
+    const updatedNylasClientSecret = await Configs.getConfig('NYLAS_CLIENT_SECRET');
+    const updatedNylasWebhook = await Configs.getConfig('NYLAS_WEBHOOK_CALLBACK_URL');
 
-      await Configs.createOrUpdateConfig(doc);
+    if (
+      prevNylasClientId.value.toString() !== updatedNylasClientId.value.toString() ||
+      prevNylasClientSecret.value.toString() !== updatedNylasClientSecret.value.toString()
+    ) {
+      await setupNylas();
 
-      resetConfigsCache();
+      await removeExistingNylasWebhook();
+      await createNylasWebhook();
+    }
 
-      const updatedConfig = await Configs.getConfig(code);
-      const isPrevConfigValueUpdated = prevConfig.value.toString() !== updatedConfig.value.toString();
-
-      if (['NYLAS_CLIENT_ID', 'NYLAS_CLIENT_SECRET'].includes(code) && isPrevConfigValueUpdated) {
-        await setupNylas();
-
-        await removeExistingNylasWebhook();
-        await createNylasWebhook();
-      }
-
-      if (code === 'NYLAS_WEBHOOK_CALLBACK_URL' && isPrevConfigValueUpdated) {
-        await removeExistingNylasWebhook();
-        await createNylasWebhook();
-      }
+    if (prevNylasWebhook.value.toString() !== updatedNylasWebhook.value.toString()) {
+      await removeExistingNylasWebhook();
+      await createNylasWebhook();
     }
   } catch (e) {
     return e;
