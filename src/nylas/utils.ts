@@ -16,8 +16,6 @@ import {
 // load config
 dotenv.config();
 
-const algorithm = 'aes-256-cbc';
-
 /**
  * Check nylas credentials
  * @returns void
@@ -249,9 +247,10 @@ const nylasInstanceWithToken = async ({
  */
 const encryptPassword = async (password: string): Promise<string> => {
   const ENCRYPTION_KEY = await getConfig('ENCRYPTION_KEY', '');
+  const ALGORITHM = await getConfig('ALGORITHM', '');
 
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv);
 
   let encrypted = cipher.update(password);
 
@@ -267,13 +266,14 @@ const encryptPassword = async (password: string): Promise<string> => {
  */
 const decryptPassword = async (password: string): Promise<string> => {
   const ENCRYPTION_KEY = await getConfig('ENCRYPTION_KEY', '');
+  const ALGORITHM = await getConfig('ALGORITHM', '');
 
   const passwordParts = password.split(':');
   const ivKey = Buffer.from(passwordParts.shift(), 'hex');
 
   const encryptedPassword = Buffer.from(passwordParts.join(':'), 'hex');
 
-  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(ENCRYPTION_KEY), ivKey);
+  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), ivKey);
 
   let decrypted = decipher.update(encryptedPassword);
 
