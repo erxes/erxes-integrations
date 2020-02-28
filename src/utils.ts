@@ -177,7 +177,7 @@ export const getConfig = async (code, defaultValue?) => {
 };
 
 export const getCommonGoogleConfigs = async () => {
-  const response = await sendRPCMessage({ action: 'get-configs' }, { configs: {} });
+  const response = await sendRPCMessage({ action: 'get-configs' });
 
   const configs = response.configs;
 

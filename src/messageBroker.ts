@@ -60,11 +60,7 @@ const handleRunCronMessage = async () => {
   }
 };
 
-export const sendRPCMessage = async (message, defaultValue?: any): Promise<any> => {
-  if (NODE_ENV === 'test') {
-    return defaultValue;
-  }
-
+export const sendRPCMessage = async (message): Promise<any> => {
   const response = await new Promise((resolve, reject) => {
     const correlationId = uuid();
 

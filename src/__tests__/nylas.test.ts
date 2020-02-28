@@ -269,6 +269,10 @@ describe('Nylas gmail test', () => {
   test('Connect provider to nylas', async () => {
     const account = await Accounts.findOne({ _id: accountId });
 
+    const sendRPCMessageMock = sinon.stub(messageBroker, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({ configs: {} });
+    });
+
     const mock = sinon.stub(utils, 'sendRequest');
 
     mock.onCall(0).returns('code');
@@ -282,6 +286,7 @@ describe('Nylas gmail test', () => {
     expect(updatedAccount.uid).toEqual('account_id');
 
     mock.restore();
+    sendRPCMessageMock.restore();
   });
 
   test('Enable or disable account', async () => {
@@ -318,15 +323,15 @@ describe('Nylas gmail test', () => {
   });
 
   test('Create a webhook', async () => {
-    const mock1 = sinon.stub(nylasUtils, 'checkCredentials').callsFake(() => Promise.resolve(true));
-
+    const mock1 = sinon.stub(nylasUtils, 'checkCredentials').callsFake(() => true);
     const mock2 = sinon.stub(nylasUtils, 'nylasInstance').callsFake(() => Promise.resolve({ id: 'webhookid' }));
 
-    expect(await tracker.createNylasWebhook()).toEqual('webhookid');
+    const response = await tracker.createNylasWebhook();
+    expect(response).toEqual('webhookid');
 
     mock2.restore();
 
-    const mock3 = sinon.stub(nylasUtils, 'nylasInstance').returns(Promise.reject({ message: 'error' }));
+    const mock3 = sinon.stub(nylasUtils, 'nylasInstance').callsFake(() => Promise.reject({ message: 'error' }));
 
     try {
       await tracker.createNylasWebhook();
@@ -356,14 +361,28 @@ describe('Nylas gmail test', () => {
   });
 
   test('Get client config', async () => {
+    const sendRPCMessageMock = sinon.stub(messageBroker, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({
+        configs: { GOOGLE_CLIENT_ID: 'GOOGLE_CLIENT_ID', GOOGLE_CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET' },
+      });
+    });
+
     const config = await nylasUtils.getClientConfig('gmail');
     const [clientId, clientSecret] = config;
 
     expect(clientId).toEqual('GOOGLE_CLIENT_ID');
     expect(clientSecret).toEqual('GOOGLE_CLIENT_SECRET');
+
+    sendRPCMessageMock.restore();
   });
 
   test('Get provider settings', async () => {
+    const sendRPCMessageMock = sinon.stub(messageBroker, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({
+        configs: { GOOGLE_CLIENT_ID: 'GOOGLE_CLIENT_ID', GOOGLE_CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET' },
+      });
+    });
+
     const settings = await nylasUtils.getProviderSettings('gmail', 'refreshToken');
 
     expect(JSON.stringify(settings)).toEqual(
@@ -373,6 +392,8 @@ describe('Nylas gmail test', () => {
         google_refresh_token: 'refreshToken',
       }),
     );
+
+    sendRPCMessageMock.restore();
   });
 
   test('Encrypt and Decrypt password', async () => {

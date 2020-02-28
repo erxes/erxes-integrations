@@ -31,6 +31,6 @@ export const createNylasWebhook = async () => {
 
     debugNylas(`Error occured while creating webhook: ${e.message}`);
 
-    return e;
+    throw e;
   }
 };
