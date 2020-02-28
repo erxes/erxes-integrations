@@ -318,10 +318,6 @@ describe('Nylas gmail test', () => {
   });
 
   test('Create a webhook', async () => {
-    const sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
-      return Promise.resolve({ configs: {} });
-    });
-
     const mock1 = sinon.stub(nylasUtils, 'checkCredentials').callsFake(() => Promise.resolve(true));
 
     const mock2 = sinon.stub(nylasUtils, 'nylasInstance').callsFake(() => Promise.resolve({ id: 'webhookid' }));
@@ -340,7 +336,6 @@ describe('Nylas gmail test', () => {
 
     mock1.restore();
     mock3.restore();
-    sendRPCMessageMock.restore();
   });
 
   test('Get provider config', () => {
@@ -361,11 +356,17 @@ describe('Nylas gmail test', () => {
   });
 
   test('Get client config', async () => {
+    const sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({ configs: {} });
+    });
+
     const config = await nylasUtils.getClientConfig('gmail');
     const [clientId, clientSecret] = config;
 
     expect(clientId).toEqual('GOOGLE_CLIENT_ID');
     expect(clientSecret).toEqual('GOOGLE_CLIENT_SECRET');
+
+    sendRPCMessageMock.restore();
   });
 
   test('Get provider settings', async () => {
