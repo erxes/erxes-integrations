@@ -45,6 +45,7 @@ describe('Nylas gmail test', () => {
     await configFactory({ code: 'GOOGLE_CLIENT_ID', value: 'GOOGLE_CLIENT_ID' });
     await configFactory({ code: 'GOOGLE_CLIENT_SECRET', value: 'GOOGLE_CLIENT_SECRET' });
     await configFactory({ code: 'ENCRYPTION_KEY', value: 'aksljdklwjdaklsjdkwljaslkdjwkljd' });
+    await configFactory({ code: 'ALGORITHM', value: 'aes-256-cbc' });
 
     const doc = { kind: 'gmail', email: 'user@mail.com' };
 
@@ -320,14 +321,14 @@ describe('Nylas gmail test', () => {
 
     const mock2 = sinon.stub(nylasUtils, 'nylasInstance').callsFake(() => Promise.resolve({ id: 'webhookid' }));
 
-    expect(await tracker.createWebhook()).toEqual('webhookid');
+    expect(await tracker.createNylasWebhook()).toEqual('webhookid');
 
     mock2.restore();
 
     const mock3 = sinon.stub(nylasUtils, 'nylasInstance').returns(Promise.reject({ message: 'error' }));
 
     try {
-      await tracker.createWebhook();
+      await tracker.createNylasWebhook();
     } catch (e) {
       expect(e.message).toEqual('error');
     }
