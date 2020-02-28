@@ -38,22 +38,21 @@ const ENVS = [
 
 module.exports.up = async () => {
   const MONGO_URL = process.env.MONGO_URL || '';
-
-  // ignore on saas
-  if (MONGO_URL.includes('erxes_integrations_')) {
-    return;
-  }
-
   const mongoClient = await mongoose.createConnection(MONGO_URL, options);
 
   const configsCollection = mongoClient.db.collection('configs');
-  const configs = await configsCollection.find({}).toArray();
-
-  if (configs.length !== 0) {
-    return;
-  }
 
   for (const env of ENVS) {
-    await configsCollection.insert({ code: env, value: process.env[env] });
+    try {
+      await configsCollection.insert({ code: env, value: process.env[env] });
+    } catch (e) {
+      console.log(e.message);
+    }
+  }
+
+  try {
+    await configsCollection.insert({ code: 'ALGORITHM', value: 'aes-256-cbc' });
+  } catch (e) {
+    console.log(e.message);
   }
 };
