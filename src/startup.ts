@@ -7,23 +7,22 @@ import { getConfig } from './utils';
 
 export const init = async () => {
   const USE_NATIVE_GMAIL = await getConfig('USE_NATIVE_GMAIL');
+  const TWITTER_CONSUMER_KEY = await getConfig({ name: 'TWITTER_CONSUMER_KEY' });
 
-  try {
-    if (USE_NATIVE_GMAIL === 'true') {
+  if (USE_NATIVE_GMAIL === 'true') {
+    try {
       await trackGmail();
+    } catch (e) {
+      debugGmail(e.message);
     }
-  } catch (e) {
-    debugGmail(e.message);
   }
 
-  try {
-    const TWITTER_CONSUMER_KEY = getConfig({ name: 'TWITTER_CONSUMER_KEY' });
-
-    if (TWITTER_CONSUMER_KEY) {
+  if (TWITTER_CONSUMER_KEY) {
+    try {
       await twitterApi.registerWebhook();
+    } catch (e) {
+      debugTwitter(e.message);
     }
-  } catch (e) {
-    debugTwitter(e.message);
   }
 
   try {
