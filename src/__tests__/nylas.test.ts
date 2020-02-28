@@ -33,6 +33,7 @@ describe('Nylas gmail test', () => {
   let accountId: string;
   let integrationId: string;
   let erxesApiId: string;
+  let sendRPCMessageMock;
 
   const attachmentDoc = {
     name: 'test',
@@ -42,6 +43,10 @@ describe('Nylas gmail test', () => {
   };
 
   beforeEach(async () => {
+    sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({ configs: {} });
+    });
+
     await configFactory({ code: 'GOOGLE_CLIENT_ID', value: 'GOOGLE_CLIENT_ID' });
     await configFactory({ code: 'GOOGLE_CLIENT_SECRET', value: 'GOOGLE_CLIENT_SECRET' });
     await configFactory({ code: 'ENCRYPTION_KEY', value: 'aksljdklwjdaklsjdkwljaslkdjwkljd' });
@@ -54,6 +59,7 @@ describe('Nylas gmail test', () => {
       nylasToken: 'askldjaslkjdlak',
       password: await nylasUtils.encryptPassword('password'),
     });
+
     const integration = await integrationFactory({
       ...doc,
       accountId: account._id,
@@ -66,6 +72,8 @@ describe('Nylas gmail test', () => {
   });
 
   afterEach(async () => {
+    sendRPCMessageMock.restore();
+
     await Integrations.remove({});
     await Accounts.remove({});
     await Configs.remove({});
