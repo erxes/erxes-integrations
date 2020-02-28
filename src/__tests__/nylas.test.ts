@@ -33,7 +33,6 @@ describe('Nylas gmail test', () => {
   let accountId: string;
   let integrationId: string;
   let erxesApiId: string;
-  let sendRPCMessageMock;
 
   const attachmentDoc = {
     name: 'test',
@@ -43,10 +42,6 @@ describe('Nylas gmail test', () => {
   };
 
   beforeEach(async () => {
-    sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
-      return Promise.resolve({ configs: {} });
-    });
-
     await configFactory({ code: 'GOOGLE_CLIENT_ID', value: 'GOOGLE_CLIENT_ID' });
     await configFactory({ code: 'GOOGLE_CLIENT_SECRET', value: 'GOOGLE_CLIENT_SECRET' });
     await configFactory({ code: 'ENCRYPTION_KEY', value: 'aksljdklwjdaklsjdkwljaslkdjwkljd' });
@@ -72,8 +67,6 @@ describe('Nylas gmail test', () => {
   });
 
   afterEach(async () => {
-    sendRPCMessageMock.restore();
-
     await Integrations.remove({});
     await Accounts.remove({});
     await Configs.remove({});
@@ -325,6 +318,10 @@ describe('Nylas gmail test', () => {
   });
 
   test('Create a webhook', async () => {
+    const sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({ configs: {} });
+    });
+
     const mock1 = sinon.stub(nylasUtils, 'checkCredentials').callsFake(() => Promise.resolve(true));
 
     const mock2 = sinon.stub(nylasUtils, 'nylasInstance').callsFake(() => Promise.resolve({ id: 'webhookid' }));
@@ -343,6 +340,7 @@ describe('Nylas gmail test', () => {
 
     mock1.restore();
     mock3.restore();
+    sendRPCMessageMock.restore();
   });
 
   test('Get provider config', () => {
