@@ -356,17 +356,11 @@ describe('Nylas gmail test', () => {
   });
 
   test('Get client config', async () => {
-    const sendRPCMessageMock = sinon.stub({ action: 'get-configs' }, 'sendRPCMessage').callsFake(() => {
-      return Promise.resolve({ configs: {} });
-    });
-
     const config = await nylasUtils.getClientConfig('gmail');
     const [clientId, clientSecret] = config;
 
     expect(clientId).toEqual('GOOGLE_CLIENT_ID');
     expect(clientSecret).toEqual('GOOGLE_CLIENT_SECRET');
-
-    sendRPCMessageMock.restore();
   });
 
   test('Get provider settings', async () => {
