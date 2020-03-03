@@ -11,6 +11,7 @@ import { removeIntegration } from './helpers';
 import './messageBroker';
 import Accounts from './models/Accounts';
 import initNylas from './nylas/controller';
+import initSmooch from './smooch/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
 import initDaily from './videoCall/controller';
@@ -95,6 +96,9 @@ initChatfuel(app);
 initWhatsapp(app);
 // init chatfuel
 initDaily(app);
+
+// init smooch
+initSmooch(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {

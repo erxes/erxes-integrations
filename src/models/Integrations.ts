@@ -15,6 +15,9 @@ export interface IIntegration {
   chatfuelConfigs?: { [key: string]: string };
   whatsappinstanceId?: string;
   whatsappToken?: string;
+  telegramBotToken?: string;
+  telegramDisplayName?: string;
+  smoochIntegrationId?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {}
@@ -41,6 +44,9 @@ export const integrationSchema = new Schema({
   }),
   whatsappinstanceId: String,
   whatsappToken: String,
+  telegramBotToken: String,
+  telegramDisplayName: String,
+  smoochIntegrationId: String,
 });
 
 export interface IIntegrationModel extends Model<IIntegrationDocument> {
