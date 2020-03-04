@@ -49,7 +49,6 @@ import {
   Conversations as TwitterConversations,
   Customers as TwitterCustomers,
 } from './twitter/models';
-import { getEnv, sendRequest } from './utils';
 import { getEnv, resetConfigsCache, sendRequest } from './utils';
 import {
   ConversationMessages as WhatsappConversationMessages,
