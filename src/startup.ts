@@ -1,7 +1,9 @@
-import { debugGmail, debugNylas, debugTwitter } from './debuggers';
+import { debugGmail, debugNylas, debugSmooch, debugTwitter } from './debuggers';
 import { trackGmail } from './gmail/watch';
 import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
+import { setupSmoochWebhook } from './smooch/api';
+import { setupSmooch } from './smooch/controller';
 import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
 
@@ -30,5 +32,12 @@ export const init = async () => {
     await createNylasWebhook();
   } catch (e) {
     debugNylas(e.message);
+  }
+
+  try {
+    await setupSmooch();
+    await setupSmoochWebhook();
+  } catch (e) {
+    debugSmooch(`failed to setup smooch: ${e.message}`);
   }
 };

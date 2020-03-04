@@ -4,7 +4,15 @@ import {
   Conversations as ChatfuelConversations,
   Customers as ChatfuelCustomers,
 } from './chatfuel/models';
-import { debugCallPro, debugFacebook, debugGmail, debugNylas, debugTwitter, debugWhatsapp } from './debuggers';
+import {
+  debugCallPro,
+  debugFacebook,
+  debugGmail,
+  debugNylas,
+  debugSmooch,
+  debugTwitter,
+  debugWhatsapp,
+} from './debuggers';
 import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
@@ -42,6 +50,8 @@ import {
   NylasYahooCustomers,
 } from './nylas/models';
 import { createNylasWebhook } from './nylas/tracker';
+import * as smoochApi from './smooch/api';
+import { setupSmooch } from './smooch/controller';
 import { getTwitterConfig, unsubscribe } from './twitter/api';
 import * as twitterApi from './twitter/api';
 import {
@@ -295,6 +305,11 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const prevNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');
   const prevNylasWebhook = await getValueAsString('NYLAS_WEBHOOK_CALLBACK_URL');
 
+  const prevSmoochAppKeyId = await getValueAsString('SMOOCH_APP_KEY_ID');
+  const prevSmoochAppKeySecret = await getValueAsString('SMOOCH_APP_KEY_SECRET');
+  const prevSmoochAppId = await getValueAsString('SMOOCH_APP_ID');
+  const prevSmoochWebhook = await getValueAsString('SMOOCH_WEBHOOK_CALLBACK_URL');
+
   const prevTwitterConfig = await getTwitterConfig();
 
   await Configs.updateConfigs(configsMap);
@@ -306,6 +321,11 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const updatedNylasClientId = await getValueAsString('NYLAS_CLIENT_ID');
   const updatedNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');
   const updatedNylasWebhook = await getValueAsString('NYLAS_WEBHOOK_CALLBACK_URL');
+
+  const updatedSmoochAppKeyId = await getValueAsString('SMOOCH_APP_KEY_ID');
+  const updatedSmoochAppKeySecret = await getValueAsString('SMOOCH_APP_KEY_SECRET');
+  const updatedSmoochAppId = await getValueAsString('SMOOCH_APP_ID');
+  const updatedSmoochWebhook = await getValueAsString('SMOOCH_WEBHOOK_CALLBACK_URL');
 
   try {
     if (prevNylasClientId !== updatedNylasClientId || prevNylasClientSecret !== updatedNylasClientSecret) {
@@ -339,5 +359,23 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
     }
   } catch (e) {
     debugTwitter(e);
+  }
+
+  try {
+    console.log('SMOOOOCH');
+    if (
+      prevSmoochAppKeyId !== updatedSmoochAppKeyId ||
+      prevSmoochAppKeySecret !== updatedSmoochAppKeySecret ||
+      prevSmoochAppId !== updatedSmoochAppId
+    ) {
+      await setupSmooch();
+      await smoochApi.setupSmoochWebhook();
+    }
+
+    if (prevSmoochWebhook !== updatedSmoochWebhook) {
+      await smoochApi.setupSmoochWebhook();
+    }
+  } catch (e) {
+    debugSmooch(e);
   }
 };

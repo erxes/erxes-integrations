@@ -1,9 +1,10 @@
 // import * as crypto from 'crypto';
-import * as dotenv from 'dotenv';
+
 import * as Smooch from 'smooch-core';
 import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
-import { saveConversation, saveCustomer, saveMessage } from './api';
+
+import { getSmoochConfig, saveConversation, saveCustomer, saveMessage } from './api';
 import { SmoochTelegramConversations } from './models';
 import { SMOOCH_MODELS } from './store';
 import { IAttachment } from './types';
@@ -21,16 +22,8 @@ interface IMessage {
   mediaUrl?: string;
 }
 
-// load config
-dotenv.config();
-
-const { SMOOCH_APP_KEY_ID, SMOOCH_APP_SECRET, SMOOCH_APP_ID } = process.env;
-
-let smooch = new Smooch({
-  keyId: SMOOCH_APP_KEY_ID,
-  secret: SMOOCH_APP_SECRET,
-  scope: 'app',
-});
+let smooch: Smooch;
+let appId = '';
 
 const init = async app => {
   app.post('/smooch/webhook', async (req, res) => {
@@ -90,8 +83,8 @@ const init = async app => {
     const integration = await Integrations.create(smoochProps);
 
     try {
-      const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
-      console.log('result: ', result);
+      const result = await smooch.integrations.create({ appId, props });
+
       await Integrations.updateOne({ _id: integration.id }, { $set: { smoochIntegrationId: result.integration._id } });
     } catch (e) {
       debugSmooch(`Failed to create smooch integration: ${e.message}`);
@@ -122,7 +115,7 @@ const init = async app => {
       }
 
       const { message } = await smooch.appUsers.sendMessage({
-        appId: SMOOCH_APP_ID,
+        appId,
         userId: user.smoochUserId,
         message: messageInput,
       });
@@ -146,24 +139,25 @@ const init = async app => {
   });
 };
 
-const setupSmooch = () => {
-  if (!SMOOCH_APP_KEY_ID || !SMOOCH_APP_SECRET) {
+export const setupSmooch = async () => {
+  console.log('setup smooch');
+  const { SMOOCH_APP_KEY_ID, SMOOCH_SMOOCH_APP_KEY_SECRET, SMOOCH_APP_ID } = await getSmoochConfig();
+  appId = SMOOCH_APP_ID;
+  if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET) {
     debugSmooch(`
-        Missing following config
-        SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
-        SMOOCH_APP_SECRET: ${SMOOCH_APP_SECRET}
-        SMOOCH_APP_ID: ${SMOOCH_APP_ID}
-      `);
+      Missing following config
+      SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
+      SMOOCH_SMOOCH_APP_KEY_SECRET: ${SMOOCH_SMOOCH_APP_KEY_SECRET}
+    `);
 
     return;
   }
+
   smooch = new Smooch({
     keyId: SMOOCH_APP_KEY_ID,
-    secret: SMOOCH_APP_SECRET,
+    secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
     scope: 'app',
   });
 };
-
-setupSmooch();
 
 export default init;
