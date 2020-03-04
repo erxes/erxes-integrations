@@ -70,7 +70,8 @@ export const setupInstance = (instanceId: string, token: string): Promise<ISetti
   const requestOptions = {
     url: `https://api.chat-api.com/instance${instanceId}/settings?token=${token}`,
     body: {
-      webhookUrl: `${getEnv({ name: 'CHAT_API_WEBHOOK_ENV' })}/whatsapp/webhook`,
+      webhookUrl: `${getEnv({ name: 'DOMAIN' })}/whatsapp/webhook`,
+
       ackNotificationsOn: true,
       chatUpdateOn: true,
       videoUploadOn: true,
