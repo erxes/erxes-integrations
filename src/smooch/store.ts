@@ -2,6 +2,9 @@ import { debugSmooch } from '../debuggers';
 import { sendRPCMessage } from '../messageBroker';
 import { checkConcurrentError } from '../utils';
 import {
+  SmoochLineConversationMessages,
+  SmoochLineConversations,
+  SmoochLineCustomers,
   SmoochTelegramConversationMessages,
   SmoochTelegramConversations,
   SmoochTelegramCustomers,
@@ -30,6 +33,11 @@ const SMOOCH_MODELS = {
     customers: SmoochViberCustomers,
     conversations: SmoochViberConversations,
     conversationMessages: SmoochViberConversationMessages,
+  },
+  line: {
+    customers: SmoochLineCustomers,
+    conversations: SmoochLineConversations,
+    conversationMessages: SmoochLineConversationMessages,
   },
 };
 

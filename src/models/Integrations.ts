@@ -19,6 +19,9 @@ export interface IIntegration {
   telegramDisplayName?: string;
   viberBotToken?: string;
   viberDisplayName?: string;
+  lineChannelId?: string;
+  lineChannelSecret?: string;
+  lineDisplayName?: string;
   smoochIntegrationId?: string;
 }
 
@@ -50,6 +53,9 @@ export const integrationSchema = new Schema({
   telegramDisplayName: String,
   viberBotToken: String,
   viberDisplayName: String,
+  lineChannelId: String,
+  lineChannelSecret: String,
+  lineDisplayName: String,
   smoochIntegrationId: String,
 });
 

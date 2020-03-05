@@ -23,6 +23,8 @@ export const getSmoochConfig = async () => {
   };
 };
 
+let smooch: Smooch;
+let appId = '';
 const saveCustomer = async (smoochIntegrationId: string, surname: string, givenName: string, smoochUserId: string) => {
   const integration = await Integrations.findOne({ smoochIntegrationId });
 
@@ -99,6 +101,17 @@ const saveMessage = async (
   return storeMessage(doc);
 };
 
+const removeIntegration = async (integrationId: string) => {
+  try {
+    await smooch.integrations.delete({
+      appId,
+      integrationId,
+    });
+  } catch (e) {
+    debugSmooch(e.message);
+  }
+};
+
 const setupSmoochWebhook = async () => {
   const {
     SMOOCH_APP_KEY_ID,
@@ -106,8 +119,8 @@ const setupSmoochWebhook = async () => {
     SMOOCH_APP_ID,
     SMOOCH_WEBHOOK_CALLBACK_URL,
   } = await getSmoochConfig();
-
-  const smooch = new Smooch({
+  appId = SMOOCH_APP_ID;
+  smooch = new Smooch({
     keyId: SMOOCH_APP_KEY_ID,
     secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
     scope: 'app',
@@ -116,10 +129,12 @@ const setupSmoochWebhook = async () => {
   try {
     await smooch.webhooks.create(SMOOCH_APP_ID, {
       target: SMOOCH_WEBHOOK_CALLBACK_URL,
+      triggers: ['message:appUser'],
+      includeClient: true,
     });
   } catch (e) {
     debugSmooch(`An error accured while setting up smooch webhook: ${e.message}`);
   }
 };
 
-export { saveCustomer, saveConversation, saveMessage, setupSmoochWebhook };
+export { saveCustomer, saveConversation, saveMessage, setupSmoochWebhook, removeIntegration };

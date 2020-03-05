@@ -1,9 +1,6 @@
-// import * as crypto from 'crypto';
-
 import * as Smooch from 'smooch-core';
 import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
-
 import { getSmoochConfig, saveConversation, saveCustomer, saveMessage } from './api';
 import { SMOOCH_MODELS } from './store';
 import { IAttachment } from './types';
@@ -14,6 +11,9 @@ export interface ISmoochProps {
   telegramDisplayName?: string;
   viberBotToken?: string;
   viberDisplayName?: string;
+  lineChannelId?: string;
+  lineChannelSecret?: string;
+  lineDisplayName?: string;
 }
 
 interface IMessage {
@@ -82,13 +82,16 @@ const init = async app => {
     } else if (kind === 'viber') {
       smoochProps.viberBotToken = props.token;
       smoochProps.viberDisplayName = props.displayName;
+    } else if (kind === 'line') {
+      smoochProps.lineChannelId = props.channelId;
+      smoochProps.lineChannelSecret = props.channelSecret;
+      smoochProps.lineDisplayName = props.displayName;
     }
 
     const integration = await Integrations.create(smoochProps);
 
     try {
       const result = await smooch.integrations.create({ appId, props });
-
       await Integrations.updateOne({ _id: integration.id }, { $set: { smoochIntegrationId: result.integration._id } });
     } catch (e) {
       debugSmooch(`Failed to create smooch integration: ${e.message}`);
@@ -145,7 +148,6 @@ const init = async app => {
 };
 
 export const setupSmooch = async () => {
-  console.log('setup smooch');
   const { SMOOCH_APP_KEY_ID, SMOOCH_SMOOCH_APP_KEY_SECRET, SMOOCH_APP_ID } = await getSmoochConfig();
   appId = SMOOCH_APP_ID;
   if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET) {
@@ -154,7 +156,6 @@ export const setupSmooch = async () => {
       SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
       SMOOCH_SMOOCH_APP_KEY_SECRET: ${SMOOCH_SMOOCH_APP_KEY_SECRET}
     `);
-
     return;
   }
 

@@ -40,6 +40,14 @@ export const SmoochViberCustomers = model<ISmoochCustomerDocument, ISmoochCustom
   smoochViberCustomerSchema,
 );
 
+export const smoochLineCustomerSchema = new Schema(customerCommonSchema);
+
+// tslint:disable-next-line
+export const SmoochLineCustomers = model<ISmoochCustomerDocument, ISmoochCustomerModel>(
+  'customers_smooch_line',
+  smoochLineCustomerSchema,
+);
+
 export interface ISmoochConversation {
   smoochConversationId: string;
   content: string;
@@ -81,6 +89,14 @@ export const SmoochViberConversations = model<ISmoochConversationDocument, ISmoo
   smoochViberConversationSchema,
 );
 
+export const smoochLineConversationSchema = new Schema(conversationCommonSchema);
+
+// tslint:disable-next-line:variable-name
+export const SmoochLineConversations = model<ISmoochConversationDocument, ISmoochConversatonModel>(
+  'conversations_smooch_line',
+  smoochLineConversationSchema,
+);
+
 // Conversation message ===========
 
 export interface ISmoochConversationMessage {
@@ -117,3 +133,11 @@ export const SmoochViberConversationMessages = model<
   ISmoochConversationMessageDocument,
   ISmoochConversationMessageModel
 >('conversation_messages_smooch_viber', smoochViberConversationMessageSchema);
+
+export const smoochLineConversationMessageSchema = new Schema(conversationMessageCommonSchema);
+
+// tslint:disable-next-line
+export const SmoochLineConversationMessages = model<
+  ISmoochConversationMessageDocument,
+  ISmoochConversationMessageModel
+>('conversation_messages_smooch_line', smoochLineConversationMessageSchema);
