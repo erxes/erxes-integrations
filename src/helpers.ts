@@ -90,7 +90,6 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
   const { _id, kind, accountId, erxesApiId } = integration;
   const account = await Accounts.findOne({ _id: accountId });
-  console.log('removing: ', kind);
   const selector = { integrationId: _id };
 
   if (kind.includes('facebook')) {

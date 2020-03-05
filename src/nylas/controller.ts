@@ -279,7 +279,6 @@ const verifyNylasSignature = async req => {
  * @returns void
  */
 export const setupNylas = async () => {
-  console.log('nylas setup called');
   const { NYLAS_CLIENT_SECRET, NYLAS_CLIENT_ID } = await getNylasConfig();
 
   if (!NYLAS_CLIENT_ID || !NYLAS_CLIENT_SECRET) {
