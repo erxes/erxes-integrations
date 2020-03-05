@@ -5,7 +5,6 @@ import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
 
 import { getSmoochConfig, saveConversation, saveCustomer, saveMessage } from './api';
-import { SmoochTelegramConversations } from './models';
 import { SMOOCH_MODELS } from './store';
 import { IAttachment } from './types';
 export interface ISmoochProps {
@@ -13,6 +12,8 @@ export interface ISmoochProps {
   erxesApiId: string;
   telegramBotToken?: string;
   telegramDisplayName?: string;
+  viberBotToken?: string;
+  viberDisplayName?: string;
 }
 
 interface IMessage {
@@ -78,6 +79,9 @@ const init = async app => {
     if (kind === 'telegram') {
       smoochProps.telegramBotToken = props.token;
       smoochProps.telegramDisplayName = props.displayName;
+    } else if (kind === 'viber') {
+      smoochProps.viberBotToken = props.token;
+      smoochProps.viberDisplayName = props.displayName;
     }
 
     const integration = await Integrations.create(smoochProps);
@@ -102,7 +106,8 @@ const init = async app => {
     }
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId });
-    const conversation = await SmoochTelegramConversations.findOne({ erxesApiId: conversationId });
+    const conversationModel = SMOOCH_MODELS[integration.kind].conversations;
+    const conversation = await conversationModel.findOne({ erxesApiId: conversationId });
     const customerModel = SMOOCH_MODELS[integration.kind].customers;
     const customerId = conversation.customerId;
     const user = await customerModel.findOne({ erxesApiId: customerId });

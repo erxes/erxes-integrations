@@ -1,7 +1,14 @@
 import { debugSmooch } from '../debuggers';
 import { sendRPCMessage } from '../messageBroker';
 import { checkConcurrentError } from '../utils';
-import { SmoochTelegramConversationMessages, SmoochTelegramConversations, SmoochTelegramCustomers } from './models';
+import {
+  SmoochTelegramConversationMessages,
+  SmoochTelegramConversations,
+  SmoochTelegramCustomers,
+  SmoochViberConversationMessages,
+  SmoochViberConversations,
+  SmoochViberCustomers,
+} from './models';
 
 import {
   IAPIConversation,
@@ -18,6 +25,11 @@ const SMOOCH_MODELS = {
     customers: SmoochTelegramCustomers,
     conversations: SmoochTelegramConversations,
     conversationMessages: SmoochTelegramConversationMessages,
+  },
+  viber: {
+    customers: SmoochViberCustomers,
+    conversations: SmoochViberConversations,
+    conversationMessages: SmoochViberConversationMessages,
   },
 };
 

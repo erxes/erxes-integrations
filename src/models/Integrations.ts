@@ -17,6 +17,8 @@ export interface IIntegration {
   whatsappToken?: string;
   telegramBotToken?: string;
   telegramDisplayName?: string;
+  viberBotToken?: string;
+  viberDisplayName?: string;
   smoochIntegrationId?: string;
 }
 
@@ -46,6 +48,8 @@ export const integrationSchema = new Schema({
   whatsappToken: String,
   telegramBotToken: String,
   telegramDisplayName: String,
+  viberBotToken: String,
+  viberDisplayName: String,
   smoochIntegrationId: String,
 });
 

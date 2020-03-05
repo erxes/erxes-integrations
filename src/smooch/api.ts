@@ -107,10 +107,6 @@ const setupSmoochWebhook = async () => {
     SMOOCH_WEBHOOK_CALLBACK_URL,
   } = await getSmoochConfig();
 
-  console.log('SMOOCH_APP_KEY_ID: ', SMOOCH_APP_KEY_ID);
-  console.log('SMOOCH_SMOOCH_APP_KEY_SECRET: ', SMOOCH_SMOOCH_APP_KEY_SECRET);
-  console.log('SMOOCH_APP_ID: ', SMOOCH_APP_ID);
-  console.log('SMOOCH_WEBHOOK_CALLBACK_URL: ', SMOOCH_WEBHOOK_CALLBACK_URL);
   const smooch = new Smooch({
     keyId: SMOOCH_APP_KEY_ID,
     secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
@@ -118,11 +114,9 @@ const setupSmoochWebhook = async () => {
   });
 
   try {
-    const result = await smooch.webhooks.create(SMOOCH_APP_ID, {
+    await smooch.webhooks.create(SMOOCH_APP_ID, {
       target: SMOOCH_WEBHOOK_CALLBACK_URL,
     });
-
-    console.log('webhook result: ', result);
   } catch (e) {
     debugSmooch(`An error accured while setting up smooch webhook: ${e.message}`);
   }
