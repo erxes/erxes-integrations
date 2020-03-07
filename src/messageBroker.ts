@@ -139,13 +139,20 @@ const initConsumer = async () => {
 
         const { action, data } = parsedObject;
 
-        let response = { status: 'error', data: {} };
+        let response = null;
 
         if (action === 'remove-account') {
-          response = {
-            status: 'success',
-            data: removeAccount(data._id),
-          };
+          try {
+            response = {
+              status: 'success',
+              data: await removeAccount(data._id),
+            };
+          } catch (e) {
+            response = {
+              status: 'error',
+              errorMessage: e.message,
+            };
+          }
         }
 
         channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
