@@ -48,8 +48,8 @@ const handleRunCronMessage = async () => {
     return debugGmail('Gmail Integration not found');
   }
 
-  for (const { _id, accountId, ...credentials } of integrations) {
-    const response = await watchPushNotification(accountId, credentials);
+  for (const { _id } of integrations) {
+    const response = await watchPushNotification();
     const { historyId, expiration } = response.data;
 
     if (!historyId || !expiration) {

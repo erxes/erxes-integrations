@@ -1,5 +1,5 @@
 import { debugGmail } from '../debuggers';
-import { getAuth, gmailClient } from './auth';
+import { getOauthClient, gmailClient } from './auth';
 import { ICredentials, IMailParams } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
@@ -93,9 +93,7 @@ export const sendGmail = async (accountId: string, email: string, mailParams: IM
  * Request to gmail API to send email
  */
 export const composeEmail = async ({
-  credentials,
   message,
-  accountId,
   threadId,
 }: {
   credentials: ICredentials;
@@ -104,7 +102,7 @@ export const composeEmail = async ({
   threadId?: string;
 }) => {
   try {
-    const auth = await getAuth(credentials, accountId);
+    const auth = await getOauthClient();
 
     const params = {
       auth,

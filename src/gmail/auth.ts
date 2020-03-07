@@ -9,7 +9,7 @@ const gmail: any = google.gmail('v1');
 
 export const gmailClient = gmail.users;
 
-const getOauthClient = () => {
+export const getOauthClient = () => {
   const GOOGLE_CLIENT_ID = getEnv({ name: 'GOOGLE_CLIENT_ID' });
   const GOOGLE_CLIENT_SECRET = getEnv({ name: 'GOOGLE_CLIENT_SECRET' });
   const GMAIL_REDIRECT_URL = `${getEnv({ name: 'DOMAIN' })}/gmaillogin`;
@@ -31,31 +31,6 @@ const getOauthClient = () => {
       ${GOOGLE_CLIENT_SECRET}
     `);
 
-    throw e;
-  }
-};
-
-/**
- * Get OAuth client with given credentials
- */
-export const getAuth = async (credentials: ICredentials, accountId?: string) => {
-  try {
-    // Google OAuthClient ================
-    const oauth2Client = getOauthClient();
-
-    if (accountId) {
-      await refreshAccessToken(accountId, credentials);
-    }
-
-    oauth2Client.on('tokens', (tokens: ICredentials) => {
-      credentials = tokens;
-    });
-
-    oauth2Client.setCredentials(credentials);
-
-    return oauth2Client;
-  } catch (e) {
-    debugGmail('Failed to get gmail auth instance');
     throw e;
   }
 };
@@ -90,7 +65,7 @@ export const getAccessToken = async (code: string): Promise<ICredentials> => {
     return new Promise((resolve, reject) =>
       oauth2Client.getToken(code, (err: any, token: ICredentials) => {
         if (err) {
-          return reject(err.response.data.error);
+          return reject(new Error(err.response.data.error));
         }
 
         return resolve(token);
@@ -109,8 +84,7 @@ export const refreshAccessToken = async (_id: string, tokens: ICredentials): Pro
   const account = await Accounts.findOne({ _id });
 
   if (!account) {
-    debugGmail(`Error Google: Account not found id with ${_id}`);
-    return;
+    return debugGmail(`Error Google: Account not found id with ${_id}`);
   }
 
   account.token = tokens.access_token;

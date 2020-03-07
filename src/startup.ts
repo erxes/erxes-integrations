@@ -1,9 +1,9 @@
 import { debugIntegrations } from './debuggers';
 import { trackGmail } from './gmail/watch';
 
-export const init = () => {
+export const init = async () => {
   try {
-    trackGmail();
+    await trackGmail();
   } catch (e) {
     debugIntegrations(e.message());
   }

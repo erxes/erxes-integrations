@@ -4,7 +4,6 @@ import loginMiddleware from './loginMiddleware';
 import { ConversationMessages } from './models';
 import { getAttachment } from './receiveEmails';
 import { sendGmail } from './send';
-import { getCredentials } from './util';
 import { watchPushNotification } from './watch';
 
 const init = async app => {
@@ -39,15 +38,13 @@ const init = async app => {
       email,
     });
 
-    const credentials = getCredentials(account);
-
     debugGmail(`Watch push notification for this ${email} user`);
 
     let historyId;
     let expiration;
 
     try {
-      const response = await watchPushNotification(accountId, credentials);
+      const response = await watchPushNotification();
 
       historyId = response.data.historyId;
       expiration = response.data.expiration;
@@ -154,9 +151,7 @@ const init = async app => {
       return next(new Error('Account not found!'));
     }
 
-    const credentials = getCredentials(account);
-
-    const attachment: { filename: string; data: string } = await getAttachment(messageId, attachmentId, credentials);
+    const attachment: { filename: string; data: string } = await getAttachment(messageId, attachmentId);
 
     attachment.filename = filename;
 

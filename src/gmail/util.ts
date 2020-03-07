@@ -1,16 +1,16 @@
 import { debugGmail } from '../debuggers';
 import Accounts, { IAccount } from '../models/Accounts';
-import { getAuth, gmailClient } from './auth';
+import { getOauthClient, gmailClient } from './auth';
 import { ICredentials } from './types';
 
 /**
  * Gets the current user's Gmail profile
  */
-export const getProfile = async (credentials: ICredentials, email?: string) => {
+export const getProfile = async (email?: string) => {
   debugGmail(`Gmail get an user profile`);
 
   try {
-    const auth = await getAuth(credentials);
+    const auth = await getOauthClient();
 
     return gmailClient.getProfile({
       auth,

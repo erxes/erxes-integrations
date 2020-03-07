@@ -3,10 +3,9 @@ import * as fs from 'fs';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
 import { getEnv } from '../utils';
-import { getAuth, gmailClient } from './auth';
+import { getOauthClient, gmailClient, refreshAccessToken } from './auth';
 import { syncPartially } from './receiveEmails';
 import { ICredentials, IPubsubMessage } from './types';
-import { getCredentialsByEmailAccountId } from './util';
 
 const USE_NATIVE_GMAIL = getEnv({ name: 'USE_NATIVE_GMAIL', defaultValue: 'false' });
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
@@ -128,6 +127,18 @@ export const trackGmail = async () => {
 
   subscription.on('message', onMessage);
   subscription.on('error', onError);
+
+  const accounts = await Accounts.find({ kind: 'gmail' });
+
+  // Refresh access tokens
+  const oauth2Client = getOauthClient();
+
+  for (const account of accounts) {
+    oauth2Client.on('tokens', async (tokens: ICredentials) => {
+      await refreshAccessToken(account._id, tokens);
+      oauth2Client.setCredentials(tokens);
+    });
+  }
 };
 
 /**
@@ -146,10 +157,8 @@ const onMessage = async (message: IPubsubMessage) => {
 
   debugGmail(`New email received to: ${emailAddress}`);
 
-  const credentials = await getCredentialsByEmailAccountId({ email: emailAddress });
-
   // Get mailbox updates with latest received historyId
-  await syncPartially(emailAddress, credentials, historyId);
+  await syncPartially(emailAddress, historyId);
 
   message.ack();
 };
@@ -159,7 +168,7 @@ const onMessage = async (message: IPubsubMessage) => {
  * and grant gmail publish permission
  * Set up or update a push notification watch on the given user mailbox.
  */
-export const watchPushNotification = async (accountId: string, credentials: ICredentials) => {
+export const watchPushNotification = async () => {
   if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC) {
     throw new Error(`
       GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID || 'Not defined'}
@@ -170,7 +179,7 @@ export const watchPushNotification = async (accountId: string, credentials: ICre
   debugGmail(`Google OAuthClient request to watch push notification for the given user mailbox`);
 
   try {
-    const auth = await getAuth(credentials, accountId);
+    const auth = getOauthClient();
 
     return gmailClient.watch({
       auth,
@@ -190,13 +199,11 @@ export const watchPushNotification = async (accountId: string, credentials: ICre
 /**
  * Stop receiving push notifications for the given user mailbox
  */
-export const stopPushNotification = async (email: string, credentials: ICredentials) => {
-  const { _id } = await Accounts.findOne({ uid: email });
-
+export const stopPushNotification = async (email: string) => {
   debugGmail(`Google OAuthClient request to stop push notification for the given user mailbox`);
 
   try {
-    const auth = await getAuth(credentials, _id);
+    const auth = getOauthClient();
 
     await gmailClient.stop({ auth, userId: email });
   } catch (e) {

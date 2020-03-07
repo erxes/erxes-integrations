@@ -22,7 +22,6 @@ import {
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
-import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
 import { enableOrDisableAccount } from './nylas/auth';
@@ -108,14 +107,12 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   if (kind === 'gmail' && !account.nylasToken) {
     debugGmail('Removing gmail entries');
 
-    const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
-
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
     integrationRemoveBy = { email: integration.email };
 
     try {
-      await stopPushNotification(account.uid, credentials);
+      await stopPushNotification(account.uid);
     } catch (e) {
       debugGmail('Failed to stop push notification of gmail account');
       throw e;
