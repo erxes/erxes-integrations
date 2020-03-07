@@ -196,7 +196,7 @@ export const stopPushNotification = async (email: string, credentials: ICredenti
   debugGmail(`Google OAuthClient request to stop push notification for the given user mailbox`);
 
   try {
-    const auth = getAuth(credentials, _id);
+    const auth = await getAuth(credentials, _id);
 
     await gmailClient.stop({ auth, userId: email });
   } catch (e) {

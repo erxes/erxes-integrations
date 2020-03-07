@@ -39,24 +39,25 @@ const getOauthClient = () => {
  * Get OAuth client with given credentials
  */
 export const getAuth = async (credentials: ICredentials, accountId?: string) => {
-  // Google OAuthClient ================
-  const oauth2Client = getOauthClient();
+  try {
+    // Google OAuthClient ================
+    const oauth2Client = getOauthClient();
 
-  credentials = await new Promise((resolve, reject) => {
-    oauth2Client.on('tokens', async (tokens: ICredentials) => {
-      try {
-        await refreshAccessToken(accountId, credentials);
-      } catch (e) {
-        reject(e);
-      }
+    if (accountId) {
+      await refreshAccessToken(accountId, credentials);
+    }
 
-      resolve(tokens);
+    oauth2Client.on('tokens', (tokens: ICredentials) => {
+      credentials = tokens;
     });
-  });
 
-  oauth2Client.setCredentials(credentials);
+    oauth2Client.setCredentials(credentials);
 
-  return oauth2Client;
+    return oauth2Client;
+  } catch (e) {
+    debugGmail('Failed to get gmail auth instance');
+    throw e;
+  }
 };
 
 /**
