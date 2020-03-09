@@ -264,7 +264,7 @@ describe('Gmail test', () => {
       return Promise.resolve(buf);
     });
 
-    const response = await receive.getAttachment('messageId', 'attachmentId');
+    const response = await receive.getAttachment(credential, 'messageId', 'attachmentId');
 
     expect(response).toEqual(buf);
 
@@ -303,7 +303,7 @@ describe('Gmail test', () => {
       .stub(gmailUtils, 'getProfile')
       .callsFake(() => Promise.resolve({ data: { emailAddress: 'john@gmail.com' } }));
 
-    const response = await gmailUtils.getProfile();
+    const response = await gmailUtils.getProfile(credential);
 
     expect(response.data.emailAddress).toEqual('john@gmail.com');
 
