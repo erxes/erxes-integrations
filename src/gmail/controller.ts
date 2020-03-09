@@ -4,6 +4,7 @@ import loginMiddleware from './loginMiddleware';
 import { ConversationMessages } from './models';
 import { getAttachment } from './receiveEmails';
 import { sendGmail } from './send';
+import { getCredentialsByEmailAccountId } from './util';
 import { watchPushNotification } from './watch';
 
 const init = async app => {
@@ -18,7 +19,6 @@ const init = async app => {
     const account = await Accounts.findOne({ _id: accountId });
 
     if (!account) {
-      debugGmail(`Error Google: Account not found with ${accountId}`);
       return next(new Error('Account not found'));
     }
 
@@ -69,7 +69,6 @@ const init = async app => {
     const account = await Accounts.findOne({ _id: req.query.accountId });
 
     if (!account) {
-      debugGmail(`Error Google: Account not found with ${req.query.accountId}`);
       return next(new Error('Account not found'));
     }
 
@@ -86,13 +85,13 @@ const init = async app => {
     const integration = await Integrations.findOne({ erxesApiId });
 
     if (!integration) {
-      throw new Error('Integration not found');
+      return next(new Error('Integration not found'));
     }
 
     const account = await Accounts.findOne({ _id: integration.accountId });
 
     if (!account) {
-      next(new Error('Account not found'));
+      return next(new Error('Account not found'));
     }
 
     try {
@@ -151,7 +150,9 @@ const init = async app => {
       return next(new Error('Account not found!'));
     }
 
-    const attachment: { filename: string; data: string } = await getAttachment(messageId, attachmentId);
+    const credentials = await getCredentialsByEmailAccountId({ accountId: account._id });
+
+    const attachment: { filename: string; data: string } = await getAttachment(credentials, messageId, attachmentId);
 
     attachment.filename = filename;
 

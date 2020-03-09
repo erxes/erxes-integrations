@@ -6,6 +6,7 @@ import { getEnv } from '../utils';
 import { getOauthClient, gmailClient, refreshAccessToken } from './auth';
 import { syncPartially } from './receiveEmails';
 import { ICredentials, IPubsubMessage } from './types';
+import { getCredentialsByEmailAccountId } from './util';
 
 const USE_NATIVE_GMAIL = getEnv({ name: 'USE_NATIVE_GMAIL', defaultValue: 'false' });
 const GOOGLE_PROJECT_ID = getEnv({ name: 'GOOGLE_PROJECT_ID' });
@@ -40,10 +41,17 @@ export const trackGmail = async () => {
     return debugGmail('Error Google: Google credentials file not found');
   }
 
-  const pubsubClient: PubSub = new PubSub({
-    projectId: GOOGLE_PROJECT_ID,
-    keyFilename: GOOGLE_APPLICATION_CREDENTIALS,
-  });
+  let pubsubClient: PubSub;
+
+  try {
+    pubsubClient = new PubSub({
+      projectId: GOOGLE_PROJECT_ID,
+      keyFilename: GOOGLE_APPLICATION_CREDENTIALS,
+    });
+  } catch (e) {
+    debugGmail('Error occured while trying to create pubsub instance');
+    throw e;
+  }
 
   debugGmail(`Pubsub: Check existing gmail topic in google cloud`);
 
@@ -130,13 +138,13 @@ export const trackGmail = async () => {
 
   const accounts = await Accounts.find({ kind: 'gmail' });
 
-  // Refresh access tokens
-  const oauth2Client = getOauthClient();
+  const auth = getOauthClient();
 
+  // Refresh access tokens
   for (const account of accounts) {
-    oauth2Client.on('tokens', async (tokens: ICredentials) => {
+    auth.on('tokens', async (tokens: ICredentials) => {
       await refreshAccessToken(account._id, tokens);
-      oauth2Client.setCredentials(tokens);
+      auth.setCredentials(tokens);
     });
   }
 };
@@ -179,10 +187,7 @@ export const watchPushNotification = async () => {
   debugGmail(`Google OAuthClient request to watch push notification for the given user mailbox`);
 
   try {
-    const auth = getOauthClient();
-
     return gmailClient.watch({
-      auth,
       userId: 'me',
       requestBody: {
         labelIds: ['INBOX', 'CATEGORY_PERSONAL'],
@@ -205,7 +210,14 @@ export const stopPushNotification = async (email: string) => {
   try {
     const auth = getOauthClient();
 
-    await gmailClient.stop({ auth, userId: email });
+    const credentials = await getCredentialsByEmailAccountId({ email });
+
+    auth.setCredentials(credentials);
+
+    await gmailClient.stop({
+      auth,
+      userId: email,
+    });
   } catch (e) {
     debugGmail(`Google OAuthClient failed to stop push notification for the given user mailbox ${e}`);
     throw e;

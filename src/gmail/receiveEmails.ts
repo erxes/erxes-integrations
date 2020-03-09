@@ -5,15 +5,21 @@ import { IIntegrationDocument } from '../models/Integrations';
 import { getOauthClient, gmailClient } from './auth';
 import { createOrGetConversation, createOrGetConversationMessage, createOrGetCustomer } from './store';
 import { ICredentials, IMessage, IMessageAdded } from './types';
-import { extractEmailFromString, parseBatchResponse, parseMessage } from './util';
+import { extractEmailFromString, getCredentialsByEmailAccountId, parseBatchResponse, parseMessage } from './util';
 
 /**
  * Get full message with historyId
  */
-const syncByHistoryId = async (auth: any, startHistoryId: string) => {
+const syncByHistoryId = async (accountId: string, startHistoryId: string) => {
   let response;
 
   try {
+    const credentials = await getCredentialsByEmailAccountId({ accountId });
+
+    const auth = getOauthClient();
+
+    auth.setCredentials(credentials);
+
     const historyResponse = await gmailClient.history.list({
       auth,
       userId: 'me',
@@ -49,7 +55,8 @@ const syncByHistoryId = async (auth: any, startHistoryId: string) => {
       singleMessage: singleMessage && (await sendSingleRequest(auth, receivedMessages)),
     };
   } catch (e) {
-    return debugGmail(`Error Google: Failed to syncronize gmail with given historyId ${e}`);
+    debugGmail(`Error Google: Failed to syncronize gmail with given historyId ${e}`);
+    throw e;
   }
 
   return response;
@@ -62,17 +69,16 @@ export const syncPartially = async (receivedEmail: string, startHistoryId: strin
   const integration = await Integrations.findOne({ email: receivedEmail });
 
   if (!integration) {
-    return debugGmail(`Integration not found in syncPartially`);
+    return new Error(`Integration not found in syncPartially`);
   }
 
-  const { gmailHistoryId } = integration;
+  const { gmailHistoryId, accountId } = integration;
 
   debugGmail(`Sync partially gmail messages with ${gmailHistoryId}`);
 
   try {
-    const auth = getOauthClient();
     // Get batched multiple messages or single message
-    const syncResponse = await syncByHistoryId(auth, gmailHistoryId);
+    const syncResponse = await syncByHistoryId(accountId, gmailHistoryId);
 
     if (!syncResponse) {
       return null;
@@ -209,10 +215,7 @@ const sendBatchRequest = (auth: any, messages: IMessageAdded[]) => {
   });
 };
 
-/**
- * Single request to get a full message
- */
-const sendSingleRequest = async (auth: ICredentials, messages: IMessageAdded[]) => {
+const sendSingleRequest = async (auth: any, messages: IMessageAdded[]) => {
   const [data] = messages;
   const { message } = data;
 
@@ -227,22 +230,22 @@ const sendSingleRequest = async (auth: ICredentials, messages: IMessageAdded[]) 
       id: message.id,
     });
   } catch (e) {
-    return debugGmail(`Error Google: Request to get a single message failed ${e}`);
+    debugGmail(`Error Google: Request to get a single message failed ${e}`);
+    throw e;
   }
 
   return response;
 };
 
-/**
- * Get attachment
- */
-export const getAttachment = async (messageId: string, attachmentId: string) => {
+export const getAttachment = async (credentials: ICredentials, messageId: string, attachmentId: string) => {
   debugGmail('Request to get an attachment');
 
   try {
     const auth = getOauthClient();
+
+    auth.setCredentials(credentials);
+
     const response = await gmailClient.messages.attachments.get({
-      auth,
       id: attachmentId,
       userId: 'me',
       messageId,

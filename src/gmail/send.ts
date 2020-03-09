@@ -77,9 +77,6 @@ const chunkSubstr = (str: string, size: number) => {
   return chunks;
 };
 
-/**
- * Create mime message and compose gmail
- */
 export const sendGmail = async (accountId: string, email: string, mailParams: IMailParams) => {
   const message = createMimeMessage(mailParams);
   const credentials = await getCredentialsByEmailAccountId({ email });
@@ -89,10 +86,8 @@ export const sendGmail = async (accountId: string, email: string, mailParams: IM
   return composeEmail(doc);
 };
 
-/**
- * Request to gmail API to send email
- */
 export const composeEmail = async ({
+  credentials,
   message,
   threadId,
 }: {
@@ -102,7 +97,9 @@ export const composeEmail = async ({
   threadId?: string;
 }) => {
   try {
-    const auth = await getOauthClient();
+    const auth = getOauthClient();
+
+    auth.setCredentials(credentials);
 
     const params = {
       auth,

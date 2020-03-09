@@ -5,6 +5,6 @@ export const init = async () => {
   try {
     await trackGmail();
   } catch (e) {
-    debugIntegrations(e.message());
+    debugIntegrations(e.message);
   }
 };

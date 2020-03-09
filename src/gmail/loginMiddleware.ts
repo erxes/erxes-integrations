@@ -1,7 +1,7 @@
 import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
 import { getEnv } from '../utils';
-import { getAccessToken, getAuthorizeUrl, getOauthClient } from './auth';
+import { getAccessToken, getAuthorizeUrl } from './auth';
 import { getProfile } from './util';
 
 const loginMiddleware = async (req, res) => {
@@ -27,12 +27,8 @@ const loginMiddleware = async (req, res) => {
 
   const credentials = await getAccessToken(req.query.code);
 
-  const auth = getOauthClient();
-
-  auth.setCredentials(credentials);
-
   // get email address connected with
-  const { data } = await getProfile();
+  const { data } = await getProfile(credentials);
   const email = data.emailAddress || '';
 
   const account = await Accounts.findOne({ uid: data.emailAddress });

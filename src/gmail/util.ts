@@ -6,11 +6,13 @@ import { ICredentials } from './types';
 /**
  * Gets the current user's Gmail profile
  */
-export const getProfile = async (email?: string) => {
+export const getProfile = async (credentials: ICredentials, email?: string) => {
   debugGmail(`Gmail get an user profile`);
 
   try {
     const auth = await getOauthClient();
+
+    auth.setCredentials(credentials);
 
     return gmailClient.getProfile({
       auth,
