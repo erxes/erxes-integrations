@@ -56,6 +56,8 @@ import {
   Customers as WhatsappCustomers,
 } from './whatsapp/models';
 
+import { setupInstance as setupWhatsapp } from './whatsapp/api';
+
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
 
@@ -327,6 +329,7 @@ export const removeCustomers = async params => {
   await ChatfuelCustomers.deleteMany(selector);
   await CallProCustomers.deleteMany(selector);
   await TwitterCustomers.deleteMany(selector);
+  await WhatsappCustomers.deleteMany(selector);
 };
 
 export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
@@ -344,6 +347,8 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const prevNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');
   const prevNylasWebhook = await getValueAsString('NYLAS_WEBHOOK_CALLBACK_URL');
 
+  const prevChatApiWebhook = await getValueAsString('CHAT_API_WEBHOOK_CALLBACK_URL');
+  const prevChatApiUID = await getValueAsString('CHAT_API_UID');
   const prevTwitterConfig = await getTwitterConfig();
 
   await Configs.updateConfigs(configsMap);
@@ -355,6 +360,9 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const updatedNylasClientId = await getValueAsString('NYLAS_CLIENT_ID');
   const updatedNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');
   const updatedNylasWebhook = await getValueAsString('NYLAS_WEBHOOK_CALLBACK_URL');
+
+  const updatedChatApiWebhook = await getValueAsString('CHAT_API_WEBHOOK_CALLBACK_URL');
+  const updatedChatApiUID = await getValueAsString('CHAT_API_UID');
 
   try {
     if (prevNylasClientId !== updatedNylasClientId || prevNylasClientSecret !== updatedNylasClientSecret) {
@@ -388,5 +396,13 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
     }
   } catch (e) {
     debugTwitter(e);
+  }
+
+  try {
+    if (prevChatApiWebhook !== updatedChatApiWebhook || prevChatApiUID !== updatedChatApiUID) {
+      await setupWhatsapp('', '');
+    }
+  } catch (e) {
+    debugWhatsapp(e);
   }
 };

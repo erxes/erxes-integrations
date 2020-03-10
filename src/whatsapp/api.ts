@@ -1,18 +1,10 @@
 import * as request from 'request-promise';
-import { getEnv } from '../utils';
+import { getConfig } from '../utils';
 interface IMessage {
   sent: boolean;
   message: string;
   id: string;
   queueNumber: number;
-}
-
-interface ISettings {
-  webhookUrl: string;
-  ackNotificationsOn: boolean;
-  chatUpdateOn: boolean;
-  videoUploadOn: boolean;
-  statusNotificationsOn: boolean;
 }
 
 export const reply = (receiverId: string, content: string, instanceId: string, token: string): Promise<IMessage> => {
@@ -66,19 +58,30 @@ export const sendFile = (
   });
 };
 
-export const setupInstance = (instanceId: string, token: string): Promise<ISettings> => {
-  const requestOptions = {
-    url: `https://api.chat-api.com/instance${instanceId}/settings?token=${token}`,
-    body: {
-      webhookUrl: `${getEnv({ name: 'DOMAIN' })}/whatsapp/webhook`,
+export const setupInstance = async () => {
+  const webhookUrl = await getConfig('CHAT_API_WEBHOOK_CALLBACK_URL');
+  const uid = await getConfig('CHAT_API_UID');
 
-      ackNotificationsOn: true,
-      chatUpdateOn: true,
-      videoUploadOn: true,
-      statusNotificationsOn: true,
-    },
+  const options = {
+    method: 'GET',
+    uri: `https://us-central1-app-chat-api-com.cloudfunctions.net/listInstances?uid=${uid}`,
     json: true,
   };
 
-  return request.post(requestOptions);
+  const result = await request(options);
+  const token = '';
+  console.log('asdaa = ', result.result);
+  for (const instance of result.result) {
+    const requestOptions = {
+      url: `https://api.chat-api.com/instance${instance.id}/settings?token=${token}`,
+      body: {
+        webhookUrl,
+        ackNotificationsOn: true,
+        chatUpdateOn: true,
+        videoUploadOn: true,
+        statusNotificationsOn: true,
+      },
+      json: true,
+    };
+  }
 };
