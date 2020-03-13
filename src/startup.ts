@@ -4,7 +4,7 @@ import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
 import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
-import { setupInstance as setupWhatsapp } from './whatsapp/api';
+import { setupChatApi as setupWhatsapp } from './whatsapp/api';
 
 export const init = async () => {
   const USE_NATIVE_GMAIL = await getConfig('USE_NATIVE_GMAIL');
@@ -34,7 +34,7 @@ export const init = async () => {
   }
 
   try {
-    await setupWhatsapp('', '');
+    await setupWhatsapp();
   } catch (e) {
     debugWhatsapp(e.message);
   }

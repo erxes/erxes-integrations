@@ -56,7 +56,7 @@ import {
   Customers as WhatsappCustomers,
 } from './whatsapp/models';
 
-import { setupInstance as setupWhatsapp } from './whatsapp/api';
+import { setupChatApi as setupWhatsapp } from './whatsapp/api';
 
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
@@ -400,7 +400,7 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
 
   try {
     if (prevChatApiWebhook !== updatedChatApiWebhook || prevChatApiUID !== updatedChatApiUID) {
-      await setupWhatsapp('', '');
+      await setupWhatsapp();
     }
   } catch (e) {
     debugWhatsapp(e);
