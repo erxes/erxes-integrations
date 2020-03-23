@@ -168,6 +168,20 @@ export const removeInstance = async (instanceId, uid) => {
   }
 };
 
+export const logout = async (instanceId, token) => {
+  const options = {
+    method: 'POST',
+    uri: `${CHAT_API_URL}/instance${instanceId}/logout?token=${token}`,
+    json: true,
+  };
+
+  try {
+    await request(options);
+  } catch (e) {
+    throw e;
+  }
+};
+
 const setWebhook = async (instanceId, token) => {
   const webhookUrl = await getConfig('CHAT_API_WEBHOOK_CALLBACK_URL');
   const options = {

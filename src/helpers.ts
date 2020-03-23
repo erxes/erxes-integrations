@@ -55,7 +55,7 @@ import {
   Customers as WhatsappCustomers,
 } from './whatsapp/models';
 
-import { setupChatApi as setupWhatsapp } from './whatsapp/api';
+import { logout, setupChatApi as setupWhatsapp } from './whatsapp/api';
 
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
@@ -175,7 +175,12 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
   if (kind === 'whatsapp') {
     debugWhatsapp('Removing whatsapp entries');
-
+    try {
+      await logout(integration.whatsappinstanceId, integration.whatsappToken);
+    } catch (e) {
+      debugWhatsapp('Failed to logout WhatsApp account');
+      throw e;
+    }
     const conversationIds = await WhatsappConversations.find(selector).distinct('_id');
 
     await WhatsappConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
