@@ -18,7 +18,6 @@ import {
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
-import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
 import Configs from './models/Configs';
@@ -112,14 +111,12 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   if (kind === 'gmail' && !account.nylasToken) {
     debugGmail('Removing gmail entries');
 
-    const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
-
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
     integrationRemoveBy = { email: integration.email };
 
     try {
-      await stopPushNotification(account.uid, credentials);
+      await stopPushNotification(account.uid);
     } catch (e) {
       debugGmail('Failed to stop push notification of gmail account');
       throw e;
@@ -293,25 +290,29 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   return erxesApiId;
 };
 
-export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string | string[] }> => {
+export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string | string[] } | Error> => {
   const account = await Accounts.findOne({ _id });
 
   if (!account) {
-    return;
+    return new Error(`Account not found: ${_id}`);
   }
 
   const erxesApiIds = [];
 
   const integrations = await Integrations.find({ accountId: account._id });
 
-  for (const integration of integrations) {
-    try {
-      const response = await removeIntegration(integration.erxesApiId);
-      erxesApiIds.push(response);
-    } catch (e) {
-      throw e;
+  if (integrations.length) {
+    for (const integration of integrations) {
+      try {
+        const response = await removeIntegration(integration.erxesApiId);
+        erxesApiIds.push(response);
+      } catch (e) {
+        throw e;
+      }
     }
   }
+
+  await Accounts.deleteOne({ _id });
 
   return { erxesApiIds };
 };

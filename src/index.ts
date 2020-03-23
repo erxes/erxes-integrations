@@ -17,10 +17,6 @@ import initTwitter from './twitter/controller';
 import initDaily from './videoCall/controller';
 import initWhatsapp from './whatsapp/controller';
 
-initRedis();
-
-initConsumer();
-
 const app = express();
 
 const rawBodySaver = (req, _res, buf, encoding) => {
@@ -129,7 +125,10 @@ app.use((error, _req, res, _next) => {
 const { PORT } = process.env;
 
 app.listen(PORT, () => {
-  connect().then(() => {
+  connect().then(async () => {
+    await initRedis();
+    await initConsumer();
+
     // Initialize startup
     init();
   });
