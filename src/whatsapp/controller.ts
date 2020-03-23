@@ -15,42 +15,14 @@ const init = async app => {
     res.sendStatus(200);
   });
 
-  app.post('/whatsapp/create-instance', async (req, res) => {
-    debugRequest(debugWhatsapp, req);
-    console.log('res: ', res);
-  });
-
   app.post('/whatsapp/create-integration', async (req, res, next) => {
     debugRequest(debugWhatsapp, req);
-
     const { integrationId, data } = req.body;
     const { instanceId, token } = JSON.parse(data);
-
-    // Check existing Integration
-    let integration = await Integrations.findOne({
-      $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
-    });
-    if (integration) {
-      throw new Error(next(`Integration already exists with this instance id: ${instanceId}`));
-    }
-
-    integration = await Integrations.create({
-      kind: 'whatsapp',
-      erxesApiId: integrationId,
-      whatsappinstanceId: instanceId,
-      whatsappToken: token,
-    });
-
     try {
-      await whatsappUtils.setupChatApi();
+      whatsappUtils.saveInstance(integrationId, instanceId, token);
     } catch (e) {
-      if (e.message.includes('not paid')) {
-        debugWhatsapp(`Failed to setup instance: ${e.message}`);
-        next(new Error(`Instance "${instanceId}" is not paid. Please pay at app.chat-api.com`));
-      } else {
-        next(new Error(e.message));
-      }
-      await Integrations.deleteOne({ _id: integration.id });
+      next(e.message);
     }
 
     return res.json({ status: 'ok' });
