@@ -11,6 +11,15 @@ interface IMessage {
   queueNumber: number;
 }
 
+interface IAttachment {
+  receiverId: string;
+  body: string;
+  filename: string;
+  caption: string;
+  instanceId: string;
+  token: string;
+}
+
 export const reply = (receiverId: string, content: string, instanceId: string, token: string): Promise<IMessage> => {
   return new Promise((resolve, reject) => {
     const requestOptions = {
@@ -32,15 +41,10 @@ export const reply = (receiverId: string, content: string, instanceId: string, t
   });
 };
 
-export const sendFile = (
-  receiverId: string,
-  body: string,
-  filename: string,
-  caption: string,
-  instanceId: string,
-  token: string,
-): Promise<IMessage> => {
+export const sendFile = (attachment: IAttachment): Promise<IMessage> => {
   return new Promise((resolve, reject) => {
+    const { instanceId, token, receiverId, body, filename, caption } = attachment;
+
     const requestOptions = {
       url: `${CHAT_API_URL}/instance${instanceId}/sendFile?token=${token}`,
       body: {

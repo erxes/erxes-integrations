@@ -47,14 +47,17 @@ const init = async app => {
 
     if (attachments.length !== 0) {
       for (const attachment of attachments) {
-        const message = await whatsappUtils.sendFile(
-          recipientId,
-          attachment.url,
-          attachment.name,
-          content,
+        const file = {
+          receiverId: recipientId,
+          body: attachment.url,
+          filename: attachment.name,
+          caption: content,
           instanceId,
           token,
-        );
+        };
+
+        const message = await whatsappUtils.sendFile(file);
+
         await ConversationMessages.create({
           conversationId: conversation._id,
           mid: message.id,
@@ -63,6 +66,7 @@ const init = async app => {
       }
     } else {
       const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
+
       await ConversationMessages.create({
         conversationId: conversation._id,
         mid: message.id,
