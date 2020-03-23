@@ -106,34 +106,42 @@ export const createInstance = async () => {
   };
 
   const { result, error } = await request(options);
+
   if (error) {
     throw new Error(error);
   }
 
   const { id, apiUrl, token } = result.instance;
+
   debugWhatsapp(`sending request to ${apiUrl}status?token=${token}`);
+
   const qr = await request({ uri: `${apiUrl}status?token=${token}`, method: 'GET', json: true });
+
   qr.instanceId = id;
   qr.token = token;
   qr.apiUrl = apiUrl;
+
   return qr;
 };
 
 export const setupChatApi = async () => {
   const uid = await getConfig('CHAT_API_UID');
+  try {
+    const { result } = await request({
+      uri: `${CHAT_API_INSTANCEAPI_URL}/listInstances?uid=${uid}`,
+      method: 'GET',
+      json: true,
+    });
 
-  const { result } = await request({
-    uri: `${CHAT_API_INSTANCEAPI_URL}/listInstances?uid=${uid}`,
-    method: 'GET',
-    json: true,
-  });
-
-  for (const instance of result) {
-    const integration = await Integrations.findOne({ whatsappinstanceId: instance.id });
-    if (!integration) {
-      continue;
+    for (const instance of result) {
+      const integration = await Integrations.findOne({ whatsappinstanceId: instance.id });
+      if (!integration) {
+        continue;
+      }
+      setWebhook(instance.id, integration.whatsappToken);
     }
-    setWebhook(instance.id, integration.whatsappToken);
+  } catch (e) {
+    throw e;
   }
 };
 

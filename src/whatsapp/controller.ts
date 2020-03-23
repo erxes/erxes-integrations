@@ -19,6 +19,7 @@ const init = async app => {
     debugRequest(debugWhatsapp, req);
     const { integrationId, data } = req.body;
     const { instanceId, token } = JSON.parse(data);
+
     try {
       whatsappUtils.saveInstance(integrationId, instanceId, token);
     } catch (e) {
@@ -36,9 +37,12 @@ const init = async app => {
     }
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
-    const integration = await Integrations.findOne({ erxesApiId: integrationId });
+
     const recipientId = conversation.recipientId;
     const instanceId = conversation.instanceId;
+
+    const integration = await Integrations.findOne({ erxesApiId: integrationId });
+
     const token = integration.whatsappToken;
 
     if (attachments.length !== 0) {

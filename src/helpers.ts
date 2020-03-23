@@ -399,11 +399,11 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
     debugTwitter(e);
   }
 
-  try {
-    if (prevChatApiWebhook !== updatedChatApiWebhook || prevChatApiUID !== updatedChatApiUID) {
+  if (prevChatApiWebhook !== updatedChatApiWebhook || prevChatApiUID !== updatedChatApiUID) {
+    try {
       await setupWhatsapp();
+    } catch (e) {
+      debugWhatsapp(e);
     }
-  } catch (e) {
-    debugWhatsapp(e);
   }
 };

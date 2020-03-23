@@ -26,11 +26,7 @@ export interface ICustomerModel extends Model<ICustomerDocument> {
 export const loadCustomerClass = () => {
   class Customer {
     public static async getCustomer(selector: any, isLean: boolean) {
-      let customer = await Customers.findOne(selector);
-
-      if (isLean) {
-        customer = await Customers.findOne(selector).lean();
-      }
+      const customer = isLean ? Customers.findOne(selector).lean() : Customers.findOne(selector);
 
       if (!customer) {
         throw new Error('Customer not found');
