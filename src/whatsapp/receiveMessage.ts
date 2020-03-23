@@ -1,5 +1,3 @@
-// import { debugWhatsapp } from '../debuggers';
-
 import Integrations from '../models/Integrations';
 import { ConversationMessages } from './models';
 import { createOrUpdateConversation, getOrCreateCustomer } from './store';
@@ -29,12 +27,7 @@ const receiveMessage = async requestBody => {
         integrationId: integration.id,
         integrationErxesApiId: integration.erxesApiId,
       };
-      const conversation = await createOrUpdateConversation(
-        requestBody.messages,
-        instanceId,
-        customerIds,
-        integrationIds,
-      );
+      await createOrUpdateConversation(requestBody.messages, instanceId, customerIds, integrationIds);
     }
   }
 };
