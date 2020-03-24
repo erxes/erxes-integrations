@@ -1,3 +1,24 @@
+## [0.12.4](https://github.com/erxes/erxes-integrations/compare/0.12.3...0.12.4) (2020-03-09)
+
+
+### Bug Fixes
+
+* **common:** improved error handlers ([24c894f](https://github.com/erxes/erxes-integrations/commit/24c894f9aa3a14085652316f9305c62727f995e3))
+
+## [0.12.3](https://github.com/erxes/erxes-integrations/compare/0.12.2...0.12.3) (2020-03-06)
+
+
+### Bug Fixes
+
+* **gmail:** remove account ([#90](https://github.com/erxes/erxes-integrations/issues/90)) ([63b14f0](https://github.com/erxes/erxes-integrations/commit/63b14f0dfe5e06131db489a756f73bbc3ba97d44))
+
+## [0.12.2](https://github.com/erxes/erxes-integrations/compare/0.12.1...0.12.2) (2020-03-04)
+
+
+### Bug Fixes
+
+* **gmail:** add error handle in watchPushNotification ([#89](https://github.com/erxes/erxes-integrations/issues/89)) ([087d423](https://github.com/erxes/erxes-integrations/commit/087d4235600c4a5cbc1beaaccd266771ab3b1b9a))
+
 ## [0.12.1](https://github.com/erxes/erxes-integrations/compare/0.12.0...0.12.1) (2020-03-02)
 
 

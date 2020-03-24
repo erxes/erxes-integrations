@@ -26,7 +26,6 @@ import {
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
-import { getCredentialsByEmailAccountId } from './gmail/util';
 import { stopPushNotification } from './gmail/watch';
 import { Accounts, Integrations } from './models';
 import Configs from './models/Configs';
@@ -82,13 +81,14 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
 
   if (!integration) {
-    return;
+    throw new Error('Integration not found');
   }
 
   // Remove endpoint
   let integrationRemoveBy;
 
   const { _id, kind, accountId, erxesApiId } = integration;
+
   const account = await Accounts.findOne({ _id: accountId });
   const selector = { integrationId: _id };
 
@@ -102,11 +102,18 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
         pageTokenResponse = await getPageAccessToken(pageId, account.token);
       } catch (e) {
         debugFacebook(`Error ocurred while trying to get page access token with ${e.message}`);
+        throw e;
       }
 
       await FacebookPosts.deleteMany({ recipientId: pageId });
       await FacebookComments.deleteMany({ recipientId: pageId });
-      await unsubscribePage(pageId, pageTokenResponse);
+
+      try {
+        await unsubscribePage(pageId, pageTokenResponse);
+      } catch (e) {
+        debugFacebook(`Error occured while trying to unsubscribe page pageId: ${pageId}`);
+        throw e;
+      }
     }
 
     integrationRemoveBy = { fbPageIds: integration.facebookPageIds };
@@ -123,12 +130,16 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   if (kind === 'gmail' && !account.nylasToken) {
     debugGmail('Removing gmail entries');
 
-    const credentials = await getCredentialsByEmailAccountId({ email: account.uid });
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
     integrationRemoveBy = { email: integration.email };
 
-    await stopPushNotification(account.uid, credentials);
+    try {
+      await stopPushNotification(account.uid);
+    } catch (e) {
+      debugGmail('Failed to stop push notification of gmail account');
+      throw e;
+    }
 
     await GmailCustomers.deleteMany(selector);
     await GmailConversations.deleteMany(selector);
@@ -144,8 +155,13 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await NylasGmailConversations.deleteMany(selector);
     await NylasGmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel nylas subscription
-    await enableOrDisableAccount(account.uid, false);
+    try {
+      // Cancel nylas subscription
+      await enableOrDisableAccount(account.uid, false);
+    } catch (e) {
+      debugNylas('Failed to cancel nylas-gmail account subscription');
+      throw e;
+    }
   }
 
   if (kind === 'callpro') {
@@ -164,7 +180,12 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     const conversationIds = await TwitterConversations.find(selector).distinct('_id');
 
-    unsubscribe(account.uid);
+    try {
+      unsubscribe(account.uid);
+    } catch (e) {
+      debugNylas('Failed to unsubscribe twitter account');
+      throw e;
+    }
 
     await TwitterConversationMessages.deleteMany(selector);
     await TwitterConversations.deleteMany(selector);
@@ -210,8 +231,13 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await NylasImapConversations.deleteMany(selector);
     await NylasImapConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel nylas subscription
-    await enableOrDisableAccount(account.uid, false);
+    try {
+      // Cancel nylas subscription
+      await enableOrDisableAccount(account.uid, false);
+    } catch (e) {
+      debugNylas('Failed to cancel subscription of nylas-imap account');
+      throw e;
+    }
   }
 
   if (kind === 'office365') {
@@ -223,8 +249,13 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await NylasOffice365Conversations.deleteMany(selector);
     await NylasOffice365ConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel nylas subscription
-    await enableOrDisableAccount(account.uid, false);
+    try {
+      // Cancel nylas subscription
+      await enableOrDisableAccount(account.uid, false);
+    } catch (e) {
+      debugNylas('Failed to subscription nylas-office365 account');
+      throw e;
+    }
   }
 
   if (kind === 'outlook') {
@@ -236,8 +267,13 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await NylasOutlookConversations.deleteMany(selector);
     await NylasOutlookConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel nylas subscription
-    await enableOrDisableAccount(account.uid, false);
+    try {
+      // Cancel nylas subscription
+      await enableOrDisableAccount(account.uid, false);
+    } catch (e) {
+      debugNylas('Failed to subscription nylas-outlook account');
+      throw e;
+    }
   }
 
   if (kind === 'yahoo') {
@@ -249,8 +285,13 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await NylasYahooConversations.deleteMany(selector);
     await NylasYahooConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
 
-    // Cancel nylas subscription
-    await enableOrDisableAccount(account.uid, false);
+    try {
+      // Cancel nylas subscription
+      await enableOrDisableAccount(account.uid, false);
+    } catch (e) {
+      debugNylas('Failed to subscription nylas-yahoo account');
+      throw e;
+    }
   }
 
   if (kind === 'chatfuel') {
@@ -301,20 +342,29 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   return erxesApiId;
 };
 
-export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string | string[] }> => {
+export const removeAccount = async (_id: string): Promise<{ erxesApiIds: string | string[] } | Error> => {
   const account = await Accounts.findOne({ _id });
 
   if (!account) {
-    return;
+    return new Error(`Account not found: ${_id}`);
   }
 
   const erxesApiIds = [];
 
   const integrations = await Integrations.find({ accountId: account._id });
 
-  for (const integration of integrations) {
-    erxesApiIds.push(await removeIntegration(integration.erxesApiId));
+  if (integrations.length) {
+    for (const integration of integrations) {
+      try {
+        const response = await removeIntegration(integration.erxesApiId);
+        erxesApiIds.push(response);
+      } catch (e) {
+        throw e;
+      }
+    }
   }
+
+  await Accounts.deleteOne({ _id });
 
   return { erxesApiIds };
 };

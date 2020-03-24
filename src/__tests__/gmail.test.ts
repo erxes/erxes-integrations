@@ -20,7 +20,7 @@ describe('Gmail test', () => {
   const credential = {
     access_token: 'jalsjdklasjd',
     refresh_token: 'kdsjd',
-    expiry_date: 'lksjd',
+    expiry_date: 123,
     scope: 'alksjdaklsdj',
     historyId: 'historyId',
   };
@@ -264,7 +264,7 @@ describe('Gmail test', () => {
       return Promise.resolve(buf);
     });
 
-    const response = await receive.getAttachment('messageId', 'attachmentId', credential);
+    const response = await receive.getAttachment(credential, 'messageId', 'attachmentId');
 
     expect(response).toEqual(buf);
 
@@ -335,7 +335,7 @@ describe('Gmail test', () => {
       .stub(watch, 'watchPushNotification')
       .callsFake(() => Promise.resolve({ data: { historyId: 'historyId', expiration: 'akljsdaklsjd' } }));
 
-    const { data } = await watch.watchPushNotification(accountId, credential);
+    const { data } = await watch.watchPushNotification('user@gmail.com');
 
     expect(data.historyId).toEqual('historyId');
     expect(data.expiration).toEqual('akljsdaklsjd');
@@ -350,6 +350,6 @@ describe('Gmail test', () => {
 
     expect(account.token).toEqual(credential.access_token);
     expect(account.tokenSecret).toEqual(credential.refresh_token);
-    expect(account.expireDate).toEqual(credential.expiry_date);
+    expect(account.expireDate).toEqual(credential.expiry_date.toString());
   });
 });
