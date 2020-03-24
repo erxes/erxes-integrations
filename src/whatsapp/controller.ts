@@ -1,9 +1,9 @@
 import { debugRequest, debugResponse, debugWhatsapp } from '../debuggers';
-
 import { Integrations } from '../models';
 import * as whatsappUtils from './api';
 import { ConversationMessages, Conversations } from './models';
 import receiveMessage from './receiveMessage';
+
 const init = async app => {
   app.post('/whatsapp/webhook', async (req, res, next) => {
     try {
@@ -36,6 +36,7 @@ const init = async app => {
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
     const recipientId = conversation.recipientId;
+
     const instanceId = conversation.instanceId;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId });

@@ -18,15 +18,19 @@ const receiveMessage = async requestBody => {
   if (messages) {
     for (const message of messages) {
       const phoneNumber = message.chatId.split('@', 2)[0];
+
       const customer = await getOrCreateCustomer(phoneNumber, message.senderName, instanceId);
+
       const customerIds = {
         customerId: customer.id,
         customerErxesApiID: customer.erxesApiId,
       };
+
       const integrationIds = {
         integrationId: integration.id,
         integrationErxesApiId: integration.erxesApiId,
       };
+
       await createOrUpdateConversation(requestBody.messages, instanceId, customerIds, integrationIds);
     }
   }

@@ -39,7 +39,9 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
         isUser: true,
       }),
     });
+
     customer.erxesApiId = apiCustomerResponse._id;
+
     await customer.save();
   } catch (e) {
     await Customers.deleteOne({ _id: customer._id });
@@ -51,7 +53,9 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
 
 export const createOrUpdateConversation = async (messages, instanceId: string, customerIds, integrationIds) => {
   const { customerId, customerErxesApiID } = customerIds;
+
   const { integrationId, integrationErxesApiId } = integrationIds;
+
   let conversation = await Conversations.findOne({
     senderId: customerId,
     instanceId,
@@ -61,14 +65,18 @@ export const createOrUpdateConversation = async (messages, instanceId: string, c
     if (!message || message.fromMe) {
       return true;
     }
+
     let conversationIds = {};
+
     if (conversation) {
       conversationIds = {
         conversationId: conversation.id,
         conversationErxesApiId: conversation.erxesApiId,
         customerErxesApiId: customerErxesApiID,
       };
+
       await createMessage(message, conversationIds);
+
       return conversation;
     }
 
@@ -91,18 +99,24 @@ export const createOrUpdateConversation = async (messages, instanceId: string, c
           content: message.body,
         }),
       });
+
       conversation.erxesApiId = apiConversationResponse._id;
+
       await conversation.save();
     } catch (e) {
       await Conversations.deleteOne({ _id: conversation._id });
+
       debugWhatsapp(`Error ocurred while trying to create or update conversation ${e.message}`);
+
       throw e;
     }
+
     conversationIds = {
       conversationId: conversation.id,
       conversationErxesApiId: conversation.erxesApiId,
       customerErxesApiId: customerErxesApiID,
     };
+
     await createMessage(message, conversationIds);
   }
 
@@ -111,9 +125,11 @@ export const createOrUpdateConversation = async (messages, instanceId: string, c
 
 const createMessage = async (message, conversationIds) => {
   const { conversationId, conversationErxesApiId, customerErxesApiId } = conversationIds;
+
   const conversationMessage = await ConversationMessages.findOne({
     mid: message.id,
   });
+
   if (conversationMessage) {
     return conversationMessage;
   }
@@ -124,7 +140,9 @@ const createMessage = async (message, conversationIds) => {
     timestamp: new Date(),
     content: message.body,
   });
+
   let attachments = [];
+
   if (message.type !== 'chat') {
     const attachment = { type: message.type, url: message.body };
     attachments = [attachment];
@@ -134,9 +152,11 @@ const createMessage = async (message, conversationIds) => {
   if (message.caption) {
     message.body = message.caption;
   }
+
   if (message.quotedMsgBody) {
     message.body = message.quotedMsgBody;
   }
+
   try {
     await sendRPCMessage({
       action: 'create-conversation-message',

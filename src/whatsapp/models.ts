@@ -3,7 +3,6 @@ import { field } from '../models/utils';
 
 export interface ICustomer {
   phoneNumber: string;
-  // id on erxes-api
   erxesApiId?: string;
   name: string;
   integrationId: string;
