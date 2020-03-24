@@ -36,7 +36,6 @@ const init = async app => {
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
     const recipientId = conversation.recipientId;
-
     const instanceId = conversation.instanceId;
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId });
