@@ -144,8 +144,7 @@ const createMessage = async (message, conversationIds) => {
   let attachments = [];
 
   if (message.type !== 'chat') {
-    const attachment = { type: message.type, url: message.body };
-    attachments = [attachment];
+    attachments = [{ type: message.type, url: message.body }];
     message.body = '';
   }
 
@@ -175,5 +174,6 @@ const createMessage = async (message, conversationIds) => {
     await ConversationMessages.deleteOne({ mid: message.mid });
     throw new Error(e);
   }
+
   return conversationMessage;
 };

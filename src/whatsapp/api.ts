@@ -54,10 +54,10 @@ export const sendFile = async (attachment: IAttachment) => {
 
 export const saveInstance = async (integrationId, instanceId, token) => {
   // Check existing Integration
-
   let integration = await Integrations.findOne({
     $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
   });
+
   if (integration) {
     throw new Error(`Integration already exists with this instance id: ${instanceId}`);
   }
@@ -84,6 +84,7 @@ export const saveInstance = async (integrationId, instanceId, token) => {
 
 export const createInstance = async () => {
   const uid = await getConfig('CHAT_API_UID');
+
   // newInstance
   const options = {
     method: 'POST',
@@ -116,6 +117,7 @@ export const createInstance = async () => {
 
 export const setupChatApi = async () => {
   const uid = await getConfig('CHAT_API_UID');
+
   try {
     const { result } = await request({
       uri: `${CHAT_API_INSTANCEAPI_URL}/listInstances?uid=${uid}`,
@@ -125,9 +127,11 @@ export const setupChatApi = async () => {
 
     for (const instance of result) {
       const integration = await Integrations.findOne({ whatsappinstanceId: instance.id });
+
       if (!integration) {
         continue;
       }
+
       setWebhook(instance.id, integration.whatsappToken);
     }
   } catch (e) {
@@ -148,7 +152,7 @@ export const removeInstance = async (instanceId, uid) => {
 
   try {
     await request(options);
-    Integrations.deleteOne({ whatsappinstanceId: instanceId });
+    await Integrations.deleteOne({ whatsappinstanceId: instanceId });
   } catch (e) {
     throw e;
   }
@@ -170,6 +174,7 @@ export const logout = async (instanceId, token) => {
 
 const setWebhook = async (instanceId, token) => {
   const webhookUrl = await getConfig('CHAT_API_WEBHOOK_CALLBACK_URL');
+
   const options = {
     uri: `${CHAT_API_URL}/instance${instanceId}/settings?token=${token}`,
     method: 'POST',
@@ -182,6 +187,7 @@ const setWebhook = async (instanceId, token) => {
     },
     json: true,
   };
+
   try {
     await request(options);
   } catch (e) {
