@@ -8,12 +8,13 @@ export interface ISmoochProps {
   kind: string;
   erxesApiId: string;
   telegramBotToken?: string;
-  telegramDisplayName?: string;
   viberBotToken?: string;
-  viberDisplayName?: string;
+  smoochDisplayName?: string;
   lineChannelId?: string;
   lineChannelSecret?: string;
-  lineDisplayName?: string;
+  twilioSid?: string;
+  twilioAuthToken?: string;
+  twilioPhoneSid?: string;
 }
 
 interface IMessage {
@@ -78,15 +79,17 @@ const init = async app => {
 
     if (kind === 'telegram') {
       smoochProps.telegramBotToken = props.token;
-      smoochProps.telegramDisplayName = props.displayName;
     } else if (kind === 'viber') {
       smoochProps.viberBotToken = props.token;
-      smoochProps.viberDisplayName = props.displayName;
     } else if (kind === 'line') {
       smoochProps.lineChannelId = props.channelId;
       smoochProps.lineChannelSecret = props.channelSecret;
-      smoochProps.lineDisplayName = props.displayName;
+    } else if (kind === 'twilio') {
+      smoochProps.twilioSid = props.accountSid;
+      smoochProps.twilioAuthToken = props.authToken;
+      smoochProps.twilioPhoneSid = props.phoneNumberSid;
     }
+    smoochProps.smoochDisplayName = props.displayName;
 
     const integration = await Integrations.create(smoochProps);
 

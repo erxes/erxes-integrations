@@ -25,6 +25,7 @@ export const getSmoochConfig = async () => {
 
 let smooch: Smooch;
 let appId = '';
+
 const saveCustomer = async (smoochIntegrationId: string, surname: string, givenName: string, smoochUserId: string) => {
   const integration = await Integrations.findOne({ smoochIntegrationId });
 
@@ -127,13 +128,34 @@ const setupSmoochWebhook = async () => {
   });
 
   try {
-    await smooch.webhooks.create(SMOOCH_APP_ID, {
-      target: SMOOCH_WEBHOOK_CALLBACK_URL,
-      triggers: ['message:appUser'],
-      includeClient: true,
-    });
+    const { webhooks } = await smooch.webhooks.list();
+
+    if (webhooks.length > 0) {
+      for (const hook of webhooks) {
+        if (hook.target !== SMOOCH_WEBHOOK_CALLBACK_URL) {
+          try {
+            await smooch.webhooks.update(hook._id, {
+              target: SMOOCH_WEBHOOK_CALLBACK_URL,
+              includeClient: true,
+            });
+          } catch (e) {
+            throw e;
+          }
+        }
+      }
+    } else {
+      try {
+        await smooch.webhooks.create({
+          target: SMOOCH_WEBHOOK_CALLBACK_URL,
+          triggers: ['message:appUser'],
+          includeClient: true,
+        });
+      } catch (e) {
+        debugSmooch(`An error occurred while setting up smooch webhook: ${e.message}`);
+      }
+    }
   } catch (e) {
-    debugSmooch(`An error accured while setting up smooch webhook: ${e.message}`);
+    throw e;
   }
 };
 

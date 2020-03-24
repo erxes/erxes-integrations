@@ -48,6 +48,14 @@ export const SmoochLineCustomers = model<ISmoochCustomerDocument, ISmoochCustome
   smoochLineCustomerSchema,
 );
 
+export const smoochTwilioCustomerSchema = new Schema(customerCommonSchema);
+
+// tslint:disable-next-line
+export const SmoochTwilioCustomers = model<ISmoochCustomerDocument, ISmoochCustomerModel>(
+  'customers_smooch_twilio_sms',
+  smoochTwilioCustomerSchema,
+);
+
 export interface ISmoochConversation {
   smoochConversationId: string;
   content: string;
@@ -97,6 +105,14 @@ export const SmoochLineConversations = model<ISmoochConversationDocument, ISmooc
   smoochLineConversationSchema,
 );
 
+export const smoochTwilioConversationSchema = new Schema(conversationCommonSchema);
+
+// tslint:disable-next-line:variable-name
+export const SmoochTwilioConversations = model<ISmoochConversationDocument, ISmoochConversatonModel>(
+  'conversations_smooch_twilio_sms',
+  smoochTwilioConversationSchema,
+);
+
 // Conversation message ===========
 
 export interface ISmoochConversationMessage {
@@ -141,3 +157,11 @@ export const SmoochLineConversationMessages = model<
   ISmoochConversationMessageDocument,
   ISmoochConversationMessageModel
 >('conversation_messages_smooch_line', smoochLineConversationMessageSchema);
+
+export const smoochTwilioConversationMessageSchema = new Schema(conversationMessageCommonSchema);
+
+// tslint:disable-next-line
+export const SmoochTwilioConversationMessages = model<
+  ISmoochConversationMessageDocument,
+  ISmoochConversationMessageModel
+>('conversation_messages_smooch_twilio_sms', smoochTwilioConversationMessageSchema);

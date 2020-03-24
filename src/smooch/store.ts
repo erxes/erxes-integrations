@@ -8,6 +8,9 @@ import {
   SmoochTelegramConversationMessages,
   SmoochTelegramConversations,
   SmoochTelegramCustomers,
+  SmoochTwilioConversationMessages,
+  SmoochTwilioConversations,
+  SmoochTwilioCustomers,
   SmoochViberConversationMessages,
   SmoochViberConversations,
   SmoochViberCustomers,
@@ -38,6 +41,11 @@ const SMOOCH_MODELS = {
     customers: SmoochLineCustomers,
     conversations: SmoochLineConversations,
     conversationMessages: SmoochLineConversationMessages,
+  },
+  twilio: {
+    customers: SmoochTwilioCustomers,
+    conversations: SmoochTwilioConversations,
+    conversationMessages: SmoochTwilioConversationMessages,
   },
 };
 

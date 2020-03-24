@@ -13,15 +13,14 @@ export interface IIntegration {
   expiration?: string;
   gmailHistoryId?: string;
   chatfuelConfigs?: { [key: string]: string };
-  whatsappinstanceId?: string;
-  whatsappToken?: string;
   telegramBotToken?: string;
-  telegramDisplayName?: string;
   viberBotToken?: string;
-  viberDisplayName?: string;
   lineChannelId?: string;
   lineChannelSecret?: string;
-  lineDisplayName?: string;
+  twilioSid?: string;
+  twilioAuthToken?: string;
+  twilioPhoneSid?: string;
+  smoochDisplayName?: string;
   smoochIntegrationId?: string;
 }
 
@@ -47,15 +46,14 @@ export const integrationSchema = new Schema({
     type: Object,
     default: {},
   }),
-  whatsappinstanceId: String,
-  whatsappToken: String,
   telegramBotToken: String,
-  telegramDisplayName: String,
   viberBotToken: String,
-  viberDisplayName: String,
   lineChannelId: String,
   lineChannelSecret: String,
-  lineDisplayName: String,
+  twilioSid: String,
+  twilioAuthToken: String,
+  twilioPhoneSid: String,
+  smoochDisplayName: String,
   smoochIntegrationId: String,
 });
 
