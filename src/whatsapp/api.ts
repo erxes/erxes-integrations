@@ -4,13 +4,6 @@ import { Integrations } from '../models';
 import { getConfig } from '../utils';
 import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
 
-interface IMessage {
-  sent: boolean;
-  message: string;
-  id: string;
-  queueNumber: number;
-}
-
 interface IAttachment {
   receiverId: string;
   body: string;
@@ -20,12 +13,7 @@ interface IAttachment {
   token: string;
 }
 
-export const reply = async (
-  receiverId: string,
-  content: string,
-  instanceId: string,
-  token: string,
-): Promise<IMessage> => {
+export const reply = async (receiverId: string, content: string, instanceId: string, token: string) => {
   const requestOptions = {
     url: `${CHAT_API_URL}/instance${instanceId}/sendMessage?token=${token}`,
     body: {
@@ -42,7 +30,7 @@ export const reply = async (
   }
 };
 
-export const sendFile = async (attachment: IAttachment): Promise<IMessage> => {
+export const sendFile = async (attachment: IAttachment) => {
   const { instanceId, token, receiverId, body, filename, caption } = attachment;
 
   const requestOptions = {
