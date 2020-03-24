@@ -22,9 +22,9 @@ const init = async app => {
     const { instanceId, token } = JSON.parse(data);
 
     try {
-      whatsappUtils.saveInstance(integrationId, instanceId, token);
+      await whatsappUtils.saveInstance(integrationId, instanceId, token);
     } catch (e) {
-      next(e.message);
+      next(e);
     }
 
     return res.json({ status: 'ok' });
