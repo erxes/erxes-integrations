@@ -17,6 +17,7 @@ const init = async app => {
 
   app.post('/whatsapp/create-integration', async (req, res, next) => {
     debugRequest(debugWhatsapp, req);
+
     const { integrationId, data } = req.body;
     const { instanceId, token } = JSON.parse(data);
 
@@ -31,10 +32,6 @@ const init = async app => {
 
   app.post('/whatsapp/reply', async (req, res, next) => {
     const { attachments, conversationId, content, integrationId } = req.body;
-
-    if (attachments.length > 1) {
-      next(new Error('You can only attach one file'));
-    }
 
     const conversation = await Conversations.getConversation({ erxesApiId: conversationId });
 
@@ -55,26 +52,25 @@ const init = async app => {
           instanceId,
           token,
         };
-
-        const message = await whatsappUtils.sendFile(file);
+        try {
+          await whatsappUtils.sendFile(file);
+        } catch (e) {
+          next(e.message);
+        }
+      }
+    } else {
+      try {
+        const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
 
         await ConversationMessages.create({
           conversationId: conversation._id,
           mid: message.id,
           content,
         });
+      } catch (e) {
+        next(e.message);
       }
-    } else {
-      const message = await whatsappUtils.reply(recipientId, content, instanceId, token);
-
-      await ConversationMessages.create({
-        conversationId: conversation._id,
-        mid: message.id,
-        content,
-      });
     }
-
-    // save on integrations db
 
     debugResponse(debugWhatsapp, req);
 
