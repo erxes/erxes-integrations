@@ -20,50 +20,47 @@ interface IAttachment {
   token: string;
 }
 
-export const reply = (receiverId: string, content: string, instanceId: string, token: string): Promise<IMessage> => {
-  return new Promise((resolve, reject) => {
-    const requestOptions = {
-      url: `${CHAT_API_URL}/instance${instanceId}/sendMessage?token=${token}`,
-      body: {
-        chatId: receiverId,
-        body: content,
-      },
-      json: true,
-    };
-    request
-      .post(requestOptions)
-      .then(res => {
-        resolve(res);
-      })
-      .catch(e => {
-        reject(e);
-      });
-  });
+export const reply = async (
+  receiverId: string,
+  content: string,
+  instanceId: string,
+  token: string,
+): Promise<IMessage> => {
+  const requestOptions = {
+    url: `${CHAT_API_URL}/instance${instanceId}/sendMessage?token=${token}`,
+    body: {
+      chatId: receiverId,
+      body: content,
+    },
+    json: true,
+  };
+  try {
+    return await request(requestOptions);
+  } catch (e) {
+    throw new Error(e.message);
+  }
 };
 
-export const sendFile = (attachment: IAttachment): Promise<IMessage> => {
-  return new Promise((resolve, reject) => {
-    const { instanceId, token, receiverId, body, filename, caption } = attachment;
+export const sendFile = async (attachment: IAttachment): Promise<IMessage> => {
+  const { instanceId, token, receiverId, body, filename, caption } = attachment;
 
-    const requestOptions = {
-      url: `${CHAT_API_URL}/instance${instanceId}/sendFile?token=${token}`,
-      body: {
-        chatId: receiverId,
-        body,
-        filename,
-        caption,
-      },
-      json: true,
-    };
-    request
-      .post(requestOptions)
-      .then(res => {
-        resolve(res);
-      })
-      .catch(e => {
-        reject(e);
-      });
-  });
+  const requestOptions = {
+    method: 'POST',
+    url: `${CHAT_API_URL}/instance${instanceId}/sendFile?token=${token}`,
+    body: {
+      chatId: receiverId,
+      body,
+      filename,
+      caption,
+    },
+    json: true,
+  };
+
+  try {
+    return await request(requestOptions);
+  } catch (e) {
+    throw new Error(e.message);
+  }
 };
 
 export const saveInstance = async (integrationId, instanceId, token) => {
