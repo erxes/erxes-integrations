@@ -1,3 +1,7 @@
+import * as smoochApi from './smooch/api';
+import * as twitterApi from './twitter/api';
+
+import { Accounts, Integrations } from './models';
 import { Conversations as CallProConversations, Customers as CallProCustomers } from './callpro/models';
 import {
   ConversationMessages as ChatfuelConversationMessages,
@@ -5,32 +9,17 @@ import {
   Customers as ChatfuelCustomers,
 } from './chatfuel/models';
 import {
-  debugCallPro,
-  debugFacebook,
-  debugGmail,
-  debugNylas,
-  debugTwitter,
-  debugWhatsapp,
-  debugSmooch,
-} from './debuggers';
-import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
   Conversations as FacebookConversations,
   Customers as FacebookCustomers,
   Posts as FacebookPosts,
 } from './facebook/models';
-import { getPageAccessToken, unsubscribePage } from './facebook/utils';
 import {
   ConversationMessages as GmailConversationMessages,
   Conversations as GmailConversations,
   Customers as GmailCustomers,
 } from './gmail/models';
-import { stopPushNotification } from './gmail/watch';
-import { Accounts, Integrations } from './models';
-import Configs from './models/Configs';
-import { enableOrDisableAccount, removeExistingNylasWebhook } from './nylas/auth';
-import { setupNylas } from './nylas/controller';
 import {
   NylasGmailConversationMessages,
   NylasGmailConversations,
@@ -48,25 +37,6 @@ import {
   NylasYahooConversations,
   NylasYahooCustomers,
 } from './nylas/models';
-import { createNylasWebhook } from './nylas/tracker';
-import * as smoochApi from './smooch/api';
-import { setupSmooch } from './smooch/controller';
-import { getTwitterConfig, unsubscribe } from './twitter/api';
-import * as twitterApi from './twitter/api';
-import {
-  ConversationMessages as TwitterConversationMessages,
-  Conversations as TwitterConversations,
-  Customers as TwitterCustomers,
-} from './twitter/models';
-import { getEnv, resetConfigsCache, sendRequest } from './utils';
-import {
-  ConversationMessages as WhatsappConversationMessages,
-  Conversations as WhatsappConversations,
-  Customers as WhatsappCustomers,
-} from './whatsapp/models';
-
-import { logout, setupChatApi as setupWhatsapp } from './whatsapp/api';
-
 import {
   SmoochLineConversationMessages,
   SmoochLineConversations,
@@ -78,6 +48,36 @@ import {
   SmoochViberConversations,
   SmoochViberCustomers,
 } from './smooch/models';
+import {
+  ConversationMessages as TwitterConversationMessages,
+  Conversations as TwitterConversations,
+  Customers as TwitterCustomers,
+} from './twitter/models';
+import {
+  ConversationMessages as WhatsappConversationMessages,
+  Conversations as WhatsappConversations,
+  Customers as WhatsappCustomers,
+} from './whatsapp/models';
+import {
+  debugCallPro,
+  debugFacebook,
+  debugGmail,
+  debugNylas,
+  debugSmooch,
+  debugTwitter,
+  debugWhatsapp,
+} from './debuggers';
+import { enableOrDisableAccount, removeExistingNylasWebhook } from './nylas/auth';
+import { getEnv, resetConfigsCache, sendRequest } from './utils';
+import { getPageAccessToken, unsubscribePage } from './facebook/utils';
+import { getTwitterConfig, unsubscribe } from './twitter/api';
+import { logout, setupChatApi as setupWhatsapp } from './whatsapp/api';
+
+import Configs from './models/Configs';
+import { createNylasWebhook } from './nylas/tracker';
+import { setupNylas } from './nylas/controller';
+import { setupSmooch } from './smooch/controller';
+import { stopPushNotification } from './gmail/watch';
 
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
