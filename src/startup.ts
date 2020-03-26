@@ -1,4 +1,4 @@
-import { debugGmail, debugNylas, debugSmooch, debugTwitter } from './debuggers';
+import { debugGmail, debugNylas, debugTwitter, debugWhatsapp, debugSmooch } from './debuggers';
 import { trackGmail } from './gmail/watch';
 import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
@@ -6,6 +6,7 @@ import { setupSmoochWebhook } from './smooch/api';
 import { setupSmooch } from './smooch/controller';
 import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
+import { setupChatApi as setupWhatsapp } from './whatsapp/api';
 
 export const init = async () => {
   const USE_NATIVE_GMAIL = await getConfig('USE_NATIVE_GMAIL');
@@ -33,6 +34,12 @@ export const init = async () => {
     await createNylasWebhook();
   } catch (e) {
     debugNylas(e.message);
+  }
+
+  try {
+    await setupWhatsapp();
+  } catch (e) {
+    debugWhatsapp(e.message);
   }
 
   try {

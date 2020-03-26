@@ -4,7 +4,15 @@ import {
   Conversations as ChatfuelConversations,
   Customers as ChatfuelCustomers,
 } from './chatfuel/models';
-import { debugCallPro, debugFacebook, debugGmail, debugNylas, debugSmooch, debugTwitter } from './debuggers';
+import {
+  debugCallPro,
+  debugFacebook,
+  debugGmail,
+  debugNylas,
+  debugTwitter,
+  debugWhatsapp,
+  debugSmooch,
+} from './debuggers';
 import {
   Comments as FacebookComments,
   ConversationMessages as FacebookConversationMessages,
@@ -51,6 +59,13 @@ import {
   Customers as TwitterCustomers,
 } from './twitter/models';
 import { getEnv, resetConfigsCache, sendRequest } from './utils';
+import {
+  ConversationMessages as WhatsappConversationMessages,
+  Conversations as WhatsappConversations,
+  Customers as WhatsappCustomers,
+} from './whatsapp/models';
+
+import { logout, setupChatApi as setupWhatsapp } from './whatsapp/api';
 
 import {
   SmoochLineConversationMessages,
@@ -177,6 +192,23 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await TwitterConversationMessages.deleteMany(selector);
     await TwitterConversations.deleteMany(selector);
     await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'whatsapp') {
+    debugWhatsapp('Removing whatsapp entries');
+
+    try {
+      await logout(integration.whatsappinstanceId, integration.whatsappToken);
+    } catch (e) {
+      debugWhatsapp('Failed to logout WhatsApp account');
+      throw e;
+    }
+
+    const conversationIds = await WhatsappConversations.find(selector).distinct('_id');
+
+    await WhatsappConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    await WhatsappConversations.deleteMany(selector);
+    await WhatsappCustomers.deleteMany(selector);
   }
 
   // Remove from core =========
@@ -362,6 +394,7 @@ export const removeCustomers = async params => {
   await SmoochTelegramCustomers.deleteMany(selector);
   await SmoochViberCustomers.deleteMany(selector);
   await SmoochLineCustomers.deleteMany(selector);
+  await WhatsappCustomers.deleteMany(selector);
 };
 
 export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
@@ -384,6 +417,8 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const prevSmoochAppId = await getValueAsString('SMOOCH_APP_ID');
   const prevSmoochWebhook = await getValueAsString('SMOOCH_WEBHOOK_CALLBACK_URL');
 
+  const prevChatApiWebhook = await getValueAsString('CHAT_API_WEBHOOK_CALLBACK_URL');
+  const prevChatApiUID = await getValueAsString('CHAT_API_UID');
   const prevTwitterConfig = await getTwitterConfig();
 
   await Configs.updateConfigs(configsMap);
@@ -400,6 +435,8 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
   const updatedSmoochAppKeySecret = await getValueAsString('SMOOCH_APP_KEY_SECRET');
   const updatedSmoochAppId = await getValueAsString('SMOOCH_APP_ID');
   const updatedSmoochWebhook = await getValueAsString('SMOOCH_WEBHOOK_CALLBACK_URL');
+  const updatedChatApiWebhook = await getValueAsString('CHAT_API_WEBHOOK_CALLBACK_URL');
+  const updatedChatApiUID = await getValueAsString('CHAT_API_UID');
 
   try {
     if (prevNylasClientId !== updatedNylasClientId || prevNylasClientSecret !== updatedNylasClientSecret) {
@@ -450,5 +487,13 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
     }
   } catch (e) {
     debugSmooch(e);
+  }
+
+  if (prevChatApiWebhook !== updatedChatApiWebhook || prevChatApiUID !== updatedChatApiUID) {
+    try {
+      await setupWhatsapp();
+    } catch (e) {
+      debugWhatsapp(e);
+    }
   }
 };

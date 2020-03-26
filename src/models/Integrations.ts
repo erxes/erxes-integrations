@@ -22,6 +22,8 @@ export interface IIntegration {
   twilioPhoneSid?: string;
   smoochDisplayName?: string;
   smoochIntegrationId?: string;
+  whatsappinstanceId?: string;
+  whatsappToken?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {}
@@ -55,6 +57,8 @@ export const integrationSchema = new Schema({
   twilioPhoneSid: String,
   smoochDisplayName: String,
   smoochIntegrationId: String,
+  whatsappinstanceId: String,
+  whatsappToken: String,
 });
 
 export interface IIntegrationModel extends Model<IIntegrationDocument> {
