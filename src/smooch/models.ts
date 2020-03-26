@@ -2,8 +2,11 @@ import { Document, model, Model, Schema } from 'mongoose';
 import { field } from '../models/utils';
 
 export interface ISmoochCustomer {
-  surname: string;
-  givenName: string;
+  surname?: string;
+  givenName?: string;
+  avatarUrl?: string;
+  phone?: string;
+  email?: string;
   smoochUserId: string;
   erxesApiId: string;
   integrationId: string;
@@ -16,8 +19,11 @@ export interface ISmoochCustomerModel extends Model<ISmoochCustomerDocument> {}
 // Customer =============
 const customerCommonSchema = {
   _id: field({ pkey: true }),
-  surname: String,
-  givenName: String,
+  surname: { type: String, optional: true },
+  givenName: { type: String, optional: true },
+  avatarUrl: { type: String, optional: true },
+  phone: { type: String, optional: true },
+  email: { type: String, optional: true },
   smoochUserId: { type: String, unique: true },
   integrationId: String,
   erxesApiId: String,
