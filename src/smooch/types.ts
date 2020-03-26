@@ -20,6 +20,16 @@ export interface IAPICustomer {
   kind: string;
 }
 
+export interface ISmoochCustomerInput {
+  smoochIntegrationId: string;
+  surname?: string;
+  givenName?: string;
+  smoochUserId: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+}
+
 export interface IAPIConversation {
   integrationId: string;
   customerId: string;
@@ -41,8 +51,11 @@ export interface ISmoochCustomerArguments {
     id: string;
     erxesApiId: string;
   };
-  surname: string;
-  givenName: string;
+  surname?: string;
+  givenName?: string;
+  phone?: string;
+  email?: string;
+  avatarUrl?: string;
 }
 
 export interface ISmoochConversationArguments {
