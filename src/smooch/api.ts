@@ -1,7 +1,9 @@
+import * as request from 'request-promise';
 import * as Smooch from 'smooch-core';
 import { debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
 import { getConfig } from '../utils';
+import { TELEGRAM_API_URL } from './constants';
 import {
   createOrGetSmoochConversation as storeConversation,
   createOrGetSmoochConversationMessage as storeMessage,
@@ -12,6 +14,7 @@ import {
   ISmoochConversationArguments,
   ISmoochConversationMessageArguments,
   ISmoochCustomerArguments,
+  ISmoochCustomerInput,
 } from './types';
 
 export const getSmoochConfig = async () => {
@@ -26,12 +29,14 @@ export const getSmoochConfig = async () => {
 let smooch: Smooch;
 let appId = '';
 
-const saveCustomer = async (smoochIntegrationId: string, surname: string, givenName: string, smoochUserId: string) => {
+const saveCustomer = async (customer: ISmoochCustomerInput) => {
+  const { smoochIntegrationId, smoochUserId, surname, givenName, email, phone, avatarUrl } = customer;
   const integration = await Integrations.findOne({ smoochIntegrationId });
 
   if (!integration) {
     return debugSmooch('Integration not found with smoochIntegrationId: ', smoochIntegrationId);
   }
+
   const doc = <ISmoochCustomerArguments>{
     kind: integration.kind,
     smoochUserId,
@@ -41,6 +46,9 @@ const saveCustomer = async (smoochIntegrationId: string, surname: string, givenN
     },
     surname,
     givenName,
+    email,
+    phone,
+    avatarUrl,
   };
 
   return storeCustomer(doc);
@@ -58,7 +66,9 @@ const saveConversation = async (
   if (!integration) {
     return debugSmooch('Integration not found with smoochIntegrationId: ', smoochIntegrationId);
   }
+
   const createdAt = received * 1000;
+
   const doc = <ISmoochConversationArguments>{
     kind: integration.kind,
     smoochConversationId,
@@ -95,6 +105,7 @@ const saveMessage = async (
     content,
     messageId,
   };
+
   if (attachment) {
     doc.attachments = [attachment];
   }
@@ -159,4 +170,18 @@ const setupSmoochWebhook = async () => {
   }
 };
 
-export { saveCustomer, saveConversation, saveMessage, setupSmoochWebhook, removeIntegration };
+const getTelegramFile = async (token: string, fileId: string) => {
+  try {
+    const { result } = await request({
+      uri: `${TELEGRAM_API_URL}/bot${token}/getFile?file_id=${fileId}`,
+      method: 'GET',
+      json: true,
+    });
+    return `${TELEGRAM_API_URL}/file/bot${token}/${result.file_path}`;
+  } catch (e) {
+    debugSmooch(e.mesage);
+    throw e.mesage;
+  }
+};
+
+export { saveCustomer, saveConversation, saveMessage, setupSmoochWebhook, removeIntegration, getTelegramFile };
