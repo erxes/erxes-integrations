@@ -44,6 +44,9 @@ import {
   SmoochTelegramConversationMessages,
   SmoochTelegramConversations,
   SmoochTelegramCustomers,
+  SmoochTwilioConversationMessages,
+  SmoochTwilioConversations,
+  SmoochTwilioCustomers,
   SmoochViberConversationMessages,
   SmoochViberConversations,
   SmoochViberCustomers,
@@ -316,8 +319,11 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
   if (kind === 'telegram') {
     debugSmooch('Removing Telegram entries');
     const conversationIds = await SmoochTelegramConversations.find(selector).distinct('_id');
-
-    await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    try {
+      await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    } catch (e) {
+      throw e;
+    }
 
     await SmoochTelegramCustomers.deleteMany(selector);
     await SmoochTelegramConversations.deleteMany(selector);
@@ -328,7 +334,11 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     debugSmooch('Removing Viber entries');
     const conversationIds = await SmoochViberConversations.find(selector).distinct('_id');
 
-    await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    try {
+      await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    } catch (e) {
+      throw e;
+    }
 
     await SmoochViberCustomers.deleteMany(selector);
     await SmoochViberConversations.deleteMany(selector);
@@ -339,11 +349,30 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     debugSmooch('Removing Line entries');
     const conversationIds = await SmoochLineConversations.find(selector).distinct('_id');
 
-    await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    try {
+      await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    } catch (e) {
+      throw e;
+    }
 
     await SmoochLineCustomers.deleteMany(selector);
     await SmoochLineConversations.deleteMany(selector);
     await SmoochLineConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'twilio') {
+    debugSmooch('Removing Twilio entries');
+    const conversationIds = await SmoochTwilioConversations.find(selector).distinct('_id');
+
+    try {
+      await smoochApi.removeIntegration(integration.smoochIntegrationId);
+    } catch (e) {
+      throw e;
+    }
+
+    await SmoochTwilioCustomers.deleteMany(selector);
+    await SmoochTwilioConversations.deleteMany(selector);
+    await SmoochTwilioConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
   }
 
   await Integrations.deleteOne({ _id });
@@ -394,6 +423,7 @@ export const removeCustomers = async params => {
   await SmoochTelegramCustomers.deleteMany(selector);
   await SmoochViberCustomers.deleteMany(selector);
   await SmoochLineCustomers.deleteMany(selector);
+  await SmoochTwilioCustomers.deleteMany(selector);
   await WhatsappCustomers.deleteMany(selector);
 };
 
