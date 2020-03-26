@@ -55,10 +55,13 @@ const createOrGetSmoochCustomer = async ({
   surname,
   givenName,
   smoochUserId,
+  phone,
+  email,
+  avatarUrl,
 }: ISmoochCustomerArguments) => {
   debugSmooch('Create or get smooch customer function called...');
   const { id, erxesApiId } = integrationIds;
-  const common = { surname, givenName };
+  const common = { surname, givenName, email, phone, avatarUrl };
 
   const doc = {
     integrationId: id,
@@ -71,6 +74,11 @@ const createOrGetSmoochCustomer = async ({
     integrationId: erxesApiId,
     firstName: givenName,
     lastName: surname,
+    phones: [phone],
+    primaryPhone: phone,
+    emails: [email],
+    primaryEmail: email,
+    avatar: avatarUrl,
     kind,
   };
 
