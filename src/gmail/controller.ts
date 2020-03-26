@@ -4,7 +4,7 @@ import loginMiddleware from './loginMiddleware';
 import { ConversationMessages } from './models';
 import { getAttachment } from './receiveEmails';
 import { sendGmail } from './send';
-import { getCredentials } from './util';
+import { getCredentialsByEmailAccountId } from './util';
 import { watchPushNotification } from './watch';
 
 const init = async app => {
@@ -19,7 +19,6 @@ const init = async app => {
     const account = await Accounts.findOne({ _id: accountId });
 
     if (!account) {
-      debugGmail(`Error Google: Account not found with ${accountId}`);
       return next(new Error('Account not found'));
     }
 
@@ -29,8 +28,7 @@ const init = async app => {
     const dumpIntegration = await Integrations.findOne({ kind: 'gmail', accountId, email }).lean();
 
     if (dumpIntegration) {
-      debugGmail(`Integration already exist with this email: ${email}`);
-      return next();
+      return next(new Error(`Integration already exist with this email: ${email}`));
     }
 
     const integration = await Integrations.create({
@@ -40,21 +38,19 @@ const init = async app => {
       email,
     });
 
-    const credentials = getCredentials(account);
-
     debugGmail(`Watch push notification for this ${email} user`);
 
     let historyId;
     let expiration;
 
     try {
-      const response = await watchPushNotification(accountId, credentials);
+      const response = await watchPushNotification(email);
 
       historyId = response.data.historyId;
       expiration = response.data.expiration;
     } catch (e) {
       debugGmail(`Error Google: Could not subscribe user ${email} to topic`);
-      next(e);
+      return next(e);
     }
 
     integration.gmailHistoryId = historyId;
@@ -73,7 +69,6 @@ const init = async app => {
     const account = await Accounts.findOne({ _id: req.query.accountId });
 
     if (!account) {
-      debugGmail(`Error Google: Account not found with ${req.query.accountId}`);
       return next(new Error('Account not found'));
     }
 
@@ -90,13 +85,13 @@ const init = async app => {
     const integration = await Integrations.findOne({ erxesApiId });
 
     if (!integration) {
-      throw new Error('Integration not found');
+      return next(new Error('Integration not found'));
     }
 
     const account = await Accounts.findOne({ _id: integration.accountId });
 
     if (!account) {
-      throw new Error('Account not found');
+      return next(new Error('Account not found'));
     }
 
     try {
@@ -118,23 +113,20 @@ const init = async app => {
     debugGmail(`Request to get gmailData with: ${erxesApiMessageId}`);
 
     if (!erxesApiMessageId) {
-      debugGmail('Conversation message id not defined');
-      return next();
+      return next(new Error('Conversation message id not defined'));
     }
 
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
     if (!integration) {
-      debugGmail('Integration not found');
-      return next();
+      return next(new Error('Integration not found'));
     }
 
     const account = await Accounts.findOne({ _id: integration.accountId }).lean();
     const conversationMessage = await ConversationMessages.findOne({ erxesApiMessageId }).lean();
 
     if (!conversationMessage) {
-      debugGmail('Conversation message not found');
-      return next();
+      return next(new Error('Conversation message not found'));
     }
 
     // attach account email for dinstinguish sender
@@ -149,26 +141,23 @@ const init = async app => {
     const integration = await Integrations.findOne({ erxesApiId: integrationId }).lean();
 
     if (!integration) {
-      debugGmail('Integration not found!');
-      return next();
+      return next(new Error('Integration not found!'));
     }
 
     const account = await Accounts.findOne({ _id: integration.accountId }).lean();
 
     if (!account) {
-      debugGmail('Account not found!');
-      return next();
+      return next(new Error('Account not found!'));
     }
 
-    const credentials = getCredentials(account);
+    const credentials = await getCredentialsByEmailAccountId({ accountId: account._id });
 
-    const attachment: { filename: string; data: string } = await getAttachment(messageId, attachmentId, credentials);
+    const attachment: { filename: string; data: string } = await getAttachment(credentials, messageId, attachmentId);
 
     attachment.filename = filename;
 
     if (!attachment) {
-      debugGmail('Attachment not found!');
-      return next();
+      return next(new Error('Attachment not found!'));
     }
 
     res.attachment(attachment.filename);

@@ -1,3 +1,46 @@
+# [0.13.0](https://github.com/erxes/erxes-integrations/compare/0.12.4...0.13.0) (2020-03-17)
+
+
+### Bug Fixes
+
+* await in initConsumer ([a925ca4](https://github.com/erxes/erxes-integrations/commit/a925ca468e01e7a14f7ca6de35f9316133350805))
+* await redis init ([d1b30e6](https://github.com/erxes/erxes-integrations/commit/d1b30e6642a8e5e2c9a00bfe749c5047341a1483))
+* merge with master and conflict ([93622fd](https://github.com/erxes/erxes-integrations/commit/93622fdbe33058211d1c7a172484926df934ab3b))
+* remove account only when there is no integrations ([f13c2a9](https://github.com/erxes/erxes-integrations/commit/f13c2a95196cb4eebd632502a39456ee44b45c38))
+
+
+### Features
+
+* **videoCall:** add video call integration using daily.co ([7e61cf8](https://github.com/erxes/erxes-integrations/commit/7e61cf89e4a5637fa5cbbacb7c17dd446180b1a2)), closes [erxes/erxes#1638](https://github.com/erxes/erxes/issues/1638)
+
+## [0.12.4](https://github.com/erxes/erxes-integrations/compare/0.12.3...0.12.4) (2020-03-09)
+
+
+### Bug Fixes
+
+* **common:** improved error handlers ([24c894f](https://github.com/erxes/erxes-integrations/commit/24c894f9aa3a14085652316f9305c62727f995e3))
+
+## [0.12.3](https://github.com/erxes/erxes-integrations/compare/0.12.2...0.12.3) (2020-03-06)
+
+
+### Bug Fixes
+
+* **gmail:** remove account ([#90](https://github.com/erxes/erxes-integrations/issues/90)) ([63b14f0](https://github.com/erxes/erxes-integrations/commit/63b14f0dfe5e06131db489a756f73bbc3ba97d44))
+
+## [0.12.2](https://github.com/erxes/erxes-integrations/compare/0.12.1...0.12.2) (2020-03-04)
+
+
+### Bug Fixes
+
+* **gmail:** add error handle in watchPushNotification ([#89](https://github.com/erxes/erxes-integrations/issues/89)) ([087d423](https://github.com/erxes/erxes-integrations/commit/087d4235600c4a5cbc1beaaccd266771ab3b1b9a))
+
+## [0.12.1](https://github.com/erxes/erxes-integrations/compare/0.12.0...0.12.1) (2020-03-02)
+
+
+### Bug Fixes
+
+* load dotenv in order to get process.env values ([2ec0463](https://github.com/erxes/erxes-integrations/commit/2ec046356668ba433f45f8d0e4faadd735b915b6))
+
 # [0.12.0](https://github.com/erxes/erxes-integrations/compare/0.11.2...0.12.0) (2020-01-08)
 
 

@@ -4,7 +4,7 @@ import * as uuid from 'uuid';
 import { debugBase, debugGmail } from './debuggers';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
-import { removeAccount } from './helpers';
+import { removeAccount, removeCustomers } from './helpers';
 import { Integrations } from './models';
 
 dotenv.config();
@@ -48,8 +48,8 @@ const handleRunCronMessage = async () => {
     return debugGmail('Gmail Integration not found');
   }
 
-  for (const { _id, accountId, ...credentials } of integrations) {
-    const response = await watchPushNotification(accountId, credentials);
+  for (const { _id, email } of integrations) {
+    const response = await watchPushNotification(email);
     const { historyId, expiration } = response.data;
 
     if (!historyId || !expiration) {
@@ -78,7 +78,7 @@ export const sendRPCMessage = async (message): Promise<any> => {
             if (res.status === 'success') {
               resolve(res.data);
             } else {
-              reject(res.errorMessage);
+              reject(new Error(res.errorMessage));
             }
 
             channel.deleteQueue(q.queue);
@@ -102,7 +102,7 @@ export const sendMessage = async (data?: any) => {
   await channel.sendToQueue('integrationsNotification', Buffer.from(JSON.stringify(data || {})));
 };
 
-const initConsumer = async () => {
+export const initConsumer = async () => {
   // Consumer
   try {
     conn = await amqplib.connect(RABBITMQ_HOST);
@@ -122,6 +122,8 @@ const initConsumer = async () => {
             await handleFacebookMessage(content);
           case 'cronjob':
             await handleRunCronMessage();
+          case 'removeCustomers':
+            await removeCustomers(content);
         }
 
         channel.ack(msg);
@@ -139,13 +141,20 @@ const initConsumer = async () => {
 
         const { action, data } = parsedObject;
 
-        let response = { status: 'error', data: {} };
+        let response = null;
 
         if (action === 'remove-account') {
-          response = {
-            status: 'success',
-            data: removeAccount(data._id),
-          };
+          try {
+            response = {
+              status: 'success',
+              data: await removeAccount(data._id),
+            };
+          } catch (e) {
+            response = {
+              status: 'error',
+              errorMessage: e.message,
+            };
+          }
         }
 
         channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
@@ -159,5 +168,3 @@ const initConsumer = async () => {
     debugBase(e.message);
   }
 };
-
-initConsumer();

@@ -1,5 +1,4 @@
 import * as bodyParser from 'body-parser';
-import * as dotenv from 'dotenv';
 import * as express from 'express';
 import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
@@ -7,17 +6,16 @@ import { connect } from './connection';
 import { debugInit, debugIntegrations, debugRequest, debugResponse } from './debuggers';
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
-import { removeIntegration } from './helpers';
-import './messageBroker';
+import { removeIntegration, updateIntegrationConfigs } from './helpers';
+import { initConsumer } from './messageBroker';
 import Accounts from './models/Accounts';
-import initNylas from './nylas/controller';
+import Configs from './models/Configs';
+import { initNylas } from './nylas/controller';
+import { initRedis } from './redisClient';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
-
-// load environment variables
-dotenv.config();
-
-connect();
+import initDaily from './videoCall/controller';
+import initWhatsapp from './whatsapp/controller';
 
 const app = express();
 
@@ -40,9 +38,35 @@ initNylas(app);
 
 app.use(bodyParser.raw({ limit: '10mb', verify: rawBodySaver, type: '*/*' }));
 
-app.post('/integrations/remove', async (req, res) => {
+app.use((req, _res, next) => {
   debugRequest(debugIntegrations, req);
 
+  next();
+});
+
+app.post('/update-configs', async (req, res, next) => {
+  const { configsMap } = req.body;
+
+  try {
+    await updateIntegrationConfigs(configsMap);
+  } catch (e) {
+    return next(e);
+  }
+
+  debugResponse(debugIntegrations, req);
+
+  return res.json({ status: 'ok' });
+});
+
+app.get('/configs', async (req, res) => {
+  const configs = await Configs.find({});
+
+  debugResponse(debugIntegrations, req, JSON.stringify(configs));
+
+  return res.json(configs);
+});
+
+app.post('/integrations/remove', async (req, res) => {
   const { integrationId } = req.body;
 
   try {
@@ -57,8 +81,6 @@ app.post('/integrations/remove', async (req, res) => {
 });
 
 app.get('/accounts', async (req, res) => {
-  debugRequest(debugIntegrations, req);
-
   let { kind } = req.query;
 
   if (kind.includes('nylas')) {
@@ -89,6 +111,11 @@ initTwitter(app);
 // init chatfuel
 initChatfuel(app);
 
+// init whatsapp
+initWhatsapp(app);
+// init chatfuel
+initDaily(app);
+
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
@@ -98,8 +125,13 @@ app.use((error, _req, res, _next) => {
 const { PORT } = process.env;
 
 app.listen(PORT, () => {
-  debugInit(`Integrations server is running on port ${PORT}`);
+  connect().then(async () => {
+    await initRedis();
+    await initConsumer();
 
-  // Initialize startup
-  init();
+    // Initialize startup
+    init();
+  });
+
+  debugInit(`Integrations server is running on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
 import { debugGmail } from '../debuggers';
-import { getAuth, gmailClient } from './auth';
+import { getOauthClient, gmailClient } from './auth';
 import { ICredentials, IMailParams } from './types';
 import { getCredentialsByEmailAccountId } from './util';
 
@@ -77,9 +77,6 @@ const chunkSubstr = (str: string, size: number) => {
   return chunks;
 };
 
-/**
- * Create mime message and compose gmail
- */
 export const sendGmail = async (accountId: string, email: string, mailParams: IMailParams) => {
   const message = createMimeMessage(mailParams);
   const credentials = await getCredentialsByEmailAccountId({ email });
@@ -89,13 +86,9 @@ export const sendGmail = async (accountId: string, email: string, mailParams: IM
   return composeEmail(doc);
 };
 
-/**
- * Request to gmail API to send email
- */
 export const composeEmail = async ({
   credentials,
   message,
-  accountId,
   threadId,
 }: {
   credentials: ICredentials;
@@ -103,26 +96,25 @@ export const composeEmail = async ({
   accountId: string;
   threadId?: string;
 }) => {
-  const auth = getAuth(credentials, accountId);
-
-  let response;
-
-  const params = {
-    auth,
-    userId: 'me',
-    response: { threadId },
-    uploadType: 'multipart',
-    media: {
-      mimeType: 'message/rfc822',
-      body: message,
-    },
-  };
-
   try {
-    response = await gmailClient.messages.send(params);
-  } catch (e) {
-    return debugGmail(`Error Google: Could not send email ${e}`);
-  }
+    const auth = await getOauthClient();
 
-  return response;
+    auth.setCredentials(credentials);
+
+    const params = {
+      auth,
+      userId: 'me',
+      response: { threadId },
+      uploadType: 'multipart',
+      media: {
+        mimeType: 'message/rfc822',
+        body: message,
+      },
+    };
+
+    return gmailClient.messages.send(params);
+  } catch (e) {
+    debugGmail(`Error Google: Could not send email ${e}`);
+    throw e;
+  }
 };
