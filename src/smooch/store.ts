@@ -1,6 +1,3 @@
-import { debugSmooch } from '../debuggers';
-import { sendRPCMessage } from '../messageBroker';
-import { checkConcurrentError } from '../utils';
 import {
   SmoochLineConversationMessages,
   SmoochLineConversations,
@@ -15,7 +12,6 @@ import {
   SmoochViberConversations,
   SmoochViberCustomers,
 } from './models';
-
 import {
   IAPIConversation,
   IAPIConversationMessage,
@@ -25,6 +21,10 @@ import {
   ISmoochConversationMessageArguments,
   ISmoochCustomerArguments,
 } from './types';
+
+import { debugSmooch } from '../debuggers';
+import { sendRPCMessage } from '../messageBroker';
+import { checkConcurrentError } from '../utils';
 
 const SMOOCH_MODELS = {
   telegram: {
@@ -60,6 +60,7 @@ const createOrGetSmoochCustomer = async ({
   avatarUrl,
 }: ISmoochCustomerArguments) => {
   debugSmooch('Create or get smooch customer function called...');
+
   const { id, erxesApiId } = integrationIds;
   const common = { surname, givenName, email, phone, avatarUrl };
 
@@ -217,6 +218,7 @@ const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCre
       apiField: 'erxesApiMessageId',
     },
   };
+
   const model = SMOOCH_MODELS[kind][collectionName];
 
   let selectedObj = await model.findOne(selector);

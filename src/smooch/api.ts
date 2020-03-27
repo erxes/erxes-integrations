@@ -143,7 +143,6 @@ const setupSmoochWebhook = async () => {
     secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
     scope: 'app',
   });
-  console.log('setup webhook');
   try {
     const { webhooks } = await smooch.webhooks.list();
 

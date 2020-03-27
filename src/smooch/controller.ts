@@ -41,9 +41,10 @@ const init = async app => {
   });
 
   app.post('/smooch/create-integration', async (req, res, next) => {
+    debugRequest(debugSmooch, req);
+
     const { SMOOCH_APP_ID } = await getSmoochConfig();
 
-    debugRequest(debugSmooch, req);
     let { kind } = req.body;
 
     if (kind.includes('smooch')) {
