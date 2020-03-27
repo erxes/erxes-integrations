@@ -131,7 +131,9 @@ const setupSmoochWebhook = async () => {
     SMOOCH_APP_ID,
     SMOOCH_WEBHOOK_CALLBACK_URL,
   } = await getSmoochConfig();
+
   appId = SMOOCH_APP_ID;
+
   smooch = new Smooch({
     keyId: SMOOCH_APP_KEY_ID,
     secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
@@ -145,8 +147,9 @@ const setupSmoochWebhook = async () => {
       for (const hook of webhooks) {
         if (hook.target !== SMOOCH_WEBHOOK_CALLBACK_URL) {
           try {
+            console.log('updating webhook');
             await smooch.webhooks.update(hook._id, {
-              target: SMOOCH_WEBHOOK_CALLBACK_URL,
+              target: SMOOCH_WEBHOOK_CALLBACK_URL.replace(/\s/g, ''),
               includeClient: true,
             });
           } catch (e) {
