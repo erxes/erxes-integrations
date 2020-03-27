@@ -53,6 +53,7 @@ const init = async app => {
 
     const { data, integrationId } = req.body;
     const props = JSON.parse(data);
+
     props.type = kind;
 
     const smoochProps = <ISmoochProps>{
