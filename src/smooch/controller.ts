@@ -26,7 +26,6 @@ interface IMessage {
 }
 
 let smooch: Smooch;
-let appId = '';
 
 const init = async app => {
   app.post('/smooch/webhook', async (req, res, next) => {
@@ -42,6 +41,8 @@ const init = async app => {
   });
 
   app.post('/smooch/create-integration', async (req, res, next) => {
+    const { SMOOCH_APP_ID } = await getSmoochConfig();
+
     debugRequest(debugSmooch, req);
     let { kind } = req.body;
 
@@ -76,7 +77,7 @@ const init = async app => {
     const integration = await Integrations.create(smoochProps);
 
     try {
-      const result = await smooch.integrations.create({ appId, props });
+      const result = await smooch.integrations.create({ SMOOCH_APP_ID, props });
 
       await Integrations.updateOne({ _id: integration.id }, { $set: { smoochIntegrationId: result.integration._id } });
     } catch (e) {
@@ -90,6 +91,9 @@ const init = async app => {
 
   app.post('/smooch/reply', async (req, res, next) => {
     const { attachments, conversationId, content, integrationId } = req.body;
+
+    const { SMOOCH_APP_ID } = await getSmoochConfig();
+
     if (attachments.length > 1) {
       throw new Error('You can only attach one file');
     }
@@ -115,7 +119,7 @@ const init = async app => {
       }
 
       const { message } = await smooch.appUsers.sendMessage({
-        appId,
+        appId: SMOOCH_APP_ID,
         userId: user.smoochUserId,
         message: messageInput,
       });
@@ -139,9 +143,7 @@ const init = async app => {
 };
 
 export const setupSmooch = async () => {
-  const { SMOOCH_APP_KEY_ID, SMOOCH_SMOOCH_APP_KEY_SECRET, SMOOCH_APP_ID } = await getSmoochConfig();
-
-  appId = SMOOCH_APP_ID;
+  const { SMOOCH_APP_KEY_ID, SMOOCH_SMOOCH_APP_KEY_SECRET } = await getSmoochConfig();
 
   if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET) {
     debugSmooch(`
