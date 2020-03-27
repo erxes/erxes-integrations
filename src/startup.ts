@@ -1,10 +1,12 @@
-import { debugGmail, debugNylas, debugTwitter, debugWhatsapp, debugSmooch } from './debuggers';
+import * as twitterApi from './twitter/api';
+
+import { debugGmail, debugNylas, debugSmooch, debugTwitter, debugWhatsapp } from './debuggers';
+
 import { trackGmail } from './gmail/watch';
 import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
 import { setupSmoochWebhook } from './smooch/api';
 import { setupSmooch } from './smooch/controller';
-import * as twitterApi from './twitter/api';
 import { getConfig } from './utils';
 import { setupChatApi as setupWhatsapp } from './whatsapp/api';
 
