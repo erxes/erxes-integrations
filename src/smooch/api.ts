@@ -147,7 +147,8 @@ const setupSmoochWebhook = async () => {
       for (const hook of webhooks) {
         if (hook.target !== SMOOCH_WEBHOOK_CALLBACK_URL) {
           try {
-            console.log('updating webhook');
+            debugSmooch('updating webhook');
+
             await smooch.webhooks.update(hook._id, {
               target: SMOOCH_WEBHOOK_CALLBACK_URL.replace(/\s/g, ''),
               includeClient: true,
