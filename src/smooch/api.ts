@@ -27,7 +27,6 @@ export const getSmoochConfig = async () => {
 };
 
 let smooch: Smooch;
-let appId = '';
 
 const saveCustomer = async (customer: ISmoochCustomerInput) => {
   const { smoochIntegrationId, smoochUserId, surname, givenName, email, phone, avatarUrl } = customer;
@@ -114,9 +113,11 @@ const saveMessage = async (
 };
 
 const removeIntegration = async (integrationId: string) => {
+  const { SMOOCH_APP_ID } = await getSmoochConfig();
+
   try {
     await smooch.integrations.delete({
-      appId,
+      appId: SMOOCH_APP_ID,
       integrationId,
     });
   } catch (e) {
@@ -128,11 +129,14 @@ const setupSmoochWebhook = async () => {
   const {
     SMOOCH_APP_KEY_ID,
     SMOOCH_SMOOCH_APP_KEY_SECRET,
-    SMOOCH_APP_ID,
     SMOOCH_WEBHOOK_CALLBACK_URL,
+    SMOOCH_APP_ID,
   } = await getSmoochConfig();
 
-  appId = SMOOCH_APP_ID;
+  if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET || SMOOCH_WEBHOOK_CALLBACK_URL || SMOOCH_APP_ID) {
+    debugSmooch('Smooch is not configured');
+    return;
+  }
 
   smooch = new Smooch({
     keyId: SMOOCH_APP_KEY_ID,
