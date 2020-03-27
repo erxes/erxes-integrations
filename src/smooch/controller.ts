@@ -1,9 +1,9 @@
 import * as Smooch from 'smooch-core';
 import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
-import { getSmoochConfig, saveConversation, saveCustomer, saveMessage, getTelegramFile } from './api';
+import { getSmoochConfig } from './api';
+import receiveMessage from './receiveMessage';
 import { SMOOCH_MODELS } from './store';
-import { IAttachment, ISmoochCustomerInput } from './types';
 
 export interface ISmoochProps {
   kind: string;
@@ -29,58 +29,13 @@ let smooch: Smooch;
 let appId = '';
 
 const init = async app => {
-  app.post('/smooch/webhook', async (req, res) => {
+  app.post('/smooch/webhook', async (req, res, next) => {
     debugSmooch('Received new message in smooch...');
-
-    const { trigger } = req.body;
-
-    if (trigger === 'message:appUser') {
-      const { appUser, messages, conversation, client } = req.body;
-
-      const smoochIntegrationId = client.integrationId;
-
-      const customer: ISmoochCustomerInput = {
-        smoochIntegrationId,
-        surname: appUser.surname,
-        givenName: appUser.givenName,
-        smoochUserId: appUser._id,
-      };
-
-      if (client.platform === 'twilio') {
-        customer.phone = client.displayName;
-      } else if (client.platform === 'telegram' && client.raw.profile_photos.total_count !== 0) {
-        const { file_id } = client.raw.profile_photos.photos[0][0];
-
-        const { telegramBotToken } = await Integrations.findOne({ smoochIntegrationId });
-
-        customer.avatarUrl = await getTelegramFile(telegramBotToken, file_id);
-      } else if (client.platform === 'line' && client.raw.pictureUrl) {
-        customer.avatarUrl = client.raw.pictureUrl;
-      } else if (client.platform === 'viber' && client.raw.avatar) {
-        customer.avatarUrl = client.raw.avatar;
-      }
-
-      for (const message of messages) {
-        const content = message.text;
-        const received = message.received;
-
-        const customerId = await saveCustomer(customer);
-
-        const conversationIds = await saveConversation(
-          smoochIntegrationId,
-          conversation._id,
-          customerId,
-          content,
-          received,
-        );
-
-        if (message.type !== 'text') {
-          const attachment: IAttachment = { type: message.mediaType, url: message.mediaUrl };
-          await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id, attachment);
-        } else {
-          await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id);
-        }
-      }
+    console.log(req.body);
+    try {
+      await receiveMessage(req.body);
+    } catch (e) {
+      return next(e);
     }
 
     return res.status(200).send('success');
