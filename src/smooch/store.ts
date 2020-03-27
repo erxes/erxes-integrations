@@ -60,6 +60,7 @@ const createOrGetSmoochCustomer = async ({
   avatarUrl,
 }: ISmoochCustomerArguments) => {
   debugSmooch('Create or get smooch customer function called...');
+
   const { id, erxesApiId } = integrationIds;
   const common = { surname, givenName, email, phone, avatarUrl };
 
@@ -217,6 +218,7 @@ const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCre
       apiField: 'erxesApiMessageId',
     },
   };
+
   const model = SMOOCH_MODELS[kind][collectionName];
 
   let selectedObj = await model.findOne(selector);

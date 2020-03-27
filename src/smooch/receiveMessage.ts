@@ -9,8 +9,8 @@ const receiveMessage = async requestBody => {
   if (trigger !== 'message:appUser') {
     return;
   }
-  const { appUser, messages, conversation, client } = requestBody;
 
+  const { appUser, messages, conversation, client } = requestBody;
   const smoochIntegrationId = client.integrationId;
 
   const customer: ISmoochCustomerInput = {
@@ -49,9 +49,11 @@ const receiveMessage = async requestBody => {
     );
 
     let attachment: IAttachment;
+
     if (message.type !== 'text') {
       attachment = { type: message.mediaType, url: message.mediaUrl };
     }
+
     await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id, attachment);
   }
 };
