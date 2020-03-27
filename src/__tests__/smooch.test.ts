@@ -3,7 +3,6 @@ import './setup.ts';
 import * as sinon from 'sinon';
 import * as message from '../messageBroker';
 
-import { accountFactory, integrationFactory } from '../factories';
 import {
   SmoochViberConversationMessages as ConversationMessages,
   SmoochViberConversations as Conversations,
@@ -21,6 +20,7 @@ import {
   ISmoochCustomerArguments,
 } from '../smooch/types';
 
+import { integrationFactory } from '../factories';
 import receiveMessage from '../smooch/receiveMessage';
 
 describe('Smooch test test', () => {
@@ -111,18 +111,64 @@ describe('Smooch test test', () => {
   test('Recieve smooch message with null requestBody', async () => {
     const response = await receiveMessage({});
     await receiveMessage({
-      direct_message_events: [
+      trigger: 'message:appUser',
+      version: 'v1.1',
+      app: {
+        _id: '5d733cf1e723f1000f61a6aa',
+      },
+      appUser: {
+        _id: 'c98d398cfdb0cde022744d2e',
+        givenName: 'soyombo',
+        signedUpAt: '2020-03-26T09:43:15.198Z',
+        properties: {},
+        conversationStarted: true,
+      },
+      conversation: {
+        _id: '541dfddbdf6ccc2926203d48',
+      },
+      client: {
+        integrationId: '5e7c78f28244630011b19161',
+        externalId: 'vHjxG4kiPkimi/clMz6cHQ==',
+        id: '43aa3828-c305-42d2-a2c0-f9d79481c3b4',
+        displayName: 'soyombo',
+        status: 'active',
+        info: {
+          country: 'MN',
+          language: 'en',
+        },
+        raw: {
+          id: 'vHjxG4kiPkimi/clMz6cHQ==',
+          name: 'soyombo',
+          avatar:
+            'https://media-direct.cdn.viber.com/download_photo?dlid=koce_VDS55T_MkNL_aEkJoZ7FEKNrtYbAhvlrinbI0QEvLvu_z45zoivOZ2HdZWTGwY5-pGJYPO402g2CK1pyJBgU0hBKRwYE2I80LNLw9HtRkejoGeybazRorC8MLI4jJ2uPA&fltp=jpg&imsz=0000',
+          language: 'en',
+          country: 'MN',
+          api_version: 8,
+          primary_device_os: 'iOS 13.3.1',
+          viber_version: '12.6.0',
+          mcc: 428,
+          mnc: 99,
+          device_type: 'iPhone8,1',
+        },
+        lastSeen: '2020-03-27T06:34:21.901Z',
+        linkedAt: '2020-03-26T09:43:15.199Z',
+        avatarUrl:
+          'https://media-direct.cdn.viber.com/download_photo?dlid=koce_VDS55T_MkNL_aEkJoZ7FEKNrtYbAhvlrinbI0QEvLvu_z45zoivOZ2HdZWTGwY5-pGJYPO402g2CK1pyJBgU0hBKRwYE2I80LNLw9HtRkejoGeybazRorC8MLI4jJ2uPA&fltp=jpg&imsz=0000',
+        _id: '5e7c7933e71fd9000c0d15c2',
+        platform: 'viber',
+        active: true,
+        blocked: false,
+        primary: true,
+      },
+      messages: [
         {
-          type: '!message_create',
-          message_create: {
-            message_data: {
-              text: 'text',
-            },
-            sender_id: 'senderId',
-            target: {
-              recipient_id: 'recipent_id',
-            },
-          },
+          type: 'text',
+          text: 'Hello',
+          role: 'appUser',
+          received: 1585290861.907,
+          name: 'soyombo',
+          authorId: 'c98d398cfdb0cde022744d2e',
+          _id: '5e7d9e6db15f60001026c168',
         },
       ],
     });
@@ -175,7 +221,8 @@ describe('Smooch test test', () => {
       customerId: '123',
       attachments,
     };
-    await createConverstaionMessage(doc);
+    const msg = await createConverstaionMessage(doc);
+    console.log('msg: ', msg);
     await createConverstaionMessage(doc);
 
     expect(await ConversationMessages.find({}).countDocuments()).toBe(1);
@@ -286,9 +333,7 @@ describe('Smooch test test', () => {
       erxesApiId: 'saflksakfja',
       viberBotToken: 'aslkdjalksdjak',
     });
-    await Customers.create({
-      userId: '123',
-    });
+
     const integrationIds = {
       id: integration.id,
       erxesApiId: integration.erxesApiId,
