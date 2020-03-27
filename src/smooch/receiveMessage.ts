@@ -48,12 +48,11 @@ const receiveMessage = async requestBody => {
       received,
     );
 
+    let attachment: IAttachment;
     if (message.type !== 'text') {
-      const attachment: IAttachment = { type: message.mediaType, url: message.mediaUrl };
-      await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id, attachment);
-    } else {
-      await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id);
+      attachment = { type: message.mediaType, url: message.mediaUrl };
     }
+    await saveMessage(smoochIntegrationId, customerId, conversationIds, content, message._id, attachment);
   }
 };
 
