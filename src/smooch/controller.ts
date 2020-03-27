@@ -77,7 +77,7 @@ const init = async app => {
     const integration = await Integrations.create(smoochProps);
 
     try {
-      const result = await smooch.integrations.create({ SMOOCH_APP_ID, props });
+      const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
 
       await Integrations.updateOne({ _id: integration.id }, { $set: { smoochIntegrationId: result.integration._id } });
     } catch (e) {
