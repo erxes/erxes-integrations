@@ -31,7 +31,7 @@ let appId = '';
 const init = async app => {
   app.post('/smooch/webhook', async (req, res, next) => {
     debugSmooch('Received new message in smooch...');
-    console.log(req.body);
+
     try {
       await receiveMessage(req.body);
     } catch (e) {
