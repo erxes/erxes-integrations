@@ -43,7 +43,7 @@ const init = async app => {
 
     const body = req.body;
 
-    const messages: Array<{ attachment?: { type: string; payload: { url: string } }; text?: string }> = [
+    const messages: { attachment?: { type: string; payload: { url: string } }; text?: string }[] = [
       { text: body.content },
     ];
 

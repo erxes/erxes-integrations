@@ -34,10 +34,10 @@ export interface IChannelData {
   recipient: { id: string };
   timestamp: number;
   text?: string;
-  attachments?: Array<{
+  attachments?: {
     type: string;
     payload: { url: string };
-  }>;
+  }[];
   message: {
     mid: string;
   };
