@@ -1,5 +1,7 @@
 const userMiddleware = async (req, _res, next) => {
-  if (req.query.user) {
+  const userId = req.headers.userid;
+
+  if (userId) {
     return next();
   }
 
