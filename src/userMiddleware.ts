@@ -1,11 +1,21 @@
+import { getSet } from './redisClient';
+
 const userMiddleware = async (req, _res, next) => {
-  const userId = req.headers.userid;
+  try {
+    const { headers, query } = req;
 
-  if (userId) {
-    return next();
+    const userId = headers.userid || query.userId;
+
+    const userIds = await getSet('userIds');
+
+    if (userIds.includes(userId)) {
+      return next();
+    }
+
+    next(new Error('User not authorized'));
+  } catch (e) {
+    next(e);
   }
-
-  next(new Error('User not authorized'));
 };
 
 export default userMiddleware;

@@ -76,6 +76,18 @@ export const getArray = async (key: string): Promise<any> => {
   return JSON.parse(value);
 };
 
+export const getSet = async (key: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    client.smembers(key, (error, replies) => {
+      if (error) {
+        return reject(error);
+      }
+
+      return resolve(replies && replies !== 'nil' ? replies : []);
+    });
+  });
+};
+
 /*
  * Set array
  */
