@@ -76,16 +76,31 @@ export const getArray = async (key: string): Promise<any> => {
   return JSON.parse(value);
 };
 
-export const getSet = async (key: string): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    client.smembers(key, (error, replies) => {
-      if (error) {
-        return reject(error);
-      }
+/*
+ * Check if value exists in set
+ */
+export const inArray = async (setKey: string, setMember: string): Promise<any> => {
+  try {
+    const response = await new Promise((resolve, reject) => {
+      client.sismember(setKey, setMember, (error, reply) => {
+        if (error) {
+          return reject(error);
+        }
 
-      return resolve(replies && replies !== 'nil' ? replies : []);
+        return resolve(reply);
+      });
     });
-  });
+
+    return response;
+
+    // handle already stored invalid type error
+  } catch (e) {
+    if (e.message.includes('WRONGTYPE')) {
+      client.del(setKey);
+    }
+
+    return false;
+  }
 };
 
 /*

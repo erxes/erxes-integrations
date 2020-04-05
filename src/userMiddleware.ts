@@ -1,21 +1,29 @@
-import { getSet } from './redisClient';
+import { inArray } from './redisClient';
+
+const EXCLUDE_PATH = ['/nylas/webhook', '/nylas/auth/callback', '/nylas/oauth2/callback', '/gmaillogin'];
 
 const userMiddleware = async (req, _res, next) => {
-  try {
-    const { headers, query } = req;
+  const { path, headers, query } = req;
 
-    const userId = headers.userid || query.userId;
-
-    const userIds = await getSet('userIds');
-
-    if (userIds.includes(userId)) {
-      return next();
-    }
-
-    next(new Error('User not authorized'));
-  } catch (e) {
-    next(e);
+  if (EXCLUDE_PATH.includes(path)) {
+    return next();
   }
+
+  if (path.startsWith('/gmail') || path.startsWith('/accounts') || path.startsWith('/nylas')) {
+    try {
+      const userId = headers.userid || query.userId;
+
+      if (await inArray('userIds', userId)) {
+        return next();
+      }
+
+      next(new Error('User not authorized'));
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  next();
 };
 
 export default userMiddleware;
