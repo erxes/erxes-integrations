@@ -1,11 +1,14 @@
 import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import * as uuid from 'uuid';
+
 import { debugBase, debugGmail } from './debuggers';
+import { removeAccount, removeCustomers } from './helpers';
+
+import { Integrations } from './models';
+import { getQrCode } from './whatsapp/api';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
-import { removeAccount, removeCustomers } from './helpers';
-import { Integrations } from './models';
 
 dotenv.config();
 
@@ -148,6 +151,18 @@ export const initConsumer = async () => {
             response = {
               status: 'success',
               data: await removeAccount(data._id),
+            };
+          } catch (e) {
+            response = {
+              status: 'error',
+              errorMessage: e.message,
+            };
+          }
+        } else if (action === 'get-qrCode') {
+          try {
+            response = {
+              status: 'success',
+              data: await getQrCode(data._id),
             };
           } catch (e) {
             response = {
