@@ -1,8 +1,10 @@
 import * as request from 'request-promise';
+
+import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
+
 import { debugWhatsapp } from '../debuggers';
 import { Integrations } from '../models';
 import { getConfig } from '../utils';
-import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
 
 interface IAttachment {
   receiverId: string;
@@ -183,7 +185,7 @@ const setWebhook = async (instanceId, token) => {
     uri: `${CHAT_API_URL}/instance${instanceId}/settings?token=${token}`,
     method: 'POST',
     body: {
-      webhookUrl,
+      webhookUrl: webhookUrl.replace(/\s/g, ''),
       ackNotificationsOn: true,
       chatUpdateOn: true,
       videoUploadOn: true,
@@ -194,6 +196,31 @@ const setWebhook = async (instanceId, token) => {
 
   try {
     await request(options);
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const getQrCode = async integrationId => {
+  const { whatsappinstanceId, whatsappToken } = await Integrations.findOne({
+    erxesApiId: integrationId,
+    kind: 'whatsapp',
+  });
+
+  const options = {
+    method: 'GET',
+    uri: `${CHAT_API_URL}/instance${whatsappinstanceId}/status?token=${whatsappToken}`,
+    json: true,
+  };
+
+  console.log(`${CHAT_API_URL}/instance${whatsappinstanceId}/status?token=${whatsappToken}`);
+
+  try {
+    const result = await request(options);
+
+    if (result.accountStatus === 'got qr code') {
+      return result.qrCode;
+    }
   } catch (e) {
     throw e;
   }
