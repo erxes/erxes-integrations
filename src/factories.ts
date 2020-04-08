@@ -57,7 +57,7 @@ export const integrationFactory = (params: {
   email?: string;
   facebookPageIds?: string[];
   facebookPageTokensMap?: object;
-  viberBotToken?: string;
+  smoochIntegrationId?: string;
   whatsappinstanceId?: string;
 }) => {
   const integration = new Integrations({
@@ -67,7 +67,7 @@ export const integrationFactory = (params: {
     erxesApiId: params.erxesApiId || '_id',
     facebookPageIds: params.facebookPageIds || [],
     facebookPageTokensMap: params.facebookPageTokensMap || {},
-    viberBotToken: params.viberBotToken || 'aaksjfhakjsfhkalhf',
+    smoochIntegrationId: params.smoochIntegrationId || 'aaksjfhakjsfhkalhf',
     whatsappinstanceId: params.whatsappinstanceId || '123456',
   });
 

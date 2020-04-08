@@ -9,7 +9,7 @@ import { createMessage, createOrUpdateConversation, getOrCreateCustomer } from '
 import { integrationFactory } from '../factories';
 import receiveMessage from '../whatsapp/receiveMessage';
 
-describe('WhatsApp test test', () => {
+describe('WhatsApp test', () => {
   const requestBody = {
     messages: [
       {
@@ -112,11 +112,11 @@ describe('WhatsApp test test', () => {
       chatId: '97699491924@c.us',
       messageNumber: 30,
       type: 'chat',
-      senderName: 'Your Bunny',
+      senderName: 'contact name',
       caption: null,
       quotedMsgBody: null,
       quotedMsgId: null,
-      chatName: 'Your Bunny',
+      chatName: 'contact name',
     };
 
     const conversation = await Conversations.create({ _id: '123', erxesApiId: '1234' });
@@ -161,11 +161,11 @@ describe('WhatsApp test test', () => {
       chatId: '97699491924@c.us',
       messageNumber: 30,
       type: 'chat',
-      senderName: 'Your Bunny',
+      senderName: 'contact name',
       caption: null,
       quotedMsgBody: null,
       quotedMsgId: null,
-      chatName: 'Your Bunny',
+      chatName: 'contact name',
     };
 
     try {
@@ -196,11 +196,11 @@ describe('WhatsApp test test', () => {
         chatId: '97699491924@c.us',
         messageNumber: 30,
         type: 'chat',
-        senderName: 'Your Bunny',
+        senderName: 'contact name',
         caption: null,
         quotedMsgBody: null,
         quotedMsgId: null,
-        chatName: 'Your Bunny',
+        chatName: 'contact name',
       },
     ];
 
