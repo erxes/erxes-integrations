@@ -27,23 +27,22 @@ describe('Smooch Viber test', () => {
   const requestBody = {
     trigger: 'message:appUser',
     appUser: {
-      _id: '7ffd55c99c88a00a5d8f9ead',
-      givenName: 'soyombo',
+      _id: '124124125120591fasgf',
+      givenName: 'customer name',
       signedUpAt: '2020-04-08T13:33:55.981Z',
       properties: {},
       conversationStarted: true,
     },
     conversation: {
-      _id: '44567ae3470a318649cd8932',
+      _id: '12345676788999',
     },
     client: {
-      integrationId: '5e8dd2954b95280010211617',
-      displayName: 'soyombo',
+      integrationId: '123456778900',
+      displayName: 'customer name',
       status: 'active',
       raw: {
-        avatar:
-          'https://media-direct.cdn.viber.com/download_photo?dlid=koce_VDS55T_MkNL_aEkJoZ7FEKNrtYbAhvlrinbI0QEvLvu_z45zoivOZ2HdZWTGwY5-pGJYPO402g2CK1pyJBgU0hBKRwYE2I80LNLw9HtRkejoGeybazRorC8MLI4jJ2uPA&fltp=jpg&imsz=0000',
-        name: 'soyombo',
+        avatar: 'http://placehold.it/120x120',
+        name: 'customer name',
         id: 'vHjxG4kiPkimi/clMz6cHQ==',
       },
       platform: 'viber',
@@ -54,9 +53,9 @@ describe('Smooch Viber test', () => {
         text: 'Hello',
         role: 'appUser',
         received: 1586352836.136,
-        name: 'soyombo',
-        authorId: '7ffd55c99c88a00a5d8f9ead',
-        _id: '5e8dd2c4e75f3b000c6e3b1c',
+        name: 'customer name',
+        authorId: 'apfsajkslj41l24j1k24l',
+        _id: 'asflkjsarlk1j4kj124',
       },
     ],
   };

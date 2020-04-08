@@ -13,14 +13,14 @@ describe('WhatsApp test', () => {
   const requestBody = {
     messages: [
       {
-        id: 'false_97699491924@c.us_3A6562C5D73ECD305149',
+        id: 'false_1234567890@c.us_3A6562C5D73ECD305149',
         body: 'Cut',
         fromMe: false,
         self: 0,
         isForwarded: 0,
-        author: '97699491924@c.us',
+        author: '1234567890@c.us',
         time: 1585036833,
-        chatId: '97699491924@c.us',
+        chatId: '1234567890@c.us',
         messageNumber: 30,
         type: 'chat',
         senderName: 'contact name',
@@ -102,14 +102,14 @@ describe('WhatsApp test', () => {
     });
 
     const message = {
-      id: 'false_97699491924@c.us_3A6562C5D73ECD305149',
+      id: 'false_1234567890@c.us_3A6562C5D73ECD305149',
       body: 'Cut',
       fromMe: false,
       self: 0,
       isForwarded: 0,
-      author: '97699491924@c.us',
+      author: '1234567890@c.us',
       time: 1585036833,
-      chatId: '97699491924@c.us',
+      chatId: '1234567890@c.us',
       messageNumber: 30,
       type: 'chat',
       senderName: 'contact name',
@@ -151,14 +151,14 @@ describe('WhatsApp test', () => {
     };
 
     const message = {
-      id: 'false_97699491924@c.us_3A6562C5D73ECD305149',
+      id: 'false_1234567890@c.us_3A6562C5D73ECD305149',
       body: 'Cut',
       fromMe: false,
       self: 0,
       isForwarded: 0,
-      author: '97699491924@c.us',
+      author: '1234567890@c.us',
       time: 1585036833,
-      chatId: '97699491924@c.us',
+      chatId: '1234567890@c.us',
       messageNumber: 30,
       type: 'chat',
       senderName: 'contact name',
@@ -186,14 +186,14 @@ describe('WhatsApp test', () => {
 
     const messages = [
       {
-        id: 'false_97699491924@c.us_3A6562C5D73ECD305150',
+        id: 'false_1234567890@c.us_3A6562C5D73ECD305150',
         body: 'Cut',
         fromMe: false,
         self: 0,
         isForwarded: 0,
-        author: '97699491924@c.us',
+        author: '1234567890@c.us',
         time: 1585036833,
-        chatId: '97699491924@c.us',
+        chatId: '1234567890@c.us',
         messageNumber: 30,
         type: 'chat',
         senderName: 'contact name',
