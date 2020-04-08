@@ -1,7 +1,9 @@
+import { ConversationMessages, Conversations, Customers } from './models';
+
 import { debugWhatsapp } from '../debuggers';
 import { sendRPCMessage } from '../messageBroker';
 import { Integrations } from '../models';
-import { ConversationMessages, Conversations, Customers } from './models';
+
 export interface IUser {
   id: string;
   created_timestamp: string;
@@ -21,11 +23,15 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
     return customer;
   }
 
-  customer = await Customers.create({
-    phoneNumber,
-    name,
-    integrationId: integration.id,
-  });
+  try {
+    customer = await Customers.create({
+      phoneNumber,
+      name,
+      integrationId: integration.id,
+    });
+  } catch (e) {
+    throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
+  }
 
   // save on api
   try {
@@ -51,7 +57,7 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
   return customer;
 };
 
-export const createOrUpdateConversation = async (messages, instanceId: string, customerIds, integrationIds) => {
+export const createOrUpdateConversation = async (message, instanceId: string, customerIds, integrationIds) => {
   const { customerId, customerErxesApiID } = customerIds;
 
   const { integrationId, integrationErxesApiId } = integrationIds;
@@ -61,69 +67,45 @@ export const createOrUpdateConversation = async (messages, instanceId: string, c
     instanceId,
   });
 
-  for (const message of messages || []) {
-    if (!message || message.fromMe) {
-      return true;
-    }
+  if (conversation) {
+    return conversation;
+  }
 
-    let conversationIds = {};
+  conversation = await Conversations.create({
+    timestamp: new Date(),
+    senderId: customerId,
+    recipientId: message.chatId,
+    content: message.body,
+    integrationId,
+    instanceId,
+  });
 
-    if (conversation) {
-      conversationIds = {
-        conversationId: conversation.id,
-        conversationErxesApiId: conversation.erxesApiId,
-        customerErxesApiId: customerErxesApiID,
-      };
-
-      await createMessage(message, conversationIds);
-
-      return conversation;
-    }
-
-    conversation = await Conversations.create({
-      timestamp: new Date(),
-      senderId: customerId,
-      recipientId: message.chatId,
-      content: message.body,
-      integrationId,
-      instanceId,
+  // save on api
+  try {
+    const apiConversationResponse = await sendRPCMessage({
+      action: 'create-or-update-conversation',
+      payload: JSON.stringify({
+        customerId: customerErxesApiID,
+        integrationId: integrationErxesApiId,
+        content: message.body,
+      }),
     });
 
-    // save on api
-    try {
-      const apiConversationResponse = await sendRPCMessage({
-        action: 'create-or-update-conversation',
-        payload: JSON.stringify({
-          customerId: customerErxesApiID,
-          integrationId: integrationErxesApiId,
-          content: message.body,
-        }),
-      });
+    conversation.erxesApiId = apiConversationResponse._id;
 
-      conversation.erxesApiId = apiConversationResponse._id;
+    await conversation.save();
+  } catch (e) {
+    await Conversations.deleteOne({ _id: conversation._id });
 
-      await conversation.save();
-    } catch (e) {
-      await Conversations.deleteOne({ _id: conversation._id });
+    debugWhatsapp(`Error ocurred while trying to create or update conversation ${e.message}`);
 
-      debugWhatsapp(`Error ocurred while trying to create or update conversation ${e.message}`);
-
-      throw e;
-    }
-
-    conversationIds = {
-      conversationId: conversation.id,
-      conversationErxesApiId: conversation.erxesApiId,
-      customerErxesApiId: customerErxesApiID,
-    };
-
-    await createMessage(message, conversationIds);
+    throw e;
   }
 
   return conversation;
 };
 
-const createMessage = async (message, conversationIds) => {
+export const createMessage = async (message, conversationIds) => {
   const { conversationId, conversationErxesApiId, customerErxesApiId } = conversationIds;
 
   const conversationMessage = await ConversationMessages.findOne({
@@ -171,7 +153,7 @@ const createMessage = async (message, conversationIds) => {
       }),
     });
   } catch (e) {
-    await ConversationMessages.deleteOne({ mid: message.mid });
+    await ConversationMessages.deleteOne({ mid: message.id });
     throw new Error(e);
   }
 

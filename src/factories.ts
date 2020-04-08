@@ -58,6 +58,7 @@ export const integrationFactory = (params: {
   facebookPageIds?: string[];
   facebookPageTokensMap?: object;
   viberBotToken?: string;
+  whatsappinstanceId?: string;
 }) => {
   const integration = new Integrations({
     kind: params.kind || 'facebook',
@@ -67,6 +68,7 @@ export const integrationFactory = (params: {
     facebookPageIds: params.facebookPageIds || [],
     facebookPageTokensMap: params.facebookPageTokensMap || {},
     viberBotToken: params.viberBotToken || 'aaksjfhakjsfhkalhf',
+    whatsappinstanceId: params.whatsappinstanceId || '123456',
   });
 
   return integration.save();

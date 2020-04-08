@@ -1,6 +1,7 @@
+import { createMessage, createOrUpdateConversation, getOrCreateCustomer } from './store';
+
 import Integrations from '../models/Integrations';
 import { ConversationMessages } from './models';
-import { createOrUpdateConversation, getOrCreateCustomer } from './store';
 
 const receiveMessage = async requestBody => {
   const { instanceId, acknowledges, messages } = requestBody;
@@ -17,6 +18,10 @@ const receiveMessage = async requestBody => {
 
   if (messages) {
     for (const message of messages) {
+      if (!message || message.fromMe) {
+        return;
+      }
+
       const phoneNumber = message.chatId.split('@', 2)[0];
 
       const customer = await getOrCreateCustomer(phoneNumber, message.senderName, instanceId);
@@ -31,7 +36,15 @@ const receiveMessage = async requestBody => {
         integrationErxesApiId: integration.erxesApiId,
       };
 
-      await createOrUpdateConversation(requestBody.messages, instanceId, customerIds, integrationIds);
+      const conversation = await createOrUpdateConversation(message, instanceId, customerIds, integrationIds);
+
+      const conversationIds = {
+        conversationId: conversation._id,
+        conversationErxesApiId: conversation.erxesApiId,
+        customerErxesApiId: customer.erxesApiId,
+      };
+
+      await createMessage(message, conversationIds);
     }
   }
 };
