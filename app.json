@@ -24,8 +24,8 @@
       "value": "https://erxes-api.herokuapp.com"
     },
     "MONGO_URL": {
-      "description": "MONGO URL",
-      "value": "MONGO_URL"
+      "description": "Integration MONGO URL",
+      "value": "INTEGRATION_MONGO_URL"
     },
     "RABBITMQ_HOST": {
       "description": "RABBITMQ_HOST",
