@@ -196,8 +196,8 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     }
 
     await TwitterConversationMessages.deleteMany(selector);
-    await TwitterConversations.deleteMany(selector);
-    await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
+    await TwitterConversations.deleteMany({ conversationId: { $in: conversationIds } });
+    await TwitterCustomers.deleteMany(selector);
   }
 
   if (kind === 'whatsapp') {
@@ -475,9 +475,9 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
 
   await Configs.updateConfigs(configsMap);
 
-  const updatedTwitterConfig = await getTwitterConfig();
-
   resetConfigsCache();
+
+  const updatedTwitterConfig = await getTwitterConfig();
 
   const updatedNylasClientId = await getValueAsString('NYLAS_CLIENT_ID');
   const updatedNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');
