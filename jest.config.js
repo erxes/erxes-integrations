@@ -12,6 +12,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/facebook/**',
     'src/twitter/**',
+    'src/whatsapp/**',
     '!src/twitter/api.ts',
     '!src/facebook/utils.ts',
     '!src/facebook/handleFacebookMessage.ts',

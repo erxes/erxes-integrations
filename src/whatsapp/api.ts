@@ -2,8 +2,8 @@ import * as request from 'request-promise';
 
 import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
 
-import { Integrations } from '../models';
 import { debugWhatsapp } from '../debuggers';
+import { Integrations } from '../models';
 import { getConfig } from '../utils';
 
 export interface IAttachment {
@@ -64,6 +64,12 @@ export const saveInstance = async (integrationId, instanceId, token) => {
     throw new Error(`Integration already exists with this instance id: ${instanceId}`);
   }
 
+  const webhookUrl = await getConfig('CHAT_API_WEBHOOK_CALLBACK_URL');
+
+  if (!webhookUrl) {
+    throw new Error('Webhook url is not configured');
+  }
+
   integration = await Integrations.create({
     kind: 'whatsapp',
     erxesApiId: integrationId,
@@ -71,16 +77,25 @@ export const saveInstance = async (integrationId, instanceId, token) => {
     whatsappToken: token,
   });
 
+  const options = {
+    uri: `${CHAT_API_URL}/instance${instanceId}/settings?token=${token}`,
+    method: 'POST',
+    body: {
+      webhookUrl,
+      ackNotificationsOn: true,
+      chatUpdateOn: true,
+      videoUploadOn: true,
+      statusNotificationsOn: true,
+      ignoreOldMessages: true,
+    },
+    json: true,
+  };
+
   try {
-    return await setWebhook(instanceId, token);
+    await request(options);
   } catch (e) {
     await Integrations.deleteOne({ _id: integration.id });
-    if (e.message.includes('not paid')) {
-      debugWhatsapp(`Failed to setup instance: ${e.message}`);
-      throw new Error(`Instance "${instanceId}" is not paid. Please pay at app.chat-api.com`);
-    } else {
-      throw new Error(e.message);
-    }
+    throw new Error(e.message);
   }
 };
 
