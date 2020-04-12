@@ -1,10 +1,12 @@
 import * as request from 'request-promise';
-import { debugWhatsapp } from '../debuggers';
-import { Integrations } from '../models';
-import { getConfig } from '../utils';
+
 import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
 
-interface IAttachment {
+import { Integrations } from '../models';
+import { debugWhatsapp } from '../debuggers';
+import { getConfig } from '../utils';
+
+export interface IAttachment {
   receiverId: string;
   body: string;
   filename: string;
@@ -82,39 +84,6 @@ export const saveInstance = async (integrationId, instanceId, token) => {
   }
 };
 
-export const createInstance = async () => {
-  const uid = await getConfig('CHAT_API_UID');
-
-  // newInstance
-  const options = {
-    method: 'POST',
-    uri: `${CHAT_API_INSTANCEAPI_URL}/newInstance`,
-    body: {
-      uid,
-      type: 'whatsapp',
-    },
-    json: true,
-  };
-
-  const { result, error } = await request(options);
-
-  if (error) {
-    throw new Error(error);
-  }
-
-  const { id, apiUrl, token } = result.instance;
-
-  debugWhatsapp(`sending request to ${apiUrl}status?token=${token}`);
-
-  const qr = await request({ uri: `${apiUrl}status?token=${token}`, method: 'GET', json: true });
-
-  qr.instanceId = id;
-  qr.token = token;
-  qr.apiUrl = apiUrl;
-
-  return qr;
-};
-
 export const setupChatApi = async () => {
   const uid = await getConfig('CHAT_API_UID');
 
@@ -143,25 +112,6 @@ export const setupChatApi = async () => {
   }
 };
 
-export const removeInstance = async (instanceId, uid) => {
-  const options = {
-    method: 'POST',
-    uri: `${CHAT_API_INSTANCEAPI_URL}/deleteInstance`,
-    body: {
-      instanceId,
-      uid,
-    },
-    json: true,
-  };
-
-  try {
-    await request(options);
-    await Integrations.deleteOne({ whatsappinstanceId: instanceId });
-  } catch (e) {
-    throw e;
-  }
-};
-
 export const logout = async (instanceId, token) => {
   const options = {
     method: 'POST',
@@ -176,7 +126,7 @@ export const logout = async (instanceId, token) => {
   }
 };
 
-const setWebhook = async (instanceId, token) => {
+export const setWebhook = async (instanceId, token) => {
   const webhookUrl = await getConfig('CHAT_API_WEBHOOK_CALLBACK_URL');
 
   const options = {
@@ -188,6 +138,7 @@ const setWebhook = async (instanceId, token) => {
       chatUpdateOn: true,
       videoUploadOn: true,
       statusNotificationsOn: true,
+      ignoreOldMessages: true,
     },
     json: true,
   };

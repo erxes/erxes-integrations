@@ -4,14 +4,14 @@ import Integrations from '../models/Integrations';
 import { ConversationMessages } from './models';
 
 const receiveMessage = async requestBody => {
-  const { instanceId, acknowledges, messages } = requestBody;
+  const { instanceId, ack, messages } = requestBody;
 
   const integration = await Integrations.getIntegration({
     $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
   });
 
-  if (acknowledges) {
-    for (const acknowledge of acknowledges) {
+  if (ack) {
+    for (const acknowledge of ack) {
       await ConversationMessages.updateOne({ mid: acknowledge.id }, { $set: { status: acknowledge.status } });
     }
   }
