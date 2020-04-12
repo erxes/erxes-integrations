@@ -2,7 +2,6 @@ import * as request from 'request-promise';
 
 import { CHAT_API_INSTANCEAPI_URL, CHAT_API_URL } from './constants';
 
-import { debugWhatsapp } from '../debuggers';
 import { Integrations } from '../models';
 import { getConfig } from '../utils';
 

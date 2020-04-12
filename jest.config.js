@@ -13,6 +13,7 @@ module.exports = {
     'src/facebook/**',
     'src/twitter/**',
     'src/whatsapp/**',
+    'src/smooch/**',
     '!src/twitter/api.ts',
     '!src/facebook/utils.ts',
     '!src/facebook/handleFacebookMessage.ts',

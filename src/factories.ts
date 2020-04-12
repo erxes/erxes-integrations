@@ -59,6 +59,7 @@ export const integrationFactory = (params: {
   facebookPageTokensMap?: object;
   smoochIntegrationId?: string;
   whatsappinstanceId?: string;
+  telegramBotToken?: string;
   whatsappToken?: string;
 }) => {
   const integration = new Integrations({
@@ -71,6 +72,7 @@ export const integrationFactory = (params: {
     smoochIntegrationId: params.smoochIntegrationId || 'aaksjfhakjsfhkalhf',
     whatsappinstanceId: params.whatsappinstanceId || '123456',
     whatsappToken: params.whatsappToken || 'asdag123',
+    telegramBotToken: params.telegramBotToken || 'asfasfk;alskf',
   });
 
   return integration.save();
