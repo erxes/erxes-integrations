@@ -23,8 +23,6 @@ const receiveMessage = async requestBody => {
   if (client.platform === 'twilio') {
     customer.phone = client.displayName;
   } else if (client.platform === 'telegram' && client.raw.profile_photos.total_count !== 0) {
-    console.log(requestBody);
-
     const { file_id } = client.raw.profile_photos.photos[0][0];
 
     const { telegramBotToken } = await Integrations.findOne({ smoochIntegrationId });
@@ -41,7 +39,7 @@ const receiveMessage = async requestBody => {
     const received = message.received;
 
     const customerId = await saveCustomer(customer);
-    console.log('customerId:', customerId);
+
     const conversationIds = await saveConversation(
       smoochIntegrationId,
       conversation._id,

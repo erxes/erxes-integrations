@@ -1,26 +1,21 @@
-import './setup.ts';
-
+import * as request from 'request-promise';
 import * as sinon from 'sinon';
-import * as messageBroker from '../messageBroker';
-import * as whatsappUtils from '../whatsapp/api';
-import { ConversationMessages, Conversations, Customers } from '../whatsapp/models';
-import { createMessage, createOrUpdateConversation, getOrCreateCustomer } from '../whatsapp/store';
-
 import { integrationFactory } from '../factories';
 import { updateIntegrationConfigs } from '../helpers';
+import * as messageBroker from '../messageBroker';
+import * as whatsappUtils from '../whatsapp/api';
 import { IAttachment } from '../whatsapp/api';
+import { ConversationMessages, Conversations, Customers } from '../whatsapp/models';
 import receiveMessage from '../whatsapp/receiveMessage';
+import { createMessage, createOrUpdateConversation, getOrCreateCustomer } from '../whatsapp/store';
+import './setup.ts';
 
 describe('WhatsApp test', () => {
-  const uid = '6os6mUyPjrNHxO3XISgI1KTSmNi1';
+  const uid = 'alksjdlkasjdlkajsldkjakld';
 
   const webhookUrl = 'https://fakewebhook.com';
 
-  const normalInstance = { instanceId: '115780', token: 'p24x1e0xwyo8udrt' };
-
-  const expiredInstance = { instanceId: '109211', token: 'eg9oxy01c6gdq49c' };
-
-  const fakeInstance = { instanceId: '986435', token: 'aglkdsqwrjvkck' };
+  const instance = { instanceId: '123456', token: 'aglkdsqwrjvkck' };
 
   const requestBody = {
     messages: [
@@ -94,11 +89,8 @@ describe('WhatsApp test', () => {
   });
 
   test('Reply ', async () => {
-    const conversation = await Conversations.create({ erxesApiId: '123', recipientId: '456' });
-
-    await whatsappUtils.reply(conversation.recipientId, 'content', normalInstance.instanceId, normalInstance.token);
     try {
-      await whatsappUtils.reply(conversation.recipientId, 'content', fakeInstance.instanceId, fakeInstance.token);
+      await whatsappUtils.reply('', '', '', '');
     } catch (e) {
       expect(e).toBeDefined();
     }
@@ -106,53 +98,46 @@ describe('WhatsApp test', () => {
 
   test('sendFile tests', async () => {
     const file = <IAttachment>{
-      instanceId: normalInstance.instanceId,
-      token: normalInstance.token,
+      instanceId: instance.instanceId,
+      token: instance.token,
       receiverId: '1111',
       body: 'http://placehold.it/120x120',
       filename: 'placeholder',
       caption: 'caption',
     };
-
-    const file1 = <IAttachment>{
-      instanceId: fakeInstance.instanceId,
-      token: fakeInstance.token,
-      receiverId: '1111',
-      body: 'http://placehold.it/120x120',
-      filename: 'placeholder',
-      caption: 'caption',
-    };
-    await whatsappUtils.sendFile(file);
 
     try {
-      await whatsappUtils.sendFile(file1);
+      await whatsappUtils.sendFile(file);
     } catch (e) {
       expect(e).toBeDefined();
     }
   });
 
   test('save instance', async () => {
-    const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
+    const configsMap = { CHAT_API_UID: uid, CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
     await updateIntegrationConfigs(configsMap);
-    await whatsappUtils.saveInstance('123', normalInstance.instanceId, normalInstance.token);
+    try {
+      await whatsappUtils.saveInstance('123', '654321', instance.token);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
   });
 
   test('save instance when webhook not set', async () => {
-    const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: null };
+    const configsMap = { CHAT_API_UID: uid, CHAT_API_WEBHOOK_CALLBACK_URL: null };
     await updateIntegrationConfigs(configsMap);
     try {
-      const result = await whatsappUtils.saveInstance('123', fakeInstance.instanceId, fakeInstance.token);
-      console.log('result: ', result);
+      await whatsappUtils.saveInstance('123', '098765', instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
   });
 
   test('save instance with error', async () => {
-    const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
+    const configsMap = { CHAT_API_UID: uid, CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
     await updateIntegrationConfigs(configsMap);
     try {
-      await whatsappUtils.saveInstance('111', fakeInstance.instanceId, fakeInstance.token);
+      await whatsappUtils.saveInstance('111', instance.instanceId, instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
@@ -161,11 +146,11 @@ describe('WhatsApp test', () => {
   test('save instance with already exists error', async () => {
     await integrationFactory({
       kind: 'whatsapp',
-      whatsappinstanceId: normalInstance.instanceId,
-      whatsappToken: normalInstance.token,
+      whatsappinstanceId: instance.instanceId,
+      whatsappToken: instance.token,
     });
     try {
-      await whatsappUtils.saveInstance('123', normalInstance.instanceId, normalInstance.token);
+      await whatsappUtils.saveInstance('123', instance.instanceId, instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
@@ -174,74 +159,79 @@ describe('WhatsApp test', () => {
   test('logout', async () => {
     await integrationFactory({
       kind: 'whatsapp',
-      whatsappinstanceId: normalInstance.instanceId,
-      whatsappToken: normalInstance.token,
+      whatsappinstanceId: instance.instanceId,
+      whatsappToken: instance.token,
     });
     try {
-      await whatsappUtils.logout(normalInstance.instanceId, normalInstance.token);
+      await whatsappUtils.logout(instance.instanceId, instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
 
     await integrationFactory({
       kind: 'whatsapp',
-      whatsappinstanceId: fakeInstance.instanceId,
-      whatsappToken: fakeInstance.token,
+      whatsappinstanceId: instance.instanceId,
+      whatsappToken: instance.token,
     });
     try {
-      await whatsappUtils.logout(fakeInstance.instanceId, fakeInstance.token);
+      await whatsappUtils.logout(instance.instanceId, instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
   });
 
   test('setup chat api', async () => {
-    const configsMap = { CHAT_API_UID: uid, CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
-    await updateIntegrationConfigs(configsMap);
-
-    await integrationFactory({ kind: 'whatsapp', whatsappinstanceId: '115780', whatsappToken: 'p24x1e0xwyo8udrt' });
-
-    await whatsappUtils.setupChatApi();
-  });
-
-  test('setup chat api with uid missing error', async () => {
-    const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
-    await updateIntegrationConfigs(configsMap);
-    try {
-      await whatsappUtils.setupChatApi();
-    } catch (e) {
-      expect(e).toBeDefined();
-    }
-  });
-
-  test('setup chat api with wrong uid', async () => {
-    const configsMap = { CHAT_API_UID: 'asdjlasjdaslkdjlaksjd', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
-    await updateIntegrationConfigs(configsMap);
-
-    await integrationFactory({
-      kind: 'whatsapp',
-      whatsappinstanceId: expiredInstance.instanceId,
-      whatsappToken: expiredInstance.token,
+    const mock = sinon.stub(request, 'Request').callsFake(() => {
+      return Promise.resolve({ result: [{ id: '1234567' }, { id: '1234' }] });
     });
 
+    const configsMap = { CHAT_API_UID: 'qwe123', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
+    await updateIntegrationConfigs(configsMap);
+
+    await integrationFactory({ kind: 'whatsapp', whatsappinstanceId: '1234567', whatsappToken: 'p24x1e0xwyo8udrt' });
     try {
       await whatsappUtils.setupChatApi();
     } catch (e) {
       expect(e).toBeDefined();
     }
+    mock.restore();
+
+    await updateIntegrationConfigs({ CHAT_API_UID: '' });
   });
 
   test('webhook test', async () => {
+    const mock = sinon.stub(request, 'Request').callsFake(() => {
+      return Promise.resolve({
+        sendDelay: null,
+        webhookUrl: null,
+        instanceStatuses: null,
+        webhookStatuses: null,
+        statusNotificationsOn: null,
+        ackNotificationsOn: null,
+        chatUpdateOn: null,
+        videoUploadOn: null,
+        proxy: null,
+        guaranteedHooks: null,
+        ignoreOldMessages: null,
+        processArchive: null,
+        disableDialogsArchive: null,
+      });
+    });
     const configsMap = { CHAT_API_UID: uid, CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
     await updateIntegrationConfigs(configsMap);
 
     await integrationFactory({
       kind: 'whatsapp',
-      whatsappinstanceId: normalInstance.instanceId,
-      whatsappToken: normalInstance.token,
+      whatsappinstanceId: instance.instanceId,
+      whatsappToken: instance.token,
     });
+    try {
+      await whatsappUtils.setWebhook(instance.instanceId, instance.token);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
 
-    await whatsappUtils.setWebhook(normalInstance.instanceId, normalInstance.token);
+    mock.restore();
   });
 
   test('webhook test with error', async () => {
@@ -250,11 +240,11 @@ describe('WhatsApp test', () => {
 
     await integrationFactory({
       kind: 'whatsapp',
-      whatsappinstanceId: fakeInstance.instanceId,
-      whatsappToken: fakeInstance.token,
+      whatsappinstanceId: instance.instanceId,
+      whatsappToken: instance.token,
     });
     try {
-      await whatsappUtils.setWebhook(fakeInstance.instanceId, fakeInstance.token);
+      await whatsappUtils.setWebhook(instance.instanceId, instance.token);
     } catch (e) {
       expect(e).toBeDefined();
     }
@@ -497,4 +487,15 @@ describe('WhatsApp test', () => {
 
     mock.restore();
   });
+
+  // test('setup chat api with uid missing error', async () => {
+  //   const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
+
+  //   await updateIntegrationConfigs(configsMap);
+  //   try {
+  //     await whatsappUtils.setupChatApi();
+  //   } catch (e) {
+  //     expect(e).toBeDefined();
+  //   }
+  // });
 });

@@ -55,6 +55,7 @@ export const sendFile = async (attachment: IAttachment) => {
 
 export const saveInstance = async (integrationId, instanceId, token) => {
   // Check existing Integration
+
   let integration = await Integrations.findOne({
     $and: [{ whatsappinstanceId: instanceId }, { kind: 'whatsapp' }],
   });
