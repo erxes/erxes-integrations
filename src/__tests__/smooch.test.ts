@@ -510,6 +510,65 @@ describe('Smooch test', () => {
     configMock.restore();
   });
 
+  test('create integration', async () => {
+    const reqViber = {
+      kind: 'smooch-viber',
+      integrationId: '123',
+      data: '{ "displayName": "viber", "token": "21243" }',
+    };
+    const reqTelegram = {
+      kind: 'smooch-telegram',
+      integrationId: '234',
+      data: '{ "displayName": "telegram", "token": "21243" }',
+    };
+    const reqLine = {
+      kind: 'smooch-line',
+      integrationId: '345',
+      data: '{ "displayName": "line", "channelId": "21243", "channelSecret": "123123123" }',
+    };
+    const reqTwilio = {
+      kind: 'smooch-twilio',
+      integrationId: '456',
+      data: '{ "displayName": "twilio", "accountSid": "21243", "authToken": "123123", "phoneNumberSid": "123123" }',
+    };
+
+    const mock = sinon.stub(smoochUtils, 'setupSmooch');
+
+    mock.onCall(0).returns({
+      integrations: {
+        create: () => {
+          return {
+            integration: {
+              _id: '1294',
+            },
+          };
+        },
+      },
+    });
+
+    await smoochUtils.createIntegration(reqViber);
+
+    try {
+      await smoochUtils.createIntegration(reqTelegram);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.createIntegration(reqLine);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.createIntegration(reqTwilio);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    mock.restore();
+  });
+
   test('setup smooch', async () => {
     try {
       await smoochUtils.setupSmooch();
