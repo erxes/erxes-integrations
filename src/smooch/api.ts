@@ -173,9 +173,9 @@ const setupSmoochWebhook = async () => {
         debugSmooch(`An error occurred while setting up smooch webhook: ${e.message}`);
       }
     }
-  } catch (e) {
-    debugSmooch(`An error occurred while setting up smooch webhook: ${e.message}`);
-    throw e.message;
+  } catch (error) {
+    debugSmooch(`An error occurred while setting up smooch webhook: ${error.message}`);
+    throw error.message;
   }
 };
 

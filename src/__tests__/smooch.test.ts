@@ -1,6 +1,5 @@
 import * as request from 'request-promise';
 import * as sinon from 'sinon';
-import * as Smooch from 'smooch-core';
 import { integrationFactory } from '../factories';
 import { updateIntegrationConfigs } from '../helpers';
 import * as messageBroker from '../messageBroker';
