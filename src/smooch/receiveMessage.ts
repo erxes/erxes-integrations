@@ -1,5 +1,5 @@
-import { getTelegramFile, saveConversation, saveCustomer, saveMessage } from './api';
 import { IAttachment, ISmoochCustomerInput } from './types';
+import { getTelegramFile, saveConversation, saveCustomer, saveMessage } from './api';
 
 import { Integrations } from '../models';
 

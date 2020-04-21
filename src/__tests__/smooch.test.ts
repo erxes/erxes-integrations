@@ -1,5 +1,9 @@
+import * as jwt from 'jsonwebtoken';
+import * as request from 'request-promise';
 import * as sinon from 'sinon';
 import * as Smooch from 'smooch-core';
+import { integrationFactory } from '../factories';
+import { updateIntegrationConfigs } from '../helpers';
 import * as messageBroker from '../messageBroker';
 import * as smoochUtils from '../smooch/api';
 import {
@@ -7,10 +11,6 @@ import {
   SmoochViberConversations as Conversations,
   SmoochViberCustomers as Customers,
 } from '../smooch/models';
-import './setup.ts';
-
-import { integrationFactory } from '../factories';
-import { updateIntegrationConfigs } from '../helpers';
 import receiveMessage from '../smooch/receiveMessage';
 import {
   createOrGetSmoochConversation,
@@ -23,6 +23,7 @@ import {
   ISmoochCustomerArguments,
   ISmoochCustomerInput,
 } from '../smooch/types';
+import './setup.ts';
 
 describe('Smooch test', () => {
   const requestBody = {
@@ -71,20 +72,31 @@ describe('Smooch test', () => {
 
   const requestBodyTelegram = {
     trigger: 'message:appUser',
+    version: 'v1.1',
+    app: {
+      _id: '5e7add33af11d3000fc2bcea',
+    },
     appUser: {
-      _id: '124124125120591fasgf',
-      givenName: 'telegram user',
+      _id: '8ad5916691f27f17058406eb',
+      surname: 'surname',
+      givenName: 'givenName',
+      signedUpAt: '2020-03-27T13:54:55.528Z',
+      properties: {},
+      conversationStarted: true,
     },
     conversation: {
-      _id: '12345676788999',
+      _id: '67e3e71f12935268a252eac6',
     },
     client: {
-      integrationId: '123456778900',
-      displayName: 'telegram user',
+      integrationId: '5e7e057be6740f000feb13f1',
+      externalId: '931442902',
+      id: 'a6f133cb-8638-4434-a570-aef0ac75f5ad',
+      displayName: 'display name',
       status: 'active',
       raw: {
+        id: 931442902,
         profile_photos: {
-          total_count: 2,
+          total_count: 1,
           photos: [
             [
               {
@@ -99,17 +111,18 @@ describe('Smooch test', () => {
           ],
         },
       },
-      platform: 'viber',
+      _id: '5e7e05af8ab787000c88e296',
+      platform: 'telegram',
     },
     messages: [
       {
         type: 'text',
-        text: 'Hello',
+        text: 'test',
         role: 'appUser',
-        received: 1586352836.136,
-        name: 'telegram user',
-        authorId: 'apfsajkslj41l24j1k24l',
-        _id: 'asflkjsarlk1j4kj124',
+        received: 1587103010.738,
+        name: 'name',
+        authorId: '8ad5916691f27f17058406eb',
+        _id: '5e9945223386ad000c69ba9f',
       },
     ],
   };
@@ -207,23 +220,302 @@ describe('Smooch test', () => {
   });
 
   test('utils remove integration', async () => {
+    const configMock = sinon.stub(smoochUtils, 'getSmoochConfig').callsFake(() => {
+      return Promise.resolve({
+        SMOOCH_APP_KEY_ID: 'key_id',
+        SMOOCH_SMOOCH_APP_KEY_SECRET: 'secret',
+        SMOOCH_WEBHOOK_CALLBACK_URL: 'https://fakewebhook.com',
+        SMOOCH_APP_ID: 'appId',
+      });
+    });
+
     const smooch = new Smooch({
       keyId: 'SMOOCH_APP_KEY_ID',
       secret: 'SMOOCH_SMOOCH_APP_KEY_SECRET',
       scope: 'app',
     });
 
-    const mock = sinon.stub(smooch.integrations, 'delete').callsFake(() => {
-      return Promise.resolve({ _id: '123456789' });
+    const jwtMock = sinon.stub(jwt, 'sign').callsFake(() => {
+      return Promise.resolve({ success: 'Token is valid' });
+    });
+
+    const mock = sinon.stub(smooch.integrations, 'delete');
+    mock.withArgs({ appId: 'appid', integrationId: 'id' }).callsFake(() => {
+      return Promise.resolve({});
     });
 
     try {
       await smoochUtils.removeIntegration('123456789');
     } catch (e) {
-      console.log(e);
+      expect(e).toBeDefined();
     }
 
     mock.restore();
+    jwtMock.restore();
+    configMock.restore();
+
+    try {
+      await smoochUtils.removeIntegration('123456789');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.setupSmooch();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+  });
+
+  test('utils set webhook', async () => {
+    const configMock = sinon.stub(smoochUtils, 'getSmoochConfig').callsFake(() => {
+      return Promise.resolve({
+        SMOOCH_APP_KEY_ID: 'key_id',
+        SMOOCH_SMOOCH_APP_KEY_SECRET: 'secret',
+        SMOOCH_WEBHOOK_CALLBACK_URL: 'https://fakewebhook.com',
+        SMOOCH_APP_ID: 'appId',
+      });
+    });
+
+    const mock = sinon.stub(smoochUtils, 'setupSmooch');
+    mock.onCall(0).returns({
+      webhooks: {
+        list: () => {
+          return { webhooks: [{ _id: '123', target: 'http://example.com/callback' }] };
+        },
+        update: () => {
+          return Promise.resolve({ webhook: { _id: '123', target: 'https://fakewebhook.com' } });
+        },
+      },
+    });
+
+    mock.onCall(1).returns({
+      webhooks: {
+        list: () => {
+          return { webhooks: [] };
+        },
+        create: () => {
+          Promise.resolve({ webhook: { _id: '123', target: 'https://fakewebhook.com' } });
+        },
+      },
+    });
+
+    mock.onCall(2).returns({
+      webhooks: {
+        list: () => {
+          return { webhooks: [{ _id: '123', target: 'https://fakewebhook.com' }] };
+        },
+      },
+    });
+
+    mock.onCall(3).returns({
+      webhooks: {
+        list: () => {
+          return { webhooks: [{ _id: '123', target: 'http://example.com/callback' }] };
+        },
+        update: () => {
+          throw new Error('failed');
+        },
+      },
+    });
+
+    mock.onCall(4).returns({
+      webhooks: {
+        list: () => {
+          return { webhooks: [] };
+        },
+        create: () => {
+          throw new Error('failed');
+        },
+      },
+    });
+
+    await smoochUtils.setupSmoochWebhook();
+    await smoochUtils.setupSmoochWebhook();
+    try {
+      await smoochUtils.setupSmoochWebhook();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.setupSmoochWebhook();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.setupSmoochWebhook();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    mock.restore();
+    configMock.restore();
+
+    try {
+      await smoochUtils.setupSmoochWebhook();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+  });
+
+  test('utils get telegram file', async () => {
+    const mock = sinon.stub(request, 'Request').callsFake(() => {
+      return Promise.resolve({ result: { file_path: 'file_path' } });
+    });
+
+    await smoochUtils.getTelegramFile('token', 'fileId');
+
+    mock.restore();
+
+    try {
+      await smoochUtils.getTelegramFile('token', 'fileId');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+  });
+
+  test('utils get line webhook', async () => {
+    const configsMap = { SMOOCH_APP_ID: 'appId' };
+    await updateIntegrationConfigs(configsMap);
+
+    await integrationFactory({
+      kind: requestBody.client.platform,
+      smoochIntegrationId: requestBody.client.integrationId,
+      erxesApiId: '123',
+    });
+
+    await smoochUtils.getLineWebhookUrl('123');
+  });
+
+  test('utils line webhook with error', async () => {
+    const configsMap = { SMOOCH_APP_ID: '' };
+    await updateIntegrationConfigs(configsMap);
+    try {
+      await smoochUtils.getLineWebhookUrl('123');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+  });
+
+  test('utils reply', async () => {
+    const configMock = sinon.stub(smoochUtils, 'getSmoochConfig').callsFake(() => {
+      return Promise.resolve({
+        SMOOCH_APP_KEY_ID: 'key_id',
+        SMOOCH_SMOOCH_APP_KEY_SECRET: 'secret',
+        SMOOCH_WEBHOOK_CALLBACK_URL: 'https://fakewebhook.com',
+        SMOOCH_APP_ID: 'appId',
+      });
+    });
+
+    const mock = sinon.stub(smoochUtils, 'setupSmooch');
+
+    mock.onCall(0).returns({
+      appUsers: {
+        sendMessage: () => {
+          return {
+            message: {
+              _id: '55c8c1498590aa1900b9b9b1',
+              authorId: 'c7f6e6d6c3a637261bd9656f',
+              role: 'appMaker',
+              type: 'text',
+              name: 'Steve',
+              text: 'Just put some vinegar on it',
+              avatarUrl: 'https://www.gravatar.com/image.jpg',
+              received: 1439220041.586,
+            },
+          };
+        },
+      },
+    });
+
+    mock.onCall(1).returns({
+      appUsers: {
+        sendMessage: () => {
+          return {
+            message: {
+              _id: '55c8c1498590aa1900b9b9b1',
+              authorId: 'c7f6e6d6c3a637261bd9656f',
+              role: 'appMaker',
+              type: 'text',
+              name: 'Steve',
+              text: 'Just put some vinegar on it',
+              avatarUrl: 'https://www.gravatar.com/image.jpg',
+              received: 1439220041.586,
+            },
+          };
+        },
+      },
+    });
+
+    mock.onCall(2).returns({
+      appUsers: {
+        sendMessage: () => {
+          throw new Error('failed');
+        },
+      },
+    });
+
+    await integrationFactory({
+      kind: requestBody.client.platform,
+      smoochIntegrationId: requestBody.client.integrationId,
+      erxesApiId: '456',
+    });
+
+    await Conversations.create({ id: '1231245', erxesApiId: '123' });
+    await Customers.create({ id: '111', smoochUserId: 'alskdjl12k3' });
+    const req1 = {
+      attachments: [],
+      conversationId: '123',
+      content: 'content',
+      integrationId: '456',
+    };
+
+    const req2 = {
+      attachments: [{ url: 'http://placehold.it/120x120' }, { url: 'http://placehold.it/120x120' }],
+      conversationId: '123',
+      content: 'content',
+      integrationId: '456',
+    };
+    const req3 = {
+      attachments: [{ url: 'http://placehold.it/120x120' }],
+      conversationId: '123',
+      content: 'content',
+      integrationId: '456',
+    };
+
+    await smoochUtils.reply(req1);
+
+    try {
+      await smoochUtils.reply(req2);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await smoochUtils.reply(req3);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    mock.restore();
+
+    try {
+      await smoochUtils.reply(req3);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    configMock.restore();
+  });
+
+  test('setup smooch', async () => {
+    try {
+      await smoochUtils.setupSmooch();
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
   });
 
   test('Recieve message: Viber', async () => {
@@ -238,17 +530,19 @@ describe('Smooch test', () => {
 
     await receiveMessage(requestBody);
 
-    await receiveMessage({
-      trigger: 'trigger',
-    });
-
     expect(await Customers.countDocuments()).toEqual(1);
     expect(await Conversations.countDocuments()).toEqual(1);
 
     mock.restore();
+
+    await receiveMessage({ trigger: 'trigger' });
   });
 
   test('Recieve message: Telegram', async () => {
+    const lineFilemock = sinon.stub(request, 'Request').callsFake(() => {
+      return Promise.resolve({ result: { file_path: 'file_path' } });
+    });
+
     const mock = sinon.stub(messageBroker, 'sendRPCMessage').callsFake(() => {
       return Promise.resolve({ _id: '123456789' });
     });
@@ -262,6 +556,7 @@ describe('Smooch test', () => {
     await receiveMessage(requestBodyTelegram);
 
     mock.restore();
+    lineFilemock.restore();
   });
 
   test('Recieve message: LINE', async () => {

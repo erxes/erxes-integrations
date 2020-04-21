@@ -1,9 +1,7 @@
-import * as Smooch from 'smooch-core';
 import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
 import { Integrations } from '../models';
-import { getSmoochConfig } from './api';
+import * as smoochUtils from './api';
 import receiveMessage from './receiveMessage';
-import { SMOOCH_MODELS } from './store';
 
 export interface ISmoochProps {
   kind: string;
@@ -17,15 +15,6 @@ export interface ISmoochProps {
   twilioAuthToken?: string;
   twilioPhoneSid?: string;
 }
-
-interface IMessage {
-  text: string;
-  role: string;
-  type: string;
-  mediaUrl?: string;
-}
-
-let smooch: Smooch;
 
 const init = async app => {
   app.post('/smooch/webhook', async (req, res, next) => {
@@ -43,7 +32,7 @@ const init = async app => {
   app.post('/smooch/create-integration', async (req, res, next) => {
     debugRequest(debugSmooch, req);
 
-    const { SMOOCH_APP_ID } = await getSmoochConfig();
+    const { SMOOCH_APP_ID } = await smoochUtils.getSmoochConfig();
 
     let { kind } = req.body;
 
@@ -77,7 +66,7 @@ const init = async app => {
     smoochProps.smoochDisplayName = props.displayName;
 
     const integration = await Integrations.create(smoochProps);
-
+    const smooch = await smoochUtils.setupSmooch();
     try {
       const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
 
@@ -92,74 +81,15 @@ const init = async app => {
   });
 
   app.post('/smooch/reply', async (req, res, next) => {
-    const { attachments, conversationId, content, integrationId } = req.body;
-
-    const { SMOOCH_APP_ID } = await getSmoochConfig();
-
-    if (attachments.length > 1) {
-      throw new Error('You can only attach one file');
-    }
-
-    const integration = await Integrations.findOne({ erxesApiId: integrationId });
-
-    const conversationModel = SMOOCH_MODELS[integration.kind].conversations;
-
-    const customerModel = SMOOCH_MODELS[integration.kind].customers;
-
-    const conversation = await conversationModel.findOne({ erxesApiId: conversationId });
-
-    const customerId = conversation.customerId;
-
-    const user = await customerModel.findOne({ erxesApiId: customerId });
-
     try {
-      const messageInput: IMessage = { text: content, role: 'appMaker', type: 'text' };
-
-      if (attachments.length !== 0) {
-        messageInput.type = 'file';
-        messageInput.mediaUrl = attachments[0].url;
-      }
-
-      const { message } = await smooch.appUsers.sendMessage({
-        appId: SMOOCH_APP_ID,
-        userId: user.smoochUserId,
-        message: messageInput,
-      });
-
-      const messageModel = SMOOCH_MODELS[integration.kind].conversationMessages;
-
-      await messageModel.create({
-        conversationId: conversation.id,
-        messageId: message._id,
-        content,
-      });
+      await smoochUtils.reply(req.body);
     } catch (e) {
-      debugSmooch(`Failed to send smooch message: ${e.message}`);
-      next(new Error(e.message));
+      next(e);
     }
 
     debugResponse(debugSmooch, req);
 
     res.sendStatus(200);
-  });
-};
-
-export const setupSmooch = async () => {
-  const { SMOOCH_APP_KEY_ID, SMOOCH_SMOOCH_APP_KEY_SECRET } = await getSmoochConfig();
-
-  if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET) {
-    debugSmooch(`
-      Missing following config
-      SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
-      SMOOCH_SMOOCH_APP_KEY_SECRET: ${SMOOCH_SMOOCH_APP_KEY_SECRET}
-    `);
-    return;
-  }
-
-  smooch = new Smooch({
-    keyId: SMOOCH_APP_KEY_ID,
-    secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
-    scope: 'app',
   });
 };
 

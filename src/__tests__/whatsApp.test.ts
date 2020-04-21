@@ -487,15 +487,4 @@ describe('WhatsApp test', () => {
 
     mock.restore();
   });
-
-  // test('setup chat api with uid missing error', async () => {
-  //   const configsMap = { CHAT_API_UID: '', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
-
-  //   await updateIntegrationConfigs(configsMap);
-  //   try {
-  //     await whatsappUtils.setupChatApi();
-  //   } catch (e) {
-  //     expect(e).toBeDefined();
-  //   }
-  // });
 });

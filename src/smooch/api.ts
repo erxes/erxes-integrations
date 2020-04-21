@@ -9,6 +9,7 @@ import {
   createOrGetSmoochConversationMessage as storeMessage,
   createOrGetSmoochCustomer as storeCustomer,
 } from './store';
+import { SMOOCH_MODELS } from './store';
 import {
   IAttachment,
   ISmoochConversationArguments,
@@ -16,6 +17,12 @@ import {
   ISmoochCustomerArguments,
   ISmoochCustomerInput,
 } from './types';
+interface IMessage {
+  text: string;
+  role: string;
+  type: string;
+  mediaUrl?: string;
+}
 
 export const getSmoochConfig = async () => {
   return {
@@ -25,8 +32,6 @@ export const getSmoochConfig = async () => {
     SMOOCH_WEBHOOK_CALLBACK_URL: await getConfig('SMOOCH_WEBHOOK_CALLBACK_URL'),
   };
 };
-
-let smooch: Smooch;
 
 const saveCustomer = async (customer: ISmoochCustomerInput) => {
   const { smoochIntegrationId, smoochUserId, surname, givenName, email, phone, avatarUrl } = customer;
@@ -113,19 +118,6 @@ const saveMessage = async (
 };
 
 const removeIntegration = async (integrationId: string) => {
-  const { SMOOCH_APP_ID } = await getSmoochConfig();
-
-  try {
-    await smooch.integrations.delete({
-      appId: SMOOCH_APP_ID,
-      integrationId,
-    });
-  } catch (e) {
-    debugSmooch(e.message);
-  }
-};
-
-const setupSmoochWebhook = async () => {
   const {
     SMOOCH_APP_KEY_ID,
     SMOOCH_SMOOCH_APP_KEY_SECRET,
@@ -134,25 +126,43 @@ const setupSmoochWebhook = async () => {
   } = await getSmoochConfig();
 
   if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET || !SMOOCH_WEBHOOK_CALLBACK_URL || !SMOOCH_APP_ID) {
-    debugSmooch('Smooch is not configured');
-    return;
+    debugSmooch('Smooch config variables does not configured');
+    throw new Error('Smooch config variables does not configured');
   }
 
-  smooch = new Smooch({
-    keyId: SMOOCH_APP_KEY_ID,
-    secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
-    scope: 'app',
-  });
+  const smooch = await setupSmooch();
+
+  try {
+    await smooch.integrations.delete({
+      appId: SMOOCH_APP_ID,
+      integrationId,
+    });
+  } catch (e) {
+    debugSmooch(e.message);
+    throw new Error(e.message);
+  }
+};
+
+const setupSmoochWebhook = async () => {
+  const { SMOOCH_WEBHOOK_CALLBACK_URL } = await getSmoochConfig();
+
+  if (!SMOOCH_WEBHOOK_CALLBACK_URL) {
+    debugSmooch('Smooch config variables does not configured');
+    throw new Error('Smooch config variables does not configured');
+  }
+
+  const smooch = await setupSmooch();
+
   try {
     const { webhooks } = await smooch.webhooks.list();
 
     if (webhooks.length > 0) {
-      for (const hook of webhooks) {
-        if (hook.target !== SMOOCH_WEBHOOK_CALLBACK_URL) {
+      for (const webhook of webhooks) {
+        if (webhook.target !== SMOOCH_WEBHOOK_CALLBACK_URL) {
           try {
             debugSmooch('updating webhook');
 
-            await smooch.webhooks.update(hook._id, {
+            await smooch.webhooks.update(webhook._id, {
               target: SMOOCH_WEBHOOK_CALLBACK_URL.replace(/\s/g, ''),
               includeClient: true,
             });
@@ -173,7 +183,8 @@ const setupSmoochWebhook = async () => {
       }
     }
   } catch (e) {
-    throw e;
+    debugSmooch(`An error occurred while setting up smooch webhook: ${e.message}`);
+    throw e.message;
   }
 };
 
@@ -187,16 +198,99 @@ const getTelegramFile = async (token: string, fileId: string) => {
     return `${TELEGRAM_API_URL}/file/bot${token}/${result.file_path}`;
   } catch (e) {
     debugSmooch(e.mesage);
-    throw e.mesage;
+    throw new Error(e.mesage);
   }
 };
 
 const getLineWebhookUrl = async (erxesApiId: string) => {
   const appid = await getConfig('SMOOCH_APP_ID');
 
+  if (!appid) {
+    throw new Error('Smooch app id does not configured');
+  }
   const integration = await Integrations.findOne({ erxesApiId });
 
   return `https://app.smooch.io:443/api/line/webhooks/${appid}/${integration.smoochIntegrationId}`;
+};
+
+const reply = async requestBody => {
+  const { attachments, conversationId, content, integrationId } = requestBody;
+
+  const { SMOOCH_APP_ID } = await getSmoochConfig();
+
+  if (attachments.length > 1) {
+    throw new Error('You can only attach one file');
+  }
+
+  const integration = await Integrations.findOne({ erxesApiId: integrationId });
+
+  const conversationModel = SMOOCH_MODELS[integration.kind].conversations;
+
+  const customerModel = SMOOCH_MODELS[integration.kind].customers;
+
+  const conversation = await conversationModel.findOne({ erxesApiId: conversationId });
+
+  const customerId = conversation.customerId;
+
+  const user = await customerModel.findOne({ erxesApiId: customerId });
+
+  const messageInput: IMessage = { text: content, role: 'appMaker', type: 'text' };
+
+  if (attachments.length !== 0) {
+    messageInput.type = 'file';
+    messageInput.mediaUrl = attachments[0].url;
+  }
+  const smooch = await setupSmooch();
+  try {
+    const { message } = await smooch.appUsers.sendMessage({
+      appId: SMOOCH_APP_ID,
+      userId: user.smoochUserId,
+      message: messageInput,
+    });
+
+    const messageModel = SMOOCH_MODELS[integration.kind].conversationMessages;
+
+    await messageModel.create({
+      conversationId: conversation.id,
+      messageId: message._id,
+      content,
+    });
+  } catch (e) {
+    debugSmooch(`Failed to send smooch message: ${e.message}`);
+    throw new Error(e.message);
+  }
+};
+
+export const setupSmooch = async () => {
+  const {
+    SMOOCH_APP_KEY_ID,
+    SMOOCH_SMOOCH_APP_KEY_SECRET,
+    SMOOCH_WEBHOOK_CALLBACK_URL,
+    SMOOCH_APP_ID,
+  } = await getSmoochConfig();
+
+  if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET || !SMOOCH_WEBHOOK_CALLBACK_URL || !SMOOCH_APP_ID) {
+    debugSmooch(`
+      Missing following config
+      SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
+      SMOOCH_SMOOCH_APP_KEY_SECRET: ${SMOOCH_SMOOCH_APP_KEY_SECRET}
+      SMOOCH_WEBHOOK_CALLBACK_URL: ${SMOOCH_WEBHOOK_CALLBACK_URL}
+      SMOOCH_APP_ID: ${SMOOCH_APP_ID}
+    `);
+    throw new Error(`
+    Missing following config
+      SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
+      SMOOCH_SMOOCH_APP_KEY_SECRET: ${SMOOCH_SMOOCH_APP_KEY_SECRET}
+      SMOOCH_WEBHOOK_CALLBACK_URL: ${SMOOCH_WEBHOOK_CALLBACK_URL}
+      SMOOCH_APP_ID: ${SMOOCH_APP_ID}
+  `);
+  }
+
+  return new Smooch({
+    keyId: SMOOCH_APP_KEY_ID,
+    secret: SMOOCH_SMOOCH_APP_KEY_SECRET,
+    scope: 'app',
+  });
 };
 
 export {
@@ -207,4 +301,5 @@ export {
   removeIntegration,
   getTelegramFile,
   getLineWebhookUrl,
+  reply,
 };
