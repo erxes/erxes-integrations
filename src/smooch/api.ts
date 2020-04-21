@@ -119,17 +119,7 @@ const saveMessage = async (
 };
 
 const removeIntegration = async (integrationId: string) => {
-  const {
-    SMOOCH_APP_KEY_ID,
-    SMOOCH_SMOOCH_APP_KEY_SECRET,
-    SMOOCH_WEBHOOK_CALLBACK_URL,
-    SMOOCH_APP_ID,
-  } = await getSmoochConfig();
-
-  if (!SMOOCH_APP_KEY_ID || !SMOOCH_SMOOCH_APP_KEY_SECRET || !SMOOCH_WEBHOOK_CALLBACK_URL || !SMOOCH_APP_ID) {
-    debugSmooch('Smooch config variables does not configured');
-    throw new Error('Smooch config variables does not configured');
-  }
+  const { SMOOCH_APP_ID } = await getSmoochConfig();
 
   const smooch = await setupSmooch();
 

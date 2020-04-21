@@ -1,4 +1,3 @@
-import * as jwt from 'jsonwebtoken';
 import * as request from 'request-promise';
 import * as sinon from 'sinon';
 import * as Smooch from 'smooch-core';
@@ -229,20 +228,29 @@ describe('Smooch test', () => {
       });
     });
 
-    const smooch = new Smooch({
-      keyId: 'SMOOCH_APP_KEY_ID',
-      secret: 'SMOOCH_SMOOCH_APP_KEY_SECRET',
-      scope: 'app',
+    const mock = sinon.stub(smoochUtils, 'setupSmooch');
+
+    mock.onCall(0).returns({
+      integrations: {
+        delete: () => {
+          return {};
+        },
+      },
     });
 
-    const jwtMock = sinon.stub(jwt, 'sign').callsFake(() => {
-      return Promise.resolve({ success: 'Token is valid' });
+    mock.onCall(1).returns({
+      integrations: {
+        delete: () => {
+          throw new Error('error');
+        },
+      },
     });
 
-    const mock = sinon.stub(smooch.integrations, 'delete');
-    mock.withArgs({ appId: 'appid', integrationId: 'id' }).callsFake(() => {
-      return Promise.resolve({});
-    });
+    try {
+      await smoochUtils.removeIntegration('123456789');
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
 
     try {
       await smoochUtils.removeIntegration('123456789');
@@ -251,14 +259,8 @@ describe('Smooch test', () => {
     }
 
     mock.restore();
-    jwtMock.restore();
-    configMock.restore();
 
-    try {
-      await smoochUtils.removeIntegration('123456789');
-    } catch (e) {
-      expect(e).toBeDefined();
-    }
+    configMock.restore();
 
     try {
       await smoochUtils.setupSmooch();

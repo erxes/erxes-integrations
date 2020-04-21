@@ -1,6 +1,5 @@
-import * as smoochUtils from './api';
-
 import { debugRequest, debugResponse, debugSmooch } from '../debuggers';
+import { createIntegration, reply } from './api';
 
 import receiveMessage from './receiveMessage';
 
@@ -21,7 +20,7 @@ const init = async app => {
     debugRequest(debugSmooch, req);
 
     try {
-      await smoochUtils.createIntegration(req.body);
+      await createIntegration(req.body);
     } catch (e) {
       return next(e);
     }
@@ -31,7 +30,7 @@ const init = async app => {
 
   app.post('/smooch/reply', async (req, res, next) => {
     try {
-      await smoochUtils.reply(req.body);
+      await reply(req.body);
     } catch (e) {
       next(e);
     }
