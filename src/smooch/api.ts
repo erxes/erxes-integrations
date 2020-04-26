@@ -276,15 +276,19 @@ const createIntegration = async requestBody => {
   switch (kind) {
     case 'telegram':
       smoochProps.telegramBotToken = props.token;
+      break;
     case 'viber':
       smoochProps.viberBotToken = props.token;
+      break;
     case 'line':
       smoochProps.lineChannelId = props.channelId;
       smoochProps.lineChannelSecret = props.channelSecret;
+      break;
     case 'twilio':
       smoochProps.twilioSid = props.accountSid;
       smoochProps.twilioAuthToken = props.authToken;
       smoochProps.twilioPhoneSid = props.phoneNumberSid;
+      break;
   }
 
   smoochProps.smoochDisplayName = props.displayName;
