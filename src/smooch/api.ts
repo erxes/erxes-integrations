@@ -18,6 +18,7 @@ import {
   ISmoochCustomerInput,
   ISmoochProps,
 } from './types';
+
 interface IMessage {
   text: string;
   role: string;
@@ -130,7 +131,7 @@ const removeIntegration = async (integrationId: string) => {
     });
   } catch (e) {
     debugSmooch(e.message);
-    throw new Error(e.message);
+    throw e;
   }
 };
 
@@ -171,11 +172,12 @@ const setupSmoochWebhook = async () => {
         });
       } catch (e) {
         debugSmooch(`An error occurred while setting up smooch webhook: ${e.message}`);
+        throw e;
       }
     }
   } catch (error) {
     debugSmooch(`An error occurred while setting up smooch webhook: ${error.message}`);
-    throw error.message;
+    throw error;
   }
 };
 
@@ -189,7 +191,7 @@ const getTelegramFile = async (token: string, fileId: string) => {
     return `${TELEGRAM_API_URL}/file/bot${token}/${result.file_path}`;
   } catch (e) {
     debugSmooch(e.mesage);
-    throw new Error(e.mesage);
+    throw e;
   }
 };
 
@@ -231,7 +233,9 @@ const reply = async requestBody => {
     messageInput.type = 'file';
     messageInput.mediaUrl = attachments[0].url;
   }
+
   const smooch = await setupSmooch();
+
   try {
     const { message } = await smooch.appUsers.sendMessage({
       appId: SMOOCH_APP_ID,
@@ -248,7 +252,7 @@ const reply = async requestBody => {
     });
   } catch (e) {
     debugSmooch(`Failed to send smooch message: ${e.message}`);
-    throw new Error(e.message);
+    throw e;
   }
 };
 
@@ -269,23 +273,26 @@ const createIntegration = async requestBody => {
     erxesApiId: integrationId,
   };
 
-  if (kind === 'telegram') {
-    smoochProps.telegramBotToken = props.token;
-  } else if (kind === 'viber') {
-    smoochProps.viberBotToken = props.token;
-  } else if (kind === 'line') {
-    smoochProps.lineChannelId = props.channelId;
-    smoochProps.lineChannelSecret = props.channelSecret;
-  } else if (kind === 'twilio') {
-    smoochProps.twilioSid = props.accountSid;
-    smoochProps.twilioAuthToken = props.authToken;
-    smoochProps.twilioPhoneSid = props.phoneNumberSid;
+  switch (kind) {
+    case 'telegram':
+      smoochProps.telegramBotToken = props.token;
+    case 'viber':
+      smoochProps.viberBotToken = props.token;
+    case 'line':
+      smoochProps.lineChannelId = props.channelId;
+      smoochProps.lineChannelSecret = props.channelSecret;
+    case 'twilio':
+      smoochProps.twilioSid = props.accountSid;
+      smoochProps.twilioAuthToken = props.authToken;
+      smoochProps.twilioPhoneSid = props.phoneNumberSid;
   }
 
   smoochProps.smoochDisplayName = props.displayName;
 
   const integration = await Integrations.create(smoochProps);
+
   const smooch = await setupSmooch();
+
   try {
     const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
 
@@ -293,7 +300,7 @@ const createIntegration = async requestBody => {
   } catch (e) {
     debugSmooch(`Failed to create smooch integration: ${e.message}`);
     await Integrations.deleteOne({ _id: integration.id });
-    throw new Error(e.message);
+    throw e;
   }
 };
 
@@ -313,6 +320,7 @@ export const setupSmooch = async () => {
       SMOOCH_WEBHOOK_CALLBACK_URL: ${SMOOCH_WEBHOOK_CALLBACK_URL}
       SMOOCH_APP_ID: ${SMOOCH_APP_ID}
     `);
+
     throw new Error(`
     Missing following config
       SMOOCH_APP_KEY_ID: ${SMOOCH_APP_KEY_ID}
