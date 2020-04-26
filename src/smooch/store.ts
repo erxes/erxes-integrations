@@ -94,7 +94,7 @@ const createOrGetSmoochCustomer = async ({
     });
   } catch (e) {
     debugSmooch(`Failed to getOrCreate customer: ${e.message}`);
-    throw new Error(e);
+    throw e;
   }
 
   return customer.erxesApiId;
@@ -140,7 +140,7 @@ const createOrGetSmoochConversation = async ({
     });
   } catch (e) {
     debugSmooch(`Failed to getOrCreate conversation: ${e.message}`);
-    throw new Error(e);
+    throw e;
   }
 
   return {
@@ -197,7 +197,7 @@ const createOrGetSmoochConversationMessage = async ({
     });
   } catch (e) {
     debugSmooch(`Failed to getOrCreate conversationMessage: ${e.message}`);
-    throw new Error(e);
+    throw e;
   }
 
   return conversationMessage;
@@ -238,7 +238,7 @@ const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCre
       await selectedObj.save();
     } catch (e) {
       await model.deleteOne({ _id: selectedObj._id });
-      throw new Error(e);
+      throw e;
     }
   }
 
