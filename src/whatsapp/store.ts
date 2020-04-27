@@ -30,7 +30,7 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
       integrationId: integration.id,
     });
   } catch (e) {
-    throw new Error(e.message.includes('duplicate') ? 'Concurrent request: customer duplication' : e);
+    throw e;
   }
 
   // save on api
@@ -126,6 +126,7 @@ export const createMessage = async (message, conversationIds) => {
   let attachments = [];
 
   if (message.type !== 'chat') {
+    console.log('body: ', message.body);
     attachments = [{ type: message.type, url: message.body }];
     message.body = '';
   }
@@ -144,10 +145,7 @@ export const createMessage = async (message, conversationIds) => {
       metaInfo: 'replaceContent',
       payload: JSON.stringify({
         content: message.body,
-        attachments: (attachments || []).map(att => ({
-          type: att.type,
-          url: att.url,
-        })),
+        attachments,
         conversationId: conversationErxesApiId,
         customerId: customerErxesApiId,
       }),
