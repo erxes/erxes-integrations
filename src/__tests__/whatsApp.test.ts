@@ -185,15 +185,22 @@ describe('WhatsApp test', () => {
       return Promise.resolve({ result: [{ id: '1234567' }, { id: '1234' }] });
     });
 
+    const webhookMock = sinon.stub(whatsappUtils, 'setWebhook').callsFake(() => {
+      return Promise.resolve({});
+    });
+
     const configsMap = { CHAT_API_UID: 'qwe123', CHAT_API_WEBHOOK_CALLBACK_URL: webhookUrl };
     await updateIntegrationConfigs(configsMap);
 
     await integrationFactory({ kind: 'whatsapp', whatsappinstanceId: '1234567', whatsappToken: 'p24x1e0xwyo8udrt' });
+
     try {
       await whatsappUtils.setupChatApi();
     } catch (e) {
       expect(e).toBeDefined();
     }
+
+    webhookMock.restore();
     mock.restore();
 
     await updateIntegrationConfigs({ CHAT_API_UID: '' });
@@ -328,6 +335,43 @@ describe('WhatsApp test', () => {
     await createMessage(message, conversationIds);
 
     expect(await ConversationMessages.find({}).countDocuments()).toBe(1);
+
+    mock.restore();
+  });
+
+  test('Store test createConverstaionMessage with attachment', async () => {
+    const mock = sinon.stub(messageBroker, 'sendRPCMessage').callsFake(() => {
+      return Promise.resolve({ _id: '123456789' });
+    });
+
+    const message = {
+      id: 'false_1234567890@c.us_3A6562C5D73ECD305149',
+      body: 'url',
+      fromMe: false,
+      self: 0,
+      isForwarded: 0,
+      author: '1234567890@c.us',
+      time: 1585036833,
+      chatId: '1234567890@c.us',
+      messageNumber: 30,
+      type: 'image',
+      senderName: 'contact name',
+      caption: null,
+      quotedMsgBody: null,
+      quotedMsgId: null,
+      chatName: 'contact name',
+    };
+
+    const conversation = await Conversations.create({ _id: '123', erxesApiId: '1234' });
+    const customer = await Customers.create({ _id: '123', erxesApiId: '1234' });
+
+    const conversationIds = {
+      conversationId: conversation.id,
+      conversationErxesApiId: conversation.erxesApiId,
+      customerErxesApiId: customer.erxesApiId,
+    };
+
+    await createMessage(message, conversationIds);
 
     mock.restore();
   });
