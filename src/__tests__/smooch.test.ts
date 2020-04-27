@@ -36,7 +36,6 @@ describe('Smooch test', () => {
     client: {
       integrationId: '123456778900',
       displayName: 'customer name',
-      status: 'active',
       raw: {
         avatar: 'http://placehold.it/120x120',
         name: 'customer name',
@@ -48,21 +47,52 @@ describe('Smooch test', () => {
       {
         type: 'text',
         text: 'Hello',
-        role: 'appUser',
         received: 1586352836.136,
         name: 'customer name',
-        authorId: 'apfsajkslj41l24j1k24l',
         _id: 'asflkjsarlk1j4kj124',
       },
       {
         mediaUrl: 'http://placehold.it/120x120',
         mediaType: 'image/jpeg',
         type: 'image',
-        role: 'appUser',
-        received: 1586696429.781,
         name: 'soyombo bat-erdene',
-        authorId: 'apfsajkslj41l24j1k24l',
-        mediaSize: 37882,
+        _id: '5e9310eef2d85d000dd84d9a',
+      },
+    ],
+  };
+
+  const requestBodyFake = {
+    trigger: 'message:appUser',
+    appUser: {
+      _id: '124124125120591fasgf',
+      givenName: 'customer name',
+    },
+    conversation: {
+      _id: '12345676788999',
+    },
+    client: {
+      integrationId: '123456778900',
+      displayName: 'customer name',
+      raw: {
+        avatar: 'http://placehold.it/120x120',
+        name: 'customer name',
+        id: 'vHjxG4kiPkimi/clMz6cHQ==',
+      },
+      platform: 'blabla',
+    },
+    messages: [
+      {
+        type: 'text',
+        text: 'Hello',
+        received: 1586352836.136,
+        name: 'customer name',
+        _id: 'asflkjsarlk1j4kj124',
+      },
+      {
+        mediaUrl: 'http://placehold.it/120x120',
+        mediaType: 'image/jpeg',
+        type: 'image',
+        name: 'soyombo bat-erdene',
         _id: '5e9310eef2d85d000dd84d9a',
       },
     ],
@@ -70,17 +100,11 @@ describe('Smooch test', () => {
 
   const requestBodyTelegram = {
     trigger: 'message:appUser',
-    version: 'v1.1',
-    app: {
-      _id: '5e7add33af11d3000fc2bcea',
-    },
     appUser: {
       _id: '8ad5916691f27f17058406eb',
       surname: 'surname',
       givenName: 'givenName',
       signedUpAt: '2020-03-27T13:54:55.528Z',
-      properties: {},
-      conversationStarted: true,
     },
     conversation: {
       _id: '67e3e71f12935268a252eac6',
@@ -567,6 +591,16 @@ describe('Smooch test', () => {
       expect(e).toBeDefined();
     }
 
+    try {
+      await smoochUtils.createIntegration({
+        kind: 'viber',
+        integrationId: '123',
+        data: '{ "displayName": "viber", "token": "21243" }',
+      });
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
     mock.restore();
   });
 
@@ -593,6 +627,25 @@ describe('Smooch test', () => {
     expect(await Customers.countDocuments()).toEqual(1);
     expect(await Conversations.countDocuments()).toEqual(1);
 
+    try {
+      await receiveMessage({
+        trigger: 'message:appUser',
+        client: {
+          integrationId: '123456778900',
+          displayName: 'customer name',
+          status: 'active',
+          platform: 'viber',
+        },
+      });
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    try {
+      await receiveMessage(requestBodyFake);
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
     mock.restore();
 
     await receiveMessage({ trigger: 'trigger' });
@@ -646,7 +699,7 @@ describe('Smooch test', () => {
     try {
       await receiveMessage(requestBodyTwilio);
     } catch (e) {
-      console.log(e);
+      expect(e).toBeDefined();
     }
 
     mock.restore();
