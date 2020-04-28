@@ -23,15 +23,11 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
     return customer;
   }
 
-  try {
-    customer = await Customers.create({
-      phoneNumber,
-      name,
-      integrationId: integration.id,
-    });
-  } catch (e) {
-    throw e;
-  }
+  customer = await Customers.create({
+    phoneNumber,
+    name,
+    integrationId: integration.id,
+  });
 
   // save on api
   try {
