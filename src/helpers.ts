@@ -30,7 +30,7 @@ import {
   Customers as GmailCustomers,
 } from './gmail/models';
 import { Accounts, Integrations } from './models';
-import { enableOrDisableAccount, removeExistingNylasWebhook } from './nylas/auth';
+import { removeExistingNylasWebhook } from './nylas/auth';
 import {
   NylasExchangeConversationMessages,
   NylasExchangeConversations,
@@ -81,6 +81,7 @@ import {
 
 import { stopPushNotification } from './gmail/watch';
 import Configs from './models/Configs';
+import { enableOrDisableAccount } from './nylas/api';
 import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
 import { setupSmooch } from './smooch/controller';
@@ -196,8 +197,8 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     }
 
     await TwitterConversationMessages.deleteMany(selector);
-    await TwitterConversations.deleteMany(selector);
-    await TwitterCustomers.deleteMany({ conversationId: { $in: conversationIds } });
+    await TwitterConversations.deleteMany({ conversationId: { $in: conversationIds } });
+    await TwitterCustomers.deleteMany(selector);
   }
 
   if (kind === 'whatsapp') {
@@ -475,9 +476,9 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
 
   await Configs.updateConfigs(configsMap);
 
-  const updatedTwitterConfig = await getTwitterConfig();
-
   resetConfigsCache();
+
+  const updatedTwitterConfig = await getTwitterConfig();
 
   const updatedNylasClientId = await getValueAsString('NYLAS_CLIENT_ID');
   const updatedNylasClientSecret = await getValueAsString('NYLAS_CLIENT_SECRET');

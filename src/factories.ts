@@ -18,6 +18,8 @@ export const accountFactory = (params: {
   kind?: string;
   name?: string;
   email?: string;
+  host?: string;
+  username?: string;
   scope?: string;
   expireDate?: string;
   token?: string;
@@ -36,6 +38,8 @@ export const accountFactory = (params: {
     email: params.email || '',
     token: params.token || '',
     scope: params.scope || '',
+    host: params.host || '',
+    username: params.username || '',
     expireDate: params.expireDate || '',
     tokenSecret: params.tokenSecret || '',
     nylasToken: params.nylasToken || '',
@@ -55,6 +59,7 @@ export const integrationFactory = (params: {
   accountId?: string;
   erxesApiId?: string;
   email?: string;
+  gmailHistoryId?: string;
   facebookPageIds?: string[];
   facebookPageTokensMap?: object;
   viberBotToken?: string;
@@ -64,6 +69,7 @@ export const integrationFactory = (params: {
     accountId: params.accountId || '_id',
     email: params.email || 'user@mail.com',
     erxesApiId: params.erxesApiId || '_id',
+    gmailHistoryId: params.gmailHistoryId || '',
     facebookPageIds: params.facebookPageIds || [],
     facebookPageTokensMap: params.facebookPageTokensMap || {},
     viberBotToken: params.viberBotToken || 'aaksjfhakjsfhkalhf',
