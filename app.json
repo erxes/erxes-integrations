@@ -16,7 +16,7 @@
       "value": "https://erxes-integration.herokuapp.com"
     },
     "MAIN_APP_DOMAIN": {
-      "description": "erxes app domain",
+      "description": "erxes front app domain",
       "value": "https://erxes.herokuapp.com"
     },
     "MAIN_API_DOMAIN": {
@@ -29,19 +29,19 @@
     },
     "RABBITMQ_HOST": {
       "description": "RABBITMQ_HOST",
-      "value": "amqp://localhost"
+      "value": "copy and paste from erxes-api RABBITMQ_HOST config var"
     },
     "REDIS_HOST": {
       "description": "REDIS_HOST",
-      "value": "REDIS_HOST"
+      "value": "copy and paste from erxes-api REDIS_HOST config var"
     },
     "REDIS_PORT": {
       "description": "REDIS_PORT",
-      "value": "28229"
+      "value": "copy and paste from erxes-api REDIS_PORT config var"
     },
     "REDIS_PASSWORD": {
       "description": "REDIS_PASSWORD",
-      "value": "REDIS_PASSWORD"
+      "value": "copy and paste from erxes-api REDIS_PASSWORD config var"
     }
   },
   "addons": [
