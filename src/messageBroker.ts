@@ -8,6 +8,7 @@ import { removeAccount, removeCustomers } from './helpers';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
+import { nylasGetCalendars } from './nylas/handleController';
 import { getLineWebhookUrl } from './smooch/api';
 
 dotenv.config();
@@ -146,30 +147,33 @@ export const initConsumer = async () => {
 
         let response = null;
 
-        if (action === 'remove-account') {
-          try {
-            response = {
-              status: 'success',
-              data: await removeAccount(data._id),
-            };
-          } catch (e) {
-            response = {
-              status: 'error',
-              errorMessage: e.message,
-            };
-          }
-        } else if (action === 'line-webhook') {
-          try {
-            response = {
-              status: 'success',
-              data: await getLineWebhookUrl(data._id),
-            };
-          } catch (e) {
-            response = {
-              status: 'error',
-              errorMessage: e.message,
-            };
-          }
+        const actionsMap = {
+          'get-calendars': {
+            params: data.accountId,
+            call: nylasGetCalendars,
+          },
+          'remove-account': {
+            params: data._id,
+            call: removeAccount,
+          },
+          'line-webhook': {
+            params: data._id,
+            call: getLineWebhookUrl,
+          },
+        };
+
+        try {
+          const { params, call } = actionsMap[action];
+
+          response = {
+            status: 'success',
+            data: await call(params),
+          };
+        } catch (e) {
+          response = {
+            status: 'error',
+            errorMessage: e.message,
+          };
         }
 
         channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {

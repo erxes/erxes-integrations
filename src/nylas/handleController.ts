@@ -1,7 +1,7 @@
 import { debugNylas } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendRequest } from '../utils';
-import { enableOrDisableAccount, getAttachment, sendMessage, uploadFile } from './api';
+import { enableOrDisableAccount, getAttachment, getCalenderOrEventList, sendMessage, uploadFile } from './api';
 import {
   connectExchangeToNylas,
   connectImapToNylas,
@@ -172,6 +172,22 @@ export const nylasSendEmail = async (erxesApiId: string, params: any) => {
   } catch (e) {
     debugNylas(`Failed to send message: ${e}`);
 
+    throw e;
+  }
+};
+
+export const nylasGetCalendars = async (accountId: string) => {
+  try {
+    debugNylas(`Getting account calendars accountId: ${accountId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return getCalenderOrEventList('calendar', account.nylasToken);
+  } catch (e) {
     throw e;
   }
 };

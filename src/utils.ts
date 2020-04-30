@@ -16,7 +16,7 @@ interface IRequestParams {
   headerParams?: { [key: string]: string };
   method: string;
   params?: { [key: string]: string };
-  body?: { [key: string]: string | string[] | boolean | IProviderSettings };
+  body?: { [key: string]: string | number | string[] | boolean | IProviderSettings };
 }
 
 /**
