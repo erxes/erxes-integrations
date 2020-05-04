@@ -4,7 +4,7 @@ import { debugNylas } from '../debuggers';
 import { getGoogleConfigs } from '../gmail/util';
 import { Accounts, Integrations } from '../models';
 import { compose, getConfig, getEnv } from '../utils';
-import { getMessageById } from './api';
+import { createEvent, deleteCalendarEvent, getMessageById, sendEventAttendance, updateEvent } from './api';
 import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
@@ -18,6 +18,7 @@ import {
   createOrGetNylasConversationMessage as storeMessage,
   createOrGetNylasCustomer as storeCustomer,
 } from './store';
+import { IEventDoc } from './types';
 
 // load config
 dotenv.config();
@@ -72,6 +73,86 @@ const syncMessages = async (accountId: string, messageId: string) => {
 
   // Store new received message
   return compose(storeMessage, storeConversation, storeCustomer)(doc);
+};
+
+const nylasDeleteCalendarEvent = async ({ eventId, accountId }: { eventId: string; accountId: string }) => {
+  try {
+    debugNylas(`Deleting calendar event id: ${eventId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return deleteCalendarEvent(eventId, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
+};
+
+const nylasCreateCalenderEvent = async ({ accountId, doc }: { accountId: string; doc: IEventDoc }) => {
+  try {
+    debugNylas(`Creating event in calendar with accountId: ${accountId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return createEvent(doc, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
+};
+
+const nylasUpdateEvent = async ({
+  accountId,
+  eventId,
+  doc,
+}: {
+  accountId: string;
+  eventId: string;
+  doc: IEventDoc;
+}) => {
+  try {
+    debugNylas(`Updating event id: ${eventId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return updateEvent(eventId, doc, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
+};
+
+const nylasSendEventAttendance = async ({
+  accountId,
+  eventId,
+  doc,
+}: {
+  accountId: string;
+  eventId: string;
+  doc: { status: 'yes' | 'no' | 'maybe'; comment?: string };
+}) => {
+  try {
+    debugNylas(`Send event attendance of eventId: ${eventId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return sendEventAttendance(eventId, doc, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
 };
 
 export const getNylasConfig = async () => {
@@ -237,4 +318,12 @@ export const decryptPassword = async (password: string): Promise<string> => {
   }
 };
 
-export { getProviderConfigs, buildEmailAddress, syncMessages };
+export {
+  getProviderConfigs,
+  buildEmailAddress,
+  syncMessages,
+  nylasDeleteCalendarEvent,
+  nylasCreateCalenderEvent,
+  nylasUpdateEvent,
+  nylasSendEventAttendance,
+};

@@ -6,8 +6,11 @@ import { debugNylas, debugRequest } from '../debuggers';
 import {
   createNylasIntegration,
   getMessage,
+  nylasCheckCalendarAvailability,
   nylasFileUpload,
   nylasGetAttachment,
+  nylasGetCalendarOrEvent,
+  nylasGetCalendarsOrEvents,
   nylasSendEmail,
 } from './handleController';
 import { authProvider, getOAuthCredentials } from './loginMiddleware';
@@ -134,6 +137,42 @@ export const initNylas = async app => {
       await nylasSendEmail(erxesApiId, params);
 
       return res.json({ status: 'ok' });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/get-calendars-events', async (req, res, next) => {
+    const { type, accountId } = req.query;
+
+    try {
+      const response = await nylasGetCalendarsOrEvents(type, accountId);
+
+      return res.json(response);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/get-calendar-event', async (req, res, next) => {
+    const { id, type, accountId } = req.query;
+
+    try {
+      const response = await nylasGetCalendarOrEvent(id, type, accountId);
+
+      return res.json(response);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/check-calendar-availability', async (req, res, next) => {
+    const { accountId, dates } = req.query;
+
+    try {
+      const response = await nylasCheckCalendarAvailability(accountId, dates);
+
+      return res.json(response);
     } catch (e) {
       next(e);
     }

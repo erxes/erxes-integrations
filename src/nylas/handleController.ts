@@ -1,13 +1,22 @@
 import { debugNylas } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { sendRequest } from '../utils';
-import { enableOrDisableAccount, getAttachment, getCalenderOrEventList, sendMessage, uploadFile } from './api';
+import {
+  checkCalendarAvailability,
+  enableOrDisableAccount,
+  getAttachment,
+  getCalendarOrEvent,
+  getCalenderOrEventList,
+  sendMessage,
+  uploadFile,
+} from './api';
 import {
   connectExchangeToNylas,
   connectImapToNylas,
   connectProviderToNylas,
   connectYahooAndOutlookToNylas,
 } from './auth';
+import { NYLAS_API_URL } from './constants';
 import { NYLAS_MODELS } from './store';
 import { buildEmailAddress } from './utils';
 
@@ -160,7 +169,7 @@ export const nylasSendEmail = async (erxesApiId: string, params: any) => {
 
     // Set mail to inbox
     await sendRequest({
-      url: `https://api.nylas.com/messages/${message.id}`,
+      url: `${NYLAS_API_URL}/messages/${message.id}`,
       method: 'PUT',
       headerParams: {
         Authorization: `Basic ${Buffer.from(`${account.nylasToken}:`).toString('base64')}`,
@@ -176,9 +185,9 @@ export const nylasSendEmail = async (erxesApiId: string, params: any) => {
   }
 };
 
-export const nylasGetCalendars = async (accountId: string) => {
+export const nylasGetCalendarsOrEvents = async (type: 'calendar' | 'event', accountId: string) => {
   try {
-    debugNylas(`Getting account calendars accountId: ${accountId}`);
+    debugNylas(`Getting account ${type} accountId: ${accountId}`);
 
     const account = await Accounts.findOne({ _id: accountId }).lean();
 
@@ -186,7 +195,42 @@ export const nylasGetCalendars = async (accountId: string) => {
       throw new Error(`Account not found with id: ${accountId}`);
     }
 
-    return getCalenderOrEventList('calendar', account.nylasToken);
+    return getCalenderOrEventList(type, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const nylasGetCalendarOrEvent = async (id: string, type: 'calendar' | 'event', accountId: string) => {
+  try {
+    debugNylas(`Getting account ${type} accountId: ${accountId}`);
+
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    return getCalendarOrEvent(id, type, account.nylasToken);
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const nylasCheckCalendarAvailability = async (
+  accountId: string,
+  dates: { startTime: number; endTime: number },
+) => {
+  try {
+    const account = await Accounts.findOne({ _id: accountId }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with id: ${accountId}`);
+    }
+
+    debugNylas(`Check availability email: ${account.email}`);
+
+    return checkCalendarAvailability(account.email, dates, account.nylasToken);
   } catch (e) {
     throw e;
   }

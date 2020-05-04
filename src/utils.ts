@@ -4,7 +4,7 @@ import * as sanitizeHtml from 'sanitize-html';
 import { debugBase, debugExternalRequests } from './debuggers';
 import { sendRPCMessage } from './messageBroker';
 import Configs from './models/Configs';
-import { IProviderSettings } from './nylas/types';
+import { IParticipants, IProviderSettings } from './nylas/types';
 import { get, set } from './redisClient';
 
 dotenv.config();
@@ -15,8 +15,8 @@ interface IRequestParams {
   headerType?: string;
   headerParams?: { [key: string]: string };
   method: string;
-  params?: { [key: string]: string };
-  body?: { [key: string]: string | number | string[] | boolean | IProviderSettings };
+  params?: { [key: string]: string | boolean };
+  body?: { [key: string]: string | number | string[] | boolean | IProviderSettings | IParticipants[] };
 }
 
 /**

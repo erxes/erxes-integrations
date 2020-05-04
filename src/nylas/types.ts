@@ -183,20 +183,24 @@ export interface ICalendarAvailability {
   }>;
 }
 
+export interface IParticipants {
+  name?: string;
+  email?: string;
+  status?: string;
+  comment?: string;
+}
+
 export interface IEventDoc {
   title?: string;
   location?: string;
   description?: string;
   busy?: boolean;
+  status?: string;
   calendarId: boolean;
   when: any;
   start: any;
   end: any;
-  participants: Array<{
-    name?: string;
-    email?: string;
-    status?: string;
-    comment?: string;
-  }>;
+  readonly: boolean;
+  participants: IParticipants[];
   notifyParticipants: boolean;
 }

@@ -8,7 +8,12 @@ import { removeAccount, removeCustomers } from './helpers';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
-import { nylasGetCalendars } from './nylas/handleController';
+import {
+  nylasCreateCalenderEvent,
+  nylasDeleteCalendarEvent,
+  nylasSendEventAttendance,
+  nylasUpdateEvent,
+} from './nylas/utils';
 import { getLineWebhookUrl } from './smooch/api';
 
 dotenv.config();
@@ -147,18 +152,32 @@ export const initConsumer = async () => {
 
         let response = null;
 
+        const { _id, accountId, eventId, doc } = data;
+
         const actionsMap = {
-          'get-calendars': {
-            params: data.accountId,
-            call: nylasGetCalendars,
-          },
           'remove-account': {
-            params: data._id,
+            params: _id,
             call: removeAccount,
           },
           'line-webhook': {
-            params: data._id,
+            params: _id,
             call: getLineWebhookUrl,
+          },
+          'delete-event': {
+            params: { accountId, eventId },
+            call: nylasDeleteCalendarEvent,
+          },
+          'create-event': {
+            params: { accountId, doc },
+            call: nylasCreateCalenderEvent,
+          },
+          'update-event': {
+            params: { accountId, eventId },
+            call: nylasUpdateEvent,
+          },
+          'send-attendance': {
+            params: { accountId, eventId, doc },
+            call: nylasSendEventAttendance,
           },
         };
 

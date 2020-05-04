@@ -324,7 +324,7 @@ const deleteCalendarEvent = async (eventId: string, accessToken: string) => {
   }
 };
 
-const createCalendarEvent = async (doc: IEventDoc, accessToken: string): Promise<IEvent> => {
+const createEvent = async (doc: IEventDoc, accessToken: string): Promise<IEvent> => {
   try {
     const event = await nylasInstanceWithToken({
       accessToken,
@@ -350,28 +350,33 @@ const createCalendarEvent = async (doc: IEventDoc, accessToken: string): Promise
   }
 };
 
-const updateCalendarEvent = async (calendarId: string, doc: IEventDoc, accessToken: string): Promise<IEvent> => {
+const updateEvent = async (eventId: string, doc: IEventDoc, accessToken: string): Promise<IEvent> => {
   try {
-    const event = await nylasInstanceWithToken({
-      accessToken,
-      name: 'events',
-      method: 'list',
-      options: { calendarId, limit: 1 }, // Modify only non read_only calendar
+    const response = await sendRequest({
+      url: `${NYLAS_API_URL}/events/${eventId}`,
+      method: 'PUT',
+      headerParams: {
+        Authorization: `Basic ${Buffer.from(`${accessToken}:`).toString('base64')}`,
+      },
+      params: {
+        notify_participants: doc.notifyParticipants,
+      },
+      body: {
+        title: doc.title,
+        location: doc.location,
+        calendar_id: doc.calendarId,
+        status: doc.status,
+        busy: doc.busy,
+        read_only: doc.readonly,
+        participants: doc.participants,
+        description: doc.description,
+        when: doc.when,
+      },
     });
 
-    event.title = doc.title;
-    event.location = doc.location;
-    event.description = doc.description;
-    event.busy = doc.busy;
-    event.calendarId = doc.calendarId;
-    event.participants = doc.participants;
-    event.when = doc.when;
-    event.start = doc.start;
-    event.end = doc.end;
+    debugNylas(`Successfully updated the event with id: ${eventId}`);
 
-    debugNylas(`Successfully updated the event with calendar id: ${calendarId}`);
-
-    return event.save({ notify_participants: doc.notifyParticipants });
+    return response;
   } catch (e) {
     throw e;
   }
@@ -414,7 +419,7 @@ export {
   getCalendarOrEvent,
   checkCalendarAvailability,
   deleteCalendarEvent,
-  createCalendarEvent,
-  updateCalendarEvent,
+  createEvent,
+  updateEvent,
   sendEventAttendance,
 };
