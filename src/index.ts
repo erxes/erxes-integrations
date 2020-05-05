@@ -10,7 +10,6 @@ import { removeIntegration, updateIntegrationConfigs } from './helpers';
 import { initConsumer } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
-import { createCalendarEvent } from './nylas/api';
 import { initNylas } from './nylas/controller';
 import { initRedis } from './redisClient';
 import initSmooch from './smooch/controller';
@@ -91,10 +90,6 @@ app.get('/accounts', async (req, res) => {
   if (kind.includes('nylas')) {
     kind = kind.split('-')[1];
   }
-
-  // await getAccountCalendars('bmR4WDMCEKlkBcsE6lE7hvK1beePqb');
-  // await getCalendarEvents('bmR4WDMCEKlkBcsE6lE7hvK1beePqb');
-  await createCalendarEvent('bmR4WDMCEKlkBcsE6lE7hvK1beePqb');
 
   const selector = { kind };
 

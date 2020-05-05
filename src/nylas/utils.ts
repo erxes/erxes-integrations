@@ -4,7 +4,7 @@ import { debugNylas } from '../debuggers';
 import { getGoogleConfigs } from '../gmail/util';
 import { Accounts, Integrations } from '../models';
 import { compose, getConfig, getEnv } from '../utils';
-import { createEvent, deleteCalendarEvent, getMessageById, sendEventAttendance, updateEvent } from './api';
+import { getCalendarOrEvent, getMessageById } from './api';
 import {
   GOOGLE_OAUTH_ACCESS_TOKEN_URL,
   GOOGLE_OAUTH_AUTH_URL,
@@ -13,15 +13,97 @@ import {
   MICROSOFT_OAUTH_AUTH_URL,
   MICROSOFT_SCOPES,
 } from './constants';
+import { NylasCalendar, NylasEvent } from './models';
 import {
   createOrGetNylasConversation as storeConversation,
   createOrGetNylasConversationMessage as storeMessage,
   createOrGetNylasCustomer as storeCustomer,
+  storeCalendars,
+  storeEvents,
+  updateCalendar,
+  updateEvent,
 } from './store';
-import { IEventDoc } from './types';
+import { ICalendar, IEvent } from './types';
 
 // load config
 dotenv.config();
+
+/**
+ * Sync calendar events from webhook
+ * @param {String} action
+ * @param {String} accountUid
+ * @param {String} eventId
+ */
+const syncEvents = async (
+  action: 'event.created' | 'event.updated' | 'event.deleted',
+  accountUid: string,
+  eventId: string,
+) => {
+  try {
+    debugNylas(`Syncing events action: ${action} eventId: ${eventId}`);
+
+    const account = await Accounts.findOne({ uid: accountUid }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with uid: ${accountUid}`);
+    }
+
+    switch (action) {
+      case 'event.created':
+        const newEvent: IEvent = await getCalendarOrEvent(eventId, 'events', account.nylasToken);
+        await storeEvents([newEvent]);
+        break;
+      case 'event.deleted':
+        await NylasEvent.deleteOne({ accountUid, providerEventId: eventId });
+        break;
+      case 'event.updated':
+        const event: IEvent = await getCalendarOrEvent(eventId, 'events', account.nylasToken);
+        await updateEvent(event);
+        break;
+    }
+  } catch (e) {
+    throw e;
+  }
+};
+
+/**
+ * Sync calendars from webhook
+ * @param action
+ * @param accountUid
+ * @param calendarId
+ */
+const syncCalendars = async (
+  action: 'calendar.created' | 'calendar.updated' | 'calendar.deleted',
+  accountUid: string,
+  calendarId: string,
+) => {
+  try {
+    debugNylas(`Syncing calendars action: ${action} calendarId: ${calendarId}`);
+
+    const account = await Accounts.findOne({ uid: accountUid }).lean();
+
+    if (!account) {
+      throw new Error(`Account not found with uid: ${accountUid}`);
+    }
+
+    switch (action) {
+      case 'calendar.created':
+        const newCalendar: ICalendar = await getCalendarOrEvent(calendarId, 'calendars', account.nylasToken);
+        await storeCalendars([newCalendar]);
+        break;
+      case 'calendar.deleted':
+        await NylasCalendar.deleteOne({ providerCalendarId: calendarId });
+        await NylasEvent.deleteMany({ providerCalendarId: calendarId });
+        break;
+      case 'calendar.updated':
+        const calendar: ICalendar = await getCalendarOrEvent(calendarId, 'calendars', account.nylasToken);
+        await updateCalendar(calendar);
+        break;
+    }
+  } catch (e) {
+    throw e;
+  }
+};
 
 /**
  * Sync messages with messageId from webhook
@@ -29,11 +111,11 @@ dotenv.config();
  * @param {String} messageId
  * @retusn {Promise} nylas messages object
  */
-const syncMessages = async (accountId: string, messageId: string) => {
-  const account = await Accounts.findOne({ uid: accountId }).lean();
+const syncMessages = async (accountUid: string, messageId: string) => {
+  const account = await Accounts.findOne({ uid: accountUid }).lean();
 
   if (!account) {
-    return debugNylas('Account not found with uid: ', accountId);
+    return debugNylas('Account not found with uid: ', accountUid);
   }
 
   const integration = await Integrations.findOne({ accountId: account._id });
@@ -73,86 +155,6 @@ const syncMessages = async (accountId: string, messageId: string) => {
 
   // Store new received message
   return compose(storeMessage, storeConversation, storeCustomer)(doc);
-};
-
-const nylasDeleteCalendarEvent = async ({ eventId, accountId }: { eventId: string; accountId: string }) => {
-  try {
-    debugNylas(`Deleting calendar event id: ${eventId}`);
-
-    const account = await Accounts.findOne({ _id: accountId }).lean();
-
-    if (!account) {
-      throw new Error(`Account not found with id: ${accountId}`);
-    }
-
-    return deleteCalendarEvent(eventId, account.nylasToken);
-  } catch (e) {
-    throw e;
-  }
-};
-
-const nylasCreateCalenderEvent = async ({ accountId, doc }: { accountId: string; doc: IEventDoc }) => {
-  try {
-    debugNylas(`Creating event in calendar with accountId: ${accountId}`);
-
-    const account = await Accounts.findOne({ _id: accountId }).lean();
-
-    if (!account) {
-      throw new Error(`Account not found with id: ${accountId}`);
-    }
-
-    return createEvent(doc, account.nylasToken);
-  } catch (e) {
-    throw e;
-  }
-};
-
-const nylasUpdateEvent = async ({
-  accountId,
-  eventId,
-  doc,
-}: {
-  accountId: string;
-  eventId: string;
-  doc: IEventDoc;
-}) => {
-  try {
-    debugNylas(`Updating event id: ${eventId}`);
-
-    const account = await Accounts.findOne({ _id: accountId }).lean();
-
-    if (!account) {
-      throw new Error(`Account not found with id: ${accountId}`);
-    }
-
-    return updateEvent(eventId, doc, account.nylasToken);
-  } catch (e) {
-    throw e;
-  }
-};
-
-const nylasSendEventAttendance = async ({
-  accountId,
-  eventId,
-  doc,
-}: {
-  accountId: string;
-  eventId: string;
-  doc: { status: 'yes' | 'no' | 'maybe'; comment?: string };
-}) => {
-  try {
-    debugNylas(`Send event attendance of eventId: ${eventId}`);
-
-    const account = await Accounts.findOne({ _id: accountId }).lean();
-
-    if (!account) {
-      throw new Error(`Account not found with id: ${accountId}`);
-    }
-
-    return sendEventAttendance(eventId, doc, account.nylasToken);
-  } catch (e) {
-    throw e;
-  }
 };
 
 export const getNylasConfig = async () => {
@@ -318,12 +320,4 @@ export const decryptPassword = async (password: string): Promise<string> => {
   }
 };
 
-export {
-  getProviderConfigs,
-  buildEmailAddress,
-  syncMessages,
-  nylasDeleteCalendarEvent,
-  nylasCreateCalenderEvent,
-  nylasUpdateEvent,
-  nylasSendEventAttendance,
-};
+export { getProviderConfigs, buildEmailAddress, syncMessages, syncEvents, syncCalendars };

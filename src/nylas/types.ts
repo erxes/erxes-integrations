@@ -167,7 +167,7 @@ export interface ICalendar {
   id: string;
   object: 'calendar';
   account_id: string;
-  name: string;
+  name?: string;
   description?: string;
   read_only: boolean;
 }

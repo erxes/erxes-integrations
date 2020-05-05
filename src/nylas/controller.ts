@@ -3,6 +3,8 @@ import * as dotenv from 'dotenv';
 import * as formidable from 'formidable';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
+import { Accounts } from '../models';
+import { getCalenderOrEventList } from './api';
 import {
   createNylasIntegration,
   getMessage,
@@ -10,11 +12,10 @@ import {
   nylasFileUpload,
   nylasGetAttachment,
   nylasGetCalendarOrEvent,
-  nylasGetCalendarsOrEvents,
   nylasSendEmail,
 } from './handleController';
 import { authProvider, getOAuthCredentials } from './loginMiddleware';
-import { getNylasConfig, syncMessages } from './utils';
+import { getNylasConfig, syncCalendars, syncEvents, syncMessages } from './utils';
 
 // load config
 dotenv.config();
@@ -41,8 +42,23 @@ export const initNylas = async app => {
 
     for (const delta of deltas) {
       const data = delta.object_data || {};
-      if (delta.type === 'message.created') {
-        await syncMessages(data.account_id, data.id);
+      const { id, account_id } = data;
+
+      switch (delta.type) {
+        case 'message.created':
+        case 'thread.replied':
+          await syncMessages(account_id, id);
+          break;
+        case 'event.created':
+        case 'event.updated':
+        case 'event.deleted':
+          await syncEvents(delta.type, account_id, id);
+          break;
+        case 'calendar.created':
+        case 'calendar.updated':
+        case 'calendar.deleted':
+          await syncCalendars(delta.type, account_id, id);
+          break;
       }
     }
 
@@ -146,7 +162,15 @@ export const initNylas = async app => {
     const { type, accountId } = req.query;
 
     try {
-      const response = await nylasGetCalendarsOrEvents(type, accountId);
+      debugNylas(`Get calendars with accountId: $${accountId}`);
+
+      const account = await Accounts.findOne({ _id: accountId }).lean();
+
+      if (!account) {
+        return next(new Error('Account not found'));
+      }
+
+      const response = await getCalenderOrEventList(type, account.nylasToken);
 
       return res.json(response);
     } catch (e) {

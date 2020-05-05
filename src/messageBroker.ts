@@ -13,7 +13,7 @@ import {
   nylasDeleteCalendarEvent,
   nylasSendEventAttendance,
   nylasUpdateEvent,
-} from './nylas/utils';
+} from './nylas/handleController';
 import { getLineWebhookUrl } from './smooch/api';
 
 dotenv.config();

@@ -240,7 +240,7 @@ export const enableOrDisableAccount = async (accountId: string, enable: boolean)
   return Accounts.updateOne({ uid: accountId }, { $set: { billingState: enable ? 'paid' : 'cancelled' } });
 };
 
-const getCalendarOrEvent = async (id: string, type: string, accessToken: string): Promise<ICalendar | IEvent> => {
+const getCalendarOrEvent = async (id: string, type: 'calendars' | 'events', accessToken: string) => {
   try {
     const response = await nylasInstanceWithToken({
       accessToken,
@@ -259,12 +259,17 @@ const getCalendarOrEvent = async (id: string, type: string, accessToken: string)
   }
 };
 
-const getCalenderOrEventList = async (type: string, accessToken: string): Promise<ICalendar[] | IEvent[]> => {
+const getCalenderOrEventList = async (
+  type: 'calendars' | 'events',
+  accessToken: string,
+  filter?: { show_cancelled?: boolean; event_id?: string; calendar_id?: string; description?: string; title?: string },
+) => {
   try {
     const responses = await nylasInstanceWithToken({
       accessToken,
       name: type,
       method: 'list',
+      options: filter,
     });
 
     if (!responses) {

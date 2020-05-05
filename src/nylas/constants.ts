@@ -16,7 +16,17 @@ export const AUTHORIZED_REDIRECT_URL = `${MAIN_APP_DOMAIN}/settings/integrations
 export const CONNECT_AUTHORIZE_URL = NYLAS_API_URL + '/connect/authorize';
 export const CONNECT_TOKEN_URL = NYLAS_API_URL + '/connect/token';
 
-export const MESSAGE_WEBHOOKS = ['message.created', 'thread.replied'];
+export const MESSAGE_WEBHOOKS = [
+  'message.created',
+  'thread.replied',
+
+  'calendar.created',
+  'calendar.deleted',
+  'calendar.updated',
+  'event.created',
+  'event.deleted',
+  'event.updated',
+];
 
 // Microsoft
 export const MICROSOFT_OAUTH_AUTH_URL = `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?`;
