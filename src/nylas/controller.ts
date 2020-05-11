@@ -4,7 +4,6 @@ import * as formidable from 'formidable';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
 import { Accounts } from '../models';
-import { getCalenderOrEventList } from './api';
 import {
   createNylasIntegration,
   getMessage,
@@ -15,6 +14,7 @@ import {
   nylasSendEmail,
 } from './handleController';
 import { authProvider, getOAuthCredentials } from './loginMiddleware';
+import { NylasCalendars, NylasEvent } from './models';
 import { getNylasConfig, syncCalendars, syncEvents, syncMessages } from './utils';
 
 // load config
@@ -158,21 +158,60 @@ export const initNylas = async app => {
     }
   });
 
-  app.get('/nylas/get-calendars-events', async (req, res, next) => {
-    const { type, accountId } = req.query;
-
+  app.get('/nylas/get-accounts-calendars', async (req, _, next) => {
     try {
-      debugNylas(`Get calendars with accountId: $${accountId}`);
+      let { kind } = req.query;
 
-      const account = await Accounts.findOne({ _id: accountId }).lean();
-
-      if (!account) {
-        return next(new Error('Account not found'));
+      if (kind.includes('nylas')) {
+        kind = kind.split('-')[1];
       }
 
-      const response = await getCalenderOrEventList(type, account.nylasToken);
+      const accounts = await Accounts.find({ kind });
 
-      return res.json(response);
+      if (!accounts) {
+        throw new Error('Accounts not found');
+      }
+
+      const uids = accounts.map(account => account.uid);
+
+      const calendars = await NylasCalendars.find({ accountUid: { $in: uids } });
+      console.log(calendars);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/get-calendars', async (req, res, next) => {
+    const { accountUid } = req.query;
+
+    try {
+      debugNylas(`Get calendars with accountUid: $${accountUid}`);
+
+      const calendars = await NylasCalendars.find({ accountUid });
+
+      if (!calendars) {
+        throw new Error('Calendars not found');
+      }
+
+      return res.json(calendars);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/get-events', async (req, res, next) => {
+    const { calendarId } = req.query;
+
+    try {
+      debugNylas(`Get events with calendarId: ${calendarId}`);
+
+      const events = await NylasEvent.find({ providerCalendarId: calendarId });
+
+      if (!events) {
+        throw new Error('Events not found');
+      }
+
+      return res.json(events);
     } catch (e) {
       next(e);
     }

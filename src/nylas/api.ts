@@ -4,7 +4,7 @@ import { debugNylas } from '../debuggers';
 import { Accounts } from '../models';
 import { sendRequest } from '../utils';
 import { NYLAS_API_URL } from './constants';
-import { ICalendar, ICalendarAvailability, IEvent, IEventDoc, IMessageDraft } from './types';
+import { ICalendarAvailability, IEvent, IEventDoc, IMessageDraft } from './types';
 
 /**
  * Build message and send API request

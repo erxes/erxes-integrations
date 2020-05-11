@@ -3,7 +3,7 @@ import { sendRPCMessage } from '../messageBroker';
 import { Accounts } from '../models';
 import { cleanHtml } from '../utils';
 import {
-  NylasCalendar,
+  NylasCalendars,
   NylasEvent,
   NylasExchangeConversationMessages,
   NylasExchangeConversations,
@@ -79,11 +79,11 @@ const storeCalendars = async (calendars: ICalendar[]) => {
     });
   }
 
-  return NylasCalendar.insertMany(doc);
+  return NylasCalendars.insertMany(doc);
 };
 
 const updateCalendar = async (calendar: ICalendar) => {
-  const prevCalendar = await NylasCalendar.findOne({ providerCalendarId: calendar.id });
+  const prevCalendar = await NylasCalendars.findOne({ providerCalendarId: calendar.id });
 
   if (!prevCalendar) {
     throw new Error(`Calendar not found to be updated ${calendar.id}`);
@@ -136,7 +136,7 @@ const storeEvents = async (events: IEvent[]) => {
       participants: event.participants,
       readOnly: event.read_only,
       location: event.location,
-      when: { endTime: event.when.end_time, startTime: event.when.start_time },
+      when: event.when,
       busy: event.busy,
       status: event.status,
     });

@@ -301,7 +301,7 @@ const calendarSchema = {
 };
 
 // tslint:disable-next-line
-export const NylasCalendar = model<ICalendarDocument, ICalendarModel>('calendar', new Schema(calendarSchema));
+export const NylasCalendars = model<ICalendarDocument, ICalendarModel>('calendar', new Schema(calendarSchema));
 
 // Event
 export interface IEvent {
@@ -359,7 +359,7 @@ const eventSchema = {
   participants: [participantsSchema],
   readOnly: Boolean,
   location: String,
-  when: new Schema({ startTime: Number, endTime: Number }, { _id: false }),
+  when: Schema.Types.Mixed,
   busy: Boolean,
   status: String,
 };

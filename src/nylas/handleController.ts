@@ -21,7 +21,7 @@ import {
   connectYahooAndOutlookToNylas,
 } from './auth';
 import { NYLAS_API_URL } from './constants';
-import { NylasCalendar } from './models';
+import { NylasCalendars } from './models';
 import { NYLAS_MODELS, storeCalendars, storeEvents } from './store';
 import { ICalendar, IEventDoc } from './types';
 import { buildEmailAddress } from './utils';
@@ -217,17 +217,13 @@ export const nylasGetAllEvents = async (accountId: string) => {
       throw new Error(`Account not found with id: ${accountId}`);
     }
 
-    const calendars = await NylasCalendar.find({ accountUid: account.uid });
-
-    const events = [];
+    const calendars = await NylasCalendars.find({ accountUid: account.uid });
 
     for (const calendar of calendars) {
-      events.push(
+      storeEvents(
         await getCalenderOrEventList('events', account.nylasToken, { calendar_id: calendar.providerCalendarId }),
       );
     }
-
-    return storeEvents(events);
   } catch (e) {
     throw e;
   }
