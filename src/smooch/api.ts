@@ -296,7 +296,7 @@ const createIntegration = async requestBody => {
   const integration = await Integrations.create(smoochProps);
 
   const smooch = await setupSmooch();
-  console.log('proops:', props);
+
   try {
     const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
 
