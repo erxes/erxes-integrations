@@ -290,20 +290,22 @@ const createIntegration = async requestBody => {
       smoochProps.twilioPhoneSid = props.phoneNumberSid;
       break;
   }
-
+  props.type = kind;
   smoochProps.smoochDisplayName = props.displayName;
 
   const integration = await Integrations.create(smoochProps);
 
   const smooch = await setupSmooch();
-
+  console.log('proops:', props);
   try {
     const result = await smooch.integrations.create({ appId: SMOOCH_APP_ID, props });
 
     await Integrations.updateOne({ _id: integration.id }, { $set: { smoochIntegrationId: result.integration._id } });
   } catch (e) {
     debugSmooch(`Failed to create smooch integration: ${e.message}`);
+
     await Integrations.deleteOne({ _id: integration.id });
+
     throw e;
   }
 };
