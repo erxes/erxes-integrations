@@ -260,6 +260,14 @@ describe('Test nylas controller', () => {
   test('Nylas send email', async () => {
     sendRequestMock.restore();
 
+    const redisAddtoArrayMock = sinon.stub(redisUtils, 'addToArray').callsFake(() => {
+      return Promise.resolve('success');
+    });
+
+    const redisRemoveFromArrayMock = sinon.stub(redisUtils, 'removeFromArray').callsFake(() => {
+      return Promise.resolve('success');
+    });
+
     try {
       await nylasSendEmail('alksjd', {});
     } catch (e) {
@@ -305,6 +313,8 @@ describe('Test nylas controller', () => {
 
     mock.restore();
     mockRequest.restore();
+    redisAddtoArrayMock.restore();
+    redisRemoveFromArrayMock.restore();
   });
 
   test('Create Nylas integration ', async () => {
