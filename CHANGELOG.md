@@ -1,3 +1,10 @@
+## [0.15.5](https://github.com/erxes/erxes-integrations/compare/0.15.4...0.15.5) (2020-07-15)
+
+
+### Bug Fixes
+
+* **nylas:** send reply email goes to resolved conversation ([a67e5b6](https://github.com/erxes/erxes-integrations/commit/a67e5b632122204723ddc78a00f7dc95ae6254d1)), closes [erxes/erxes#2097](https://github.com/erxes/erxes/issues/2097)
+
 ## [0.15.4](https://github.com/erxes/erxes-integrations/compare/0.5.13...0.15.4) (2020-07-08)
 
 ## [0.5.13](https://github.com/erxes/erxes-integrations/compare/0.15.2...0.5.13) (2020-07-08)
