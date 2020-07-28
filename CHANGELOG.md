@@ -1,3 +1,5 @@
+# [0.16.0](https://github.com/erxes/erxes-integrations/compare/0.15.5...0.16.0) (2020-07-28)
+
 ## [0.15.5](https://github.com/erxes/erxes-integrations/compare/0.15.4...0.15.5) (2020-07-15)
 
 
