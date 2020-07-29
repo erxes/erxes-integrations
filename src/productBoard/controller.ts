@@ -8,32 +8,55 @@ const init = async app => {
     const PRODUCT_BOARD_TOKEN = await getConfig('PRODUCT_BOARD_TOKEN');
     const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
 
-    const { customer, content, tags } = req.body;
+    const { customer, messages, tags, erxesApiConversationId, user } = req.body;
+
+    let content = '';
+
+    for (const message of messages) {
+      const messageDate = new Date(message.createdAt).toUTCString();
+
+      if (message.customerId) {
+        content = content.concat(`<b>${customer.primaryEmail}</b> <i>${messageDate}</i><p>${message.content}</p><hr>`);
+      } else {
+        content = content.concat(`<b>${user.details.fullName}</b> <i>${messageDate}</i><p>${message.content}</p><hr>`);
+      }
+
+      if (message.attachments) {
+        for (const attachment of message.attachments) {
+          content = content.concat(`<a href="${attachment.url}">${attachment.name}</a><hr>`);
+        }
+      }
+    }
+
+    const origin = messages[messages.length - 1].content;
 
     try {
-      await sendRequest({
+      const result = await sendRequest({
         url: 'https://api.productboard.com/notes',
         method: 'POST',
         headerParams: {
           authorization: `Bearer ${PRODUCT_BOARD_TOKEN}`,
         },
         body: {
-          title: `Erxes message from ${customer.firstName}`,
+          title: messages[0].content,
           content,
-          customer_email: customer.email,
-          display_url: `${MAIN_APP_DOMAIN}/inbox/?_id=${customer._id}`,
+          customer_email: customer.primaryEmail,
+          display_url: `${MAIN_APP_DOMAIN}/inbox/?_id=${erxesApiConversationId}`,
           source: {
-            origin: 'erxes inbox',
-            customerId: customer._id,
+            origin,
+            record_id: erxesApiConversationId,
           },
-          tags,
+          tags: tags.map(tag => tag.name),
         },
       });
+
+      return res.send(result.links.html);
     } catch (e) {
+      if (e.statusCode === 422) {
+        next(new Error('already exists'));
+      }
       next(e);
     }
-
-    return res.json({ status: 'ok' });
   });
 };
 
