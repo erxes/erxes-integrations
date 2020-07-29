@@ -1,7 +1,19 @@
 import { debugProductBoard, debugRequest } from '../debuggers';
 import { getConfig, getEnv, sendRequest } from '../utils';
+import { Conversations } from './models';
 
 const init = async app => {
+  app.get('/productBoard/note', async (req, res) => {
+    const { erxesApiId } = req.query;
+    try {
+      const conversation = await Conversations.findOne({ erxesApiId });
+
+      return res.send(conversation.productBoardLink);
+    } catch (e) {
+      return res.send('');
+    }
+  });
+
   app.post('/productBoard/create-note', async (req, res, next) => {
     debugRequest(debugProductBoard, req);
 
@@ -48,6 +60,12 @@ const init = async app => {
           },
           tags: tags.map(tag => tag.name),
         },
+      });
+
+      await Conversations.create({
+        timestamp: new Date(),
+        erxesApiId: erxesApiConversationId,
+        productBoardLink: result.links.html,
       });
 
       return res.send(result.links.html);
