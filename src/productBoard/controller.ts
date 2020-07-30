@@ -72,6 +72,8 @@ const init = async app => {
     } catch (e) {
       if (e.statusCode === 422) {
         next(new Error('already exists'));
+      } else if (e.statusCode === 401) {
+        next(new Error('Please enter the product board access token in system config.'));
       }
       next(e);
     }
