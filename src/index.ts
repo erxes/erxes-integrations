@@ -7,7 +7,7 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
-import { initConsumer, rabbitMQStatus } from './messageBroker';
+import { initBroker } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
 import { initNylas } from './nylas/controller';
@@ -62,13 +62,6 @@ app.get('/status', async (_req, res, next) => {
     await redisStatus();
   } catch (e) {
     debugIntegrations('Redis is not running');
-    return next(e);
-  }
-
-  try {
-    await rabbitMQStatus();
-  } catch (e) {
-    debugIntegrations('RabbitMQ is not running');
     return next(e);
   }
 
@@ -164,7 +157,7 @@ const { PORT } = process.env;
 app.listen(PORT, () => {
   connect().then(async () => {
     await initRedis();
-    await initConsumer();
+    await initBroker();
 
     // Initialize startup
     init();
