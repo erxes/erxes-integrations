@@ -57,7 +57,7 @@ let client;
 
 export const initBroker = async () => {
   client = await messageBroker({
-    name: 'workers',
+    name: 'integrations',
     RABBITMQ_HOST: process.env.RABBITMQ_HOST,
   });
 
