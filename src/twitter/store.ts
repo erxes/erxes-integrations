@@ -1,4 +1,4 @@
-import messageBroker from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import { IIntegrationDocument } from '../models/Integrations';
 import { ConversationMessages, Conversations, Customers, IConversationDocument } from './models';
 
@@ -39,7 +39,7 @@ export const getOrCreateCustomer = async (integration: IIntegrationDocument, use
 
   // save on api
   try {
-    const apiCustomerResponse = await messageBroker().sendRPCMessage({
+    const apiCustomerResponse = await sendRPCMessage({
       action: 'get-create-update-customer',
       payload: JSON.stringify({
         //  integrationId on erxes-api
@@ -93,7 +93,7 @@ export const getOrCreateConversation = async (
 
   // save on api
   try {
-    const apiConversationResponse = await messageBroker().sendRPCMessage({
+    const apiConversationResponse = await sendRPCMessage({
       action: 'create-or-update-conversation',
       payload: JSON.stringify({
         customerId: customerErxesApiId,
@@ -136,7 +136,7 @@ export const createConverstaionMessage = async (
 
     // save message on api
     try {
-      await messageBroker().sendRPCMessage({
+      await sendRPCMessage({
         action: 'create-conversation-message',
         metaInfo: 'replaceContent',
         payload: JSON.stringify({

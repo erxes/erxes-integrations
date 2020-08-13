@@ -1,5 +1,5 @@
 import { Activity } from 'botbuilder';
-import messageBroker from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import Integrations from '../models/Integrations';
 import { ConversationMessages, Conversations } from './models';
 import { getOrCreateCustomer } from './store';
@@ -42,7 +42,7 @@ const receiveMessage = async (activity: Activity) => {
 
     // save on api
     try {
-      const apiConversationResponse = await messageBroker().sendRPCMessage({
+      const apiConversationResponse = await sendRPCMessage({
         action: 'create-or-update-conversation',
         payload: JSON.stringify({
           customerId: customer.erxesApiId,
@@ -86,7 +86,7 @@ const receiveMessage = async (activity: Activity) => {
 
     // save message on api
     try {
-      await messageBroker().sendRPCMessage({
+      await sendRPCMessage({
         action: 'create-conversation-message',
         metaInfo: 'replaceContent',
         payload: JSON.stringify({

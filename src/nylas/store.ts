@@ -1,6 +1,6 @@
 import { client as memoryStorage } from 'erxes-inmemory-storage';
 import { debugNylas } from '../debuggers';
-import messageBroker from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import { cleanHtml } from '../utils';
 import {
   NylasExchangeConversationMessages,
@@ -289,7 +289,7 @@ export const getOrCreate = async ({ kind, collectionName, selector, fields }: IG
     try {
       const action = map[collectionName].action;
 
-      const response = await messageBroker().sendRPCMessage({
+      const response = await sendRPCMessage({
         action,
         metaInfo: action.includes('message') ? 'replaceContent' : null,
         payload: JSON.stringify(fields.api),

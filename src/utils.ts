@@ -3,7 +3,7 @@ import { client as memoryStorage } from 'erxes-inmemory-storage';
 import * as request from 'request-promise';
 import * as sanitizeHtml from 'sanitize-html';
 import { debugBase, debugExternalRequests } from './debuggers';
-import messageBroker from './messageBroker';
+import { sendRPCMessage } from './messageBroker';
 import Configs from './models/Configs';
 import { IProviderSettings } from './nylas/types';
 
@@ -180,7 +180,7 @@ export const getConfig = async (code, defaultValue?) => {
 };
 
 export const getCommonGoogleConfigs = async () => {
-  const response = await messageBroker().sendRPCMessage({ action: 'get-configs' });
+  const response = await sendRPCMessage({ action: 'get-configs' });
 
   const configs = response.configs;
 

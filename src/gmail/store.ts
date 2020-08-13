@@ -1,4 +1,4 @@
-import messageBroker from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import { cleanHtml } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './models';
 import { buildEmail } from './util';
@@ -26,7 +26,7 @@ export const createOrGetCustomer = async (email: string, integrationIds: IIntegr
     }
 
     try {
-      const apiCustomerResponse = await messageBroker().sendRPCMessage({
+      const apiCustomerResponse = await sendRPCMessage({
         action: 'get-create-update-customer',
         payload: JSON.stringify({
           emails: [email],
@@ -86,7 +86,7 @@ export const createOrGetConversation = async (args: {
 
     // save on api
     try {
-      const apiConversationResponse = await messageBroker().sendRPCMessage({
+      const apiConversationResponse = await sendRPCMessage({
         action: 'create-or-update-conversation',
         payload: JSON.stringify({
           customerId: customerErxesApiId,
@@ -142,7 +142,7 @@ export const createOrGetConversationMessage = async (args: {
     const newConversationMessage = await ConversationMessages.create(doc);
 
     try {
-      const apiMessageResponse = await messageBroker().sendRPCMessage({
+      const apiMessageResponse = await sendRPCMessage({
         action: 'create-conversation-message',
         metaInfo: 'replaceContent',
         payload: JSON.stringify({

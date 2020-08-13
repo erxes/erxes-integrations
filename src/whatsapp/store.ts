@@ -1,7 +1,7 @@
 import { ConversationMessages, Conversations, Customers } from './models';
 
 import { debugWhatsapp } from '../debuggers';
-import messageBroker from '../messageBroker';
+import { sendRPCMessage } from '../messageBroker';
 import { Integrations } from '../models';
 
 export interface IUser {
@@ -31,7 +31,7 @@ export const getOrCreateCustomer = async (phoneNumber: string, name: string, ins
 
   // save on api
   try {
-    const apiCustomerResponse = await messageBroker().sendRPCMessage({
+    const apiCustomerResponse = await sendRPCMessage({
       action: 'get-create-update-customer',
       payload: JSON.stringify({
         integrationId: integration.erxesApiId,
@@ -78,7 +78,7 @@ export const createOrUpdateConversation = async (message, instanceId: string, cu
 
   // save on api
   try {
-    const apiConversationResponse = await messageBroker().sendRPCMessage({
+    const apiConversationResponse = await sendRPCMessage({
       action: 'create-or-update-conversation',
       payload: JSON.stringify({
         customerId: customerErxesApiID,
@@ -135,7 +135,7 @@ export const createMessage = async (message, conversationIds) => {
   }
 
   try {
-    await messageBroker().sendRPCMessage({
+    await sendRPCMessage({
       action: 'create-conversation-message',
       metaInfo: 'replaceContent',
       payload: JSON.stringify({
