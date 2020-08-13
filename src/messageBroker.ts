@@ -117,3 +117,11 @@ export const initBroker = async () => {
 export default function() {
   return client;
 }
+
+export const sendRPCMessage = async (message): Promise<any> => {
+  return client.sendRPCMessage('rpc_queue:integrations_to_api', message);
+};
+
+export const sendMessage = async (data?: any) => {
+  return client.sendRPCMessage('integrationsNotification', data);
+};
