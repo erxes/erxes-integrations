@@ -1,6 +1,6 @@
 import { debugChatfuel, debugRequest } from '../debuggers';
 import { generateAttachmentMessages } from '../facebook/utils';
-import { sendRPCMessage } from '../messageBroker';
+import messageBroker from '../messageBroker';
 import { Integrations } from '../models';
 import { sendRequest } from '../utils';
 import { ConversationMessages, Conversations, Customers } from './models';
@@ -96,7 +96,7 @@ const init = async app => {
 
       // save on api
       try {
-        const apiCustomerResponse = await sendRPCMessage({
+        const apiCustomerResponse = await messageBroker().sendRPCMessage({
           action: 'get-create-update-customer',
           payload: JSON.stringify({
             integrationId: integration.erxesApiId,
@@ -132,7 +132,7 @@ const init = async app => {
 
       // save on api
       try {
-        const apiConversationResponse = await sendRPCMessage({
+        const apiConversationResponse = await messageBroker().sendRPCMessage({
           action: 'create-or-update-conversation',
           payload: JSON.stringify({
             customerId: customer.erxesApiId,
@@ -157,7 +157,7 @@ const init = async app => {
 
     // save message on api
     try {
-      await sendRPCMessage({
+      await messageBroker().sendRPCMessage({
         action: 'create-conversation-message',
         payload: JSON.stringify({
           content: message,

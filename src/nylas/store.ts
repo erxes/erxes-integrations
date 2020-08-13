@@ -1,6 +1,6 @@
+import { client as memoryStorage } from 'erxes-inmemory-storage';
 import { debugNylas } from '../debuggers';
-import { sendRPCMessage } from '../messageBroker';
-import { inArray } from '../redisClient';
+import messageBroker from '../messageBroker';
 import { cleanHtml } from '../utils';
 import {
   NylasExchangeConversationMessages,
@@ -229,7 +229,7 @@ const createOrGetNylasConversationMessage = async ({
     createdAt,
   };
 
-  const isUnreadMessage = await inArray('nylas_unread_messageId', message.id);
+  const isUnreadMessage = await memoryStorage.inArray('nylas_unread_messageId', message.id);
 
   // fields to save on api
   const api = {
@@ -289,7 +289,7 @@ export const getOrCreate = async ({ kind, collectionName, selector, fields }: IG
     try {
       const action = map[collectionName].action;
 
-      const response = await sendRPCMessage({
+      const response = await messageBroker().sendRPCMessage({
         action,
         metaInfo: action.includes('message') ? 'replaceContent' : null,
         payload: JSON.stringify(fields.api),

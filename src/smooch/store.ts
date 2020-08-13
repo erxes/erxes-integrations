@@ -23,7 +23,7 @@ import {
 } from './types';
 
 import { debugSmooch } from '../debuggers';
-import { sendRPCMessage } from '../messageBroker';
+import messageBroker from '../messageBroker';
 import { checkConcurrentError } from '../utils';
 
 const SMOOCH_MODELS = {
@@ -246,7 +246,7 @@ const getOrCreate = async ({ kind, collectionName, selector, fields }: IGetOrCre
 };
 
 const requestMainApi = (action: string, params: IAPICustomer | IAPIConversation | IAPIConversationMessage) => {
-  return sendRPCMessage({
+  return messageBroker().sendRPCMessage({
     action,
     metaInfo: action.includes('message') ? 'replaceContent' : null,
     payload: JSON.stringify(params),

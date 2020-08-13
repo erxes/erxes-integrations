@@ -1,7 +1,7 @@
 import { Comments, Customers, Posts } from './models';
 import { ICommentParams, IPostParams } from './types';
 
-import { sendMessage, sendRPCMessage } from '../messageBroker';
+import messageBroker from '../messageBroker';
 import { Accounts, Integrations } from '../models';
 import { getFacebookUser, getFacebookUserProfilePic } from './utils';
 
@@ -101,7 +101,7 @@ export const getOrCreatePost = async (
 
   // create conversation in api
   try {
-    const apiConversationResponse = await sendRPCMessage({
+    const apiConversationResponse = await messageBroker().sendRPCMessage({
       action: 'create-or-update-conversation',
       payload: JSON.stringify({
         customerId: customerErxesApiId,
@@ -137,7 +137,7 @@ export const getOrCreateComment = async (commentParams: ICommentParams, pageId: 
 
   await Comments.create(doc);
 
-  sendMessage({ action: 'external-integration-entry-added' });
+  messageBroker().sendMessage({ action: 'external-integration-entry-added' });
 };
 
 export const getOrCreateCustomer = async (pageId: string, userId: string, kind: string) => {
@@ -172,7 +172,7 @@ export const getOrCreateCustomer = async (pageId: string, userId: string, kind: 
 
   // save on api
   try {
-    const apiCustomerResponse = await sendRPCMessage({
+    const apiCustomerResponse = await messageBroker().sendRPCMessage({
       action: 'get-create-update-customer',
       payload: JSON.stringify({
         integrationId: integration.erxesApiId,

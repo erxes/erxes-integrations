@@ -3,9 +3,9 @@ import * as dotenv from 'dotenv';
 import { debugGmail } from './debuggers';
 import { removeAccount, removeCustomers } from './helpers';
 
+import messageBroker from 'erxes-message-broker';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
-import init from './messageBroker/index';
 import { Integrations } from './models';
 import { getLineWebhookUrl } from './smooch/api';
 
@@ -56,7 +56,7 @@ dotenv.config();
 let client;
 
 export const initBroker = async () => {
-  client = await init({
+  client = await messageBroker({
     name: 'workers',
     RABBITMQ_HOST: process.env.RABBITMQ_HOST,
   });
@@ -117,11 +117,3 @@ export const initBroker = async () => {
 export default function() {
   return client;
 }
-
-export const sendRPCMessage = async (message): Promise<any> => {
-  return client.sendRPCMessage('rpc_queue:integrations_to_api', message);
-};
-
-export const sendMessage = async (data?: any) => {
-  return client.sendRPCMessage('integrationsNotification', data);
-};

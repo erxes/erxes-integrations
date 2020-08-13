@@ -1,5 +1,5 @@
 import { debugCallPro, debugRequest } from '../debuggers';
-import { sendRPCMessage } from '../messageBroker';
+import messageBroker from '../messageBroker';
 import { Integrations } from '../models';
 import { Conversations, Customers } from './models';
 
@@ -75,7 +75,7 @@ const init = async app => {
 
       // save on api
       try {
-        const apiCustomerResponse = await sendRPCMessage({
+        const apiCustomerResponse = await messageBroker().sendRPCMessage({
           action: 'get-create-update-customer',
           payload: JSON.stringify({
             integrationId: integration.erxesApiId,
@@ -117,7 +117,7 @@ const init = async app => {
       await Conversations.updateOne({ callId: callID }, { $set: { state: disp } });
 
       try {
-        await sendRPCMessage({
+        await messageBroker().sendRPCMessage({
           action: 'create-or-update-conversation',
           payload: JSON.stringify({
             content: disp,
@@ -134,7 +134,7 @@ const init = async app => {
 
     // save on api
     try {
-      const apiConversationResponse = await sendRPCMessage({
+      const apiConversationResponse = await messageBroker().sendRPCMessage({
         action: 'create-or-update-conversation',
         payload: JSON.stringify({
           customerId: customer.erxesApiId,

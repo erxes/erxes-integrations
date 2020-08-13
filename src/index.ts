@@ -1,3 +1,5 @@
+import './inmemoryStorage';
+
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import initCallPro from './callpro/controller';
@@ -12,7 +14,6 @@ import Accounts from './models/Accounts';
 import Configs from './models/Configs';
 import { initNylas } from './nylas/controller';
 import initProductBoard from './productBoard/controller';
-import { initRedis, redisStatus } from './redisClient';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
@@ -57,14 +58,6 @@ app.get('/status', async (_req, res, next) => {
     debugIntegrations('MongoDB is not running');
     return next(e);
   }
-
-  try {
-    await redisStatus();
-  } catch (e) {
-    debugIntegrations('Redis is not running');
-    return next(e);
-  }
-
   res.end('ok');
 });
 
@@ -156,7 +149,6 @@ const { PORT } = process.env;
 
 app.listen(PORT, () => {
   connect().then(async () => {
-    await initRedis();
     await initBroker();
 
     // Initialize startup
