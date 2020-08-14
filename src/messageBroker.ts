@@ -123,5 +123,5 @@ export const sendRPCMessage = async (message): Promise<any> => {
 };
 
 export const sendMessage = async (data?: any) => {
-  return client.sendRPCMessage('integrationsNotification', data);
+  return client.sendMessage('integrationsNotification', data);
 };
