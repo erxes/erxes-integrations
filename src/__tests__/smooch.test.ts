@@ -1,3 +1,4 @@
+import * as memoryStorage from 'erxes-inmemory-storage';
 import * as request from 'request-promise';
 import * as sinon from 'sinon';
 import { integrationFactory } from '../factories';
@@ -22,6 +23,8 @@ import {
   ISmoochCustomerInput,
 } from '../smooch/types';
 import './setup.ts';
+
+memoryStorage.init({});
 
 describe('Smooch test', () => {
   const requestBody = {

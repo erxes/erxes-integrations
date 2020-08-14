@@ -1,3 +1,4 @@
+import * as memoryStorage from 'erxes-inmemory-storage';
 import * as querystring from 'querystring';
 import * as sinon from 'sinon';
 import * as debuggers from '../debuggers';
@@ -12,6 +13,8 @@ import getOAuthCredentials from '../nylas/loginMiddleware';
 import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
+
+memoryStorage.init({});
 
 interface IReqBody {
   kind?: string;

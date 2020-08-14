@@ -1,3 +1,4 @@
+import * as memoryStorage from 'erxes-inmemory-storage';
 import * as request from 'request-promise';
 import * as sinon from 'sinon';
 import { integrationFactory } from '../factories';
@@ -9,6 +10,8 @@ import { ConversationMessages, Conversations, Customers } from '../whatsapp/mode
 import receiveMessage from '../whatsapp/receiveMessage';
 import { createMessage, createOrUpdateConversation, getOrCreateCustomer } from '../whatsapp/store';
 import './setup.ts';
+
+memoryStorage.init({});
 
 describe('WhatsApp test', () => {
   const uid = 'alksjdlkasjdlkajsldkjakld';

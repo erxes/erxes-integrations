@@ -1,4 +1,4 @@
-import { client as memoryStorage } from 'erxes-inmemory-storage';
+import * as memoryStorage from 'erxes-inmemory-storage';
 import * as sinon from 'sinon';
 import { integrationFactory } from '../factories';
 import { Integrations } from '../models';
@@ -15,6 +15,8 @@ import { NylasGmailConversationMessages } from '../nylas/models';
 import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
+
+memoryStorage.init({});
 
 describe('Test nylas controller', () => {
   let sendRequestMock;
@@ -156,11 +158,11 @@ describe('Test nylas controller', () => {
       });
     });
 
-    const redisMock = sinon.stub(memoryStorage, 'get').callsFake(() => {
+    const redisMock = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
       return Promise.resolve('email321,refrshToken');
     });
 
-    const redisRemoveMock = sinon.stub(memoryStorage, 'removeKey').callsFake(() => {
+    const redisRemoveMock = sinon.stub(memoryStorage.client, 'removeKey').callsFake(() => {
       return Promise.resolve('success');
     });
 
@@ -260,11 +262,11 @@ describe('Test nylas controller', () => {
   test('Nylas send email', async () => {
     sendRequestMock.restore();
 
-    const redisAddtoArrayMock = sinon.stub(memoryStorage, 'addToArray').callsFake(() => {
+    const redisAddtoArrayMock = sinon.stub(memoryStorage.client, 'addToArray').callsFake(() => {
       return Promise.resolve('success');
     });
 
-    const redisRemoveFromArrayMock = sinon.stub(memoryStorage, 'removeFromArray').callsFake(() => {
+    const redisRemoveFromArrayMock = sinon.stub(memoryStorage.client, 'removeFromArray').callsFake(() => {
       return Promise.resolve('success');
     });
 
@@ -329,11 +331,11 @@ describe('Test nylas controller', () => {
       });
     });
 
-    const redisMock = sinon.stub(memoryStorage, 'get').callsFake(() => {
+    const redisMock = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
       return Promise.resolve('email321@gmail.com,refrshToken');
     });
 
-    const redisRemoveMock = sinon.stub(memoryStorage, 'removeKey').callsFake(() => {
+    const redisRemoveMock = sinon.stub(memoryStorage.client, 'removeKey').callsFake(() => {
       return Promise.resolve('success');
     });
 

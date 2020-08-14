@@ -1,3 +1,4 @@
+import * as memoryStorage from 'erxes-inmemory-storage';
 import * as sinon from 'sinon';
 import { accountFactory, integrationFactory } from '../factories';
 import * as message from '../messageBroker';
@@ -5,6 +6,8 @@ import { ConversationMessages, Conversations, Customers } from '../twitter/model
 import receiveDms from '../twitter/receiveDms';
 import { createConverstaionMessage, getOrCreateConversation, getOrCreateCustomer } from '../twitter/store';
 import './setup.ts';
+
+memoryStorage.init({});
 
 describe('Twitter test test', () => {
   const users = {
