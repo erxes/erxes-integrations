@@ -1,5 +1,3 @@
-import './inmemoryStorage';
-
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import initCallPro from './callpro/controller';
@@ -9,6 +7,7 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
+import { initRedis } from './inmemoryStorage';
 import { initBroker } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
@@ -150,6 +149,8 @@ const { PORT } = process.env;
 app.listen(PORT, () => {
   connect().then(async () => {
     await initBroker();
+
+    initRedis();
 
     // Initialize startup
     init();

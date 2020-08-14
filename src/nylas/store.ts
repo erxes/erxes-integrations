@@ -1,5 +1,5 @@
-import { client as memoryStorage } from 'erxes-inmemory-storage';
 import { debugNylas } from '../debuggers';
+import memoryStorage from '../inmemoryStorage';
 import { sendRPCMessage } from '../messageBroker';
 import { cleanHtml } from '../utils';
 import {
@@ -229,7 +229,7 @@ const createOrGetNylasConversationMessage = async ({
     createdAt,
   };
 
-  const isUnreadMessage = await memoryStorage.inArray('nylas_unread_messageId', message.id);
+  const isUnreadMessage = await memoryStorage().inArray('nylas_unread_messageId', message.id);
 
   // fields to save on api
   const api = {

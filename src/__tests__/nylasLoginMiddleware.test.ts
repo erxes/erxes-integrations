@@ -1,7 +1,7 @@
-import * as memoryStorage from 'erxes-inmemory-storage';
 import * as querystring from 'querystring';
 import * as sinon from 'sinon';
 import * as debuggers from '../debuggers';
+import { initRedis } from '../inmemoryStorage';
 import * as api from '../nylas/api';
 import {
   AUTHORIZED_REDIRECT_URL,
@@ -14,7 +14,7 @@ import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
 
-memoryStorage.init({});
+initRedis();
 
 interface IReqBody {
   kind?: string;

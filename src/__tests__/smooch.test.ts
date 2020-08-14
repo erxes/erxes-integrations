@@ -1,8 +1,8 @@
-import * as memoryStorage from 'erxes-inmemory-storage';
 import * as request from 'request-promise';
 import * as sinon from 'sinon';
 import { integrationFactory } from '../factories';
 import { updateIntegrationConfigs } from '../helpers';
+import { initRedis } from '../inmemoryStorage';
 import * as messageBroker from '../messageBroker';
 import * as smoochUtils from '../smooch/api';
 import {
@@ -24,7 +24,7 @@ import {
 } from '../smooch/types';
 import './setup.ts';
 
-memoryStorage.init({});
+initRedis();
 
 describe('Smooch test', () => {
   const requestBody = {

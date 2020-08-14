@@ -1,4 +1,4 @@
-import { client as memoryStorage } from 'erxes-inmemory-storage';
+import memoryStorage from './inmemoryStorage';
 
 const EXCLUDE_PATH = [
   '/nylas/webhook',
@@ -24,7 +24,7 @@ const userMiddleware = async (req, _res, next) => {
     try {
       const userId = headers.userid || query.userId;
 
-      if (await memoryStorage.inArray('userIds', userId)) {
+      if (await memoryStorage().inArray('userIds', userId)) {
         return next();
       }
 

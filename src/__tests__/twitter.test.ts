@@ -1,13 +1,13 @@
-import * as memoryStorage from 'erxes-inmemory-storage';
 import * as sinon from 'sinon';
 import { accountFactory, integrationFactory } from '../factories';
+import { initRedis } from '../inmemoryStorage';
 import * as message from '../messageBroker';
 import { ConversationMessages, Conversations, Customers } from '../twitter/models';
 import receiveDms from '../twitter/receiveDms';
 import { createConverstaionMessage, getOrCreateConversation, getOrCreateCustomer } from '../twitter/store';
 import './setup.ts';
 
-memoryStorage.init({});
+initRedis();
 
 describe('Twitter test test', () => {
   const users = {

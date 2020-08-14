@@ -1,4 +1,3 @@
-import * as memoryStorage from 'erxes-inmemory-storage';
 import * as Nylas from 'nylas';
 import * as sinon from 'sinon';
 import {
@@ -10,6 +9,7 @@ import {
 } from '../factories';
 import { buildEmail } from '../gmail/util';
 import * as gmailUtils from '../gmail/util';
+import memoryStorage, { initRedis } from '../inmemoryStorage';
 import * as messageBroker from '../messageBroker';
 import { Integrations } from '../models';
 import Configs from '../models/Configs';
@@ -32,7 +32,7 @@ import * as utils from '../utils';
 import { cleanHtml } from '../utils';
 import './setup.ts';
 
-memoryStorage.init({});
+initRedis();
 
 describe('Nylas gmail test', () => {
   const erxesApiId = 'erxesApiId';
@@ -308,7 +308,7 @@ describe('Nylas gmail test', () => {
   });
 
   test('Store compose function create or get nylas customer, conversation, message', async () => {
-    const inArrayMock = sinon.stub(memoryStorage.client, 'inArray').callsFake(() => {
+    const inArrayMock = sinon.stub(memoryStorage(), 'inArray').callsFake(() => {
       return Promise.resolve('alksjdkjasae');
     });
 
@@ -552,11 +552,11 @@ describe('Nylas gmail test', () => {
 
     const mock = sinon.stub(utils, 'sendRequest');
 
-    const redisMock = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
+    const redisMock = sinon.stub(memoryStorage(), 'get').callsFake(() => {
       return Promise.resolve('email,refrshToken');
     });
 
-    const redisRemoveMock = sinon.stub(memoryStorage.client, 'removeKey').callsFake(() => {
+    const redisRemoveMock = sinon.stub(memoryStorage(), 'removeKey').callsFake(() => {
       return Promise.resolve('success');
     });
 
@@ -583,7 +583,7 @@ describe('Nylas gmail test', () => {
       kind: 'gmail',
     });
 
-    const redisMockExists = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
+    const redisMockExists = sinon.stub(memoryStorage(), 'get').callsFake(() => {
       return Promise.resolve('john@mail.com,refreshToken');
     });
 
@@ -602,7 +602,7 @@ describe('Nylas gmail test', () => {
 
     redisMockExists.restore();
 
-    const redisMockNotFound = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
+    const redisMockNotFound = sinon.stub(memoryStorage(), 'get').callsFake(() => {
       return Promise.resolve(null);
     });
 
@@ -617,7 +617,7 @@ describe('Nylas gmail test', () => {
     mock.restore();
     sendRPCMessageMock.restore();
 
-    const redisMockExists2 = sinon.stub(memoryStorage.client, 'get').callsFake(() => {
+    const redisMockExists2 = sinon.stub(memoryStorage(), 'get').callsFake(() => {
       return Promise.resolve('user2@mail.com,refreshToken');
     });
 

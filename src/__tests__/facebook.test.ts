@@ -1,4 +1,3 @@
-import * as memoryStorage from 'erxes-inmemory-storage';
 import * as sinon from 'sinon';
 import { Comments, ConversationMessages, Conversations, Customers, Posts } from '../facebook/models';
 import receiveMessage from '../facebook/receiveMessage';
@@ -13,11 +12,12 @@ import {
   facebookPostFactory,
   integrationFactory,
 } from '../factories';
+import { initRedis } from '../inmemoryStorage';
 import * as message from '../messageBroker';
 import { Accounts, Integrations } from '../models';
 import './setup.ts';
 
-memoryStorage.init({});
+initRedis();
 
 describe('Facebook test', () => {
   let accountId;

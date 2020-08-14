@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
-import { client as memoryStorage } from 'erxes-inmemory-storage';
 import { debugNylas } from '../debuggers';
+import memoryStorage from '../inmemoryStorage';
 import { Integrations } from '../models';
 import { getConfig, sendRequest } from '../utils';
 import { checkEmailDuplication, enableOrDisableAccount } from './api';
@@ -19,7 +19,7 @@ dotenv.config();
 const connectProviderToNylas = async (kind: string, integrationId: string, uid: string) => {
   const crendentialKey = `${uid}-credential`;
 
-  const providerCredential = await memoryStorage.get(crendentialKey, false);
+  const providerCredential = await memoryStorage().get(crendentialKey, false);
 
   if (!providerCredential) {
     throw new Error(`Refresh token not found ${kind}`);
@@ -43,7 +43,7 @@ const connectProviderToNylas = async (kind: string, integrationId: string, uid: 
       ...(kind === 'gmail' ? { scopes: 'email.read_only,email.drafts,email.send,email.modify' } : {}),
     });
 
-    await memoryStorage.removeKey(crendentialKey);
+    await memoryStorage().removeKey(crendentialKey);
 
     await createIntegration({
       kind,
