@@ -156,5 +156,5 @@ app.listen(PORT, () => {
     init();
   });
 
-  debugInit(`Integrations server is running on port ${PORT}.`);
+  debugInit(`Integrations server is running on port ${PORT}`);
 });
