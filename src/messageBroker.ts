@@ -105,8 +105,10 @@ export const initBroker = async () => {
       switch (type) {
         case 'facebook':
           await handleFacebookMessage(content);
+          break;
         case 'cronjob':
           await handleRunCronMessage();
+          break;
         case 'removeCustomers':
           await removeCustomers(content);
       }
