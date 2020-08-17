@@ -7,7 +7,7 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
-import { initRedis } from './inmemoryStorage';
+import { initMemoryStorage } from './inmemoryStorage';
 import { initBroker } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
@@ -129,6 +129,7 @@ initChatfuel(app);
 
 // init whatsapp
 initWhatsapp(app);
+
 // init chatfuel
 initDaily(app);
 
@@ -150,7 +151,7 @@ app.listen(PORT, () => {
   connect().then(async () => {
     await initBroker();
 
-    initRedis();
+    initMemoryStorage();
 
     // Initialize startup
     init();

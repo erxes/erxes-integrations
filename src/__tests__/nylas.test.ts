@@ -9,7 +9,7 @@ import {
 } from '../factories';
 import { buildEmail } from '../gmail/util';
 import * as gmailUtils from '../gmail/util';
-import memoryStorage, { initRedis } from '../inmemoryStorage';
+import memoryStorage, { initMemoryStorage } from '../inmemoryStorage';
 import * as messageBroker from '../messageBroker';
 import { Integrations } from '../models';
 import Configs from '../models/Configs';
@@ -32,7 +32,7 @@ import * as utils from '../utils';
 import { cleanHtml } from '../utils';
 import './setup.ts';
 
-initRedis();
+initMemoryStorage();
 
 describe('Nylas gmail test', () => {
   const erxesApiId = 'erxesApiId';

@@ -12,12 +12,12 @@ import {
   facebookPostFactory,
   integrationFactory,
 } from '../factories';
-import { initRedis } from '../inmemoryStorage';
+import { initMemoryStorage } from '../inmemoryStorage';
 import * as message from '../messageBroker';
 import { Accounts, Integrations } from '../models';
 import './setup.ts';
 
-initRedis();
+initMemoryStorage();
 
 describe('Facebook test', () => {
   let accountId;

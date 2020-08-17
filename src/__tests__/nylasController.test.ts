@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { integrationFactory } from '../factories';
-import memoryStorage, { initRedis } from '../inmemoryStorage';
+import memoryStorage, { initMemoryStorage } from '../inmemoryStorage';
 import { Integrations } from '../models';
 import * as api from '../nylas/api';
 import * as auth from '../nylas/auth';
@@ -16,7 +16,7 @@ import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
 
-initRedis();
+initMemoryStorage();
 
 describe('Test nylas controller', () => {
   let sendRequestMock;

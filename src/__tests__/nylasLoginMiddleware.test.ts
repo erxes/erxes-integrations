@@ -1,7 +1,7 @@
 import * as querystring from 'querystring';
 import * as sinon from 'sinon';
 import * as debuggers from '../debuggers';
-import { initRedis } from '../inmemoryStorage';
+import { initMemoryStorage } from '../inmemoryStorage';
 import * as api from '../nylas/api';
 import {
   AUTHORIZED_REDIRECT_URL,
@@ -14,7 +14,7 @@ import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
 
-initRedis();
+initMemoryStorage();
 
 interface IReqBody {
   kind?: string;
