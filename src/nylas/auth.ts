@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { debugNylas } from '../debuggers';
+import memoryStorage from '../inmemoryStorage';
 import { Integrations } from '../models';
-import { get, removeKey } from '../redisClient';
 import { getConfig, sendRequest } from '../utils';
 import { checkEmailDuplication, enableOrDisableAccount } from './api';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL, NYLAS_API_URL } from './constants';
@@ -19,7 +19,7 @@ dotenv.config();
 const connectProviderToNylas = async (kind: string, integrationId: string, uid: string) => {
   const crendentialKey = `${uid}-credential`;
 
-  const providerCredential = await get(crendentialKey, false);
+  const providerCredential = await memoryStorage().get(crendentialKey, false);
 
   if (!providerCredential) {
     throw new Error(`Refresh token not found ${kind}`);
@@ -43,9 +43,10 @@ const connectProviderToNylas = async (kind: string, integrationId: string, uid: 
       ...(kind === 'gmail' ? { scopes: 'email.read_only,email.drafts,email.send,email.modify' } : {}),
     });
 
-    await removeKey(crendentialKey);
+    await memoryStorage().removeKey(crendentialKey);
 
-    await updateIntegration({
+    await createIntegration({
+      kind,
       email,
       integrationId,
       nylasToken: access_token,
@@ -73,7 +74,8 @@ const connectYahooAndOutlookToNylas = async (kind: string, integrationId: string
       settings: { username: email, password },
     });
 
-    await updateIntegration({
+    await createIntegration({
+      kind,
       integrationId,
       nylasToken: access_token,
       nylasAccountId: account_id,
@@ -103,7 +105,8 @@ const connectExchangeToNylas = async (integrationId: string, data: INylasIntegra
       },
     });
 
-    await updateIntegration({
+    await createIntegration({
+      kind: 'exchange',
       integrationId,
       nylasToken: access_token,
       nylasAccountId: account_id,
@@ -141,7 +144,8 @@ const connectImapToNylas = async (integrationId: string, data: INylasIntegration
       },
     });
 
-    await updateIntegration({
+    await createIntegration({
+      kind: 'imap',
       integrationId,
       nylasToken: access_token,
       nylasAccountId: account_id,
@@ -243,34 +247,33 @@ const removeExistingNylasWebhook = async (): Promise<void> => {
   }
 };
 
-const updateIntegration = async ({
+const createIntegration = async ({
   email,
   integrationId,
   nylasAccountId,
   nylasToken,
   status,
+  kind,
 }: {
   email?: string;
   integrationId: string;
   nylasAccountId: string;
   nylasToken: string;
   status: string;
+  kind: string;
 }) => {
   if (status === 'cancelled') {
     await enableOrDisableAccount(nylasAccountId, true);
   }
 
-  return Integrations.updateOne(
-    { erxesApiId: integrationId },
-    {
-      $set: {
-        ...(email ? { email } : {}),
-        nylasToken,
-        nylasAccountId,
-        nylasBillingState: 'paid',
-      },
-    },
-  );
+  return Integrations.create({
+    ...(email ? { email } : {}),
+    kind,
+    erxesApiId: integrationId,
+    nylasToken,
+    nylasAccountId,
+    nylasBillingState: 'paid',
+  });
 };
 
 export {

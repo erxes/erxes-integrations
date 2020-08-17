@@ -7,11 +7,12 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
-import { initConsumer, rabbitMQStatus } from './messageBroker';
+import { initMemoryStorage } from './inmemoryStorage';
+import { initBroker } from './messageBroker';
 import Accounts from './models/Accounts';
 import Configs from './models/Configs';
 import { initNylas } from './nylas/controller';
-import { initRedis, redisStatus } from './redisClient';
+import initProductBoard from './productBoard/controller';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
@@ -56,21 +57,6 @@ app.get('/status', async (_req, res, next) => {
     debugIntegrations('MongoDB is not running');
     return next(e);
   }
-
-  try {
-    await redisStatus();
-  } catch (e) {
-    debugIntegrations('Redis is not running');
-    return next(e);
-  }
-
-  try {
-    await rabbitMQStatus();
-  } catch (e) {
-    debugIntegrations('RabbitMQ is not running');
-    return next(e);
-  }
-
   res.end('ok');
 });
 
@@ -143,11 +129,15 @@ initChatfuel(app);
 
 // init whatsapp
 initWhatsapp(app);
+
 // init chatfuel
 initDaily(app);
 
 // init smooch
 initSmooch(app);
+
+// init product board
+initProductBoard(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
@@ -159,8 +149,9 @@ const { PORT } = process.env;
 
 app.listen(PORT, () => {
   connect().then(async () => {
-    await initRedis();
-    await initConsumer();
+    await initBroker();
+
+    initMemoryStorage();
 
     // Initialize startup
     init();

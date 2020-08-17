@@ -1,6 +1,7 @@
 import * as querystring from 'querystring';
 import * as sinon from 'sinon';
 import * as debuggers from '../debuggers';
+import { initMemoryStorage } from '../inmemoryStorage';
 import * as api from '../nylas/api';
 import {
   AUTHORIZED_REDIRECT_URL,
@@ -12,6 +13,8 @@ import getOAuthCredentials from '../nylas/loginMiddleware';
 import * as nylasUtils from '../nylas/utils';
 import * as utils from '../utils';
 import './setup.ts';
+
+initMemoryStorage();
 
 interface IReqBody {
   kind?: string;
@@ -144,7 +147,7 @@ describe('Login middleware test', () => {
 
     const response = await getOAuthCredentials(req, res, next);
 
-    expect(response).toBe(`${AUTHORIZED_REDIRECT_URL}&uid=123#showgmailModal=true`);
+    expect(response).toBe(`${AUTHORIZED_REDIRECT_URL}?uid=123#showgmailModal=true`);
 
     sendRequestMock.restore();
   });
@@ -168,7 +171,7 @@ describe('Login middleware test', () => {
 
     const response = await getOAuthCredentials(req, res, next);
 
-    expect(response).toEqual(`${AUTHORIZED_REDIRECT_URL}&uid=123#showoffice365Modal=true`);
+    expect(response).toEqual(`${AUTHORIZED_REDIRECT_URL}?uid=123#showoffice365Modal=true`);
 
     sendRequestMock.restore();
   });

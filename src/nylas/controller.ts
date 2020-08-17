@@ -60,7 +60,7 @@ export const initNylas = async app => {
     try {
       await createNylasIntegration(kind, integrationId, args);
     } catch (e) {
-      next(e);
+      return next(e);
     }
 
     debugNylas(`Successfully created the integration and connected to nylas`);
@@ -135,7 +135,7 @@ export const initNylas = async app => {
 
       return res.json({ status: 'ok' });
     } catch (e) {
-      next(e);
+      return next(e);
     }
   });
 };
