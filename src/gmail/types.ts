@@ -88,3 +88,11 @@ export interface IPubsubMessage {
   data: Buffer;
   ack: () => void;
 }
+
+export interface IGmailRequest {
+  email: string;
+  type: string;
+  method: string;
+  params?: { [key: string]: string };
+  body?: any;
+}

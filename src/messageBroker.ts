@@ -2,66 +2,18 @@ import * as amqplib from 'amqplib';
 import * as dotenv from 'dotenv';
 import { v4 as uuid } from 'uuid';
 
-import { debugBase, debugGmail } from './debuggers';
+import { debugBase } from './debuggers';
 import { removeAccount, removeCustomers } from './helpers';
 
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
-import { watchPushNotification } from './gmail/watch';
-import { Integrations } from './models';
 import { getLineWebhookUrl } from './smooch/api';
 
 dotenv.config();
 
-const { NODE_ENV, RABBITMQ_HOST = 'amqp://localhost' } = process.env;
+const { RABBITMQ_HOST = 'amqp://localhost' } = process.env;
 
 let conn;
 let channel;
-
-const handleRunCronMessage = async () => {
-  if (NODE_ENV === 'test') {
-    return;
-  }
-
-  const integrations = await Integrations.aggregate([
-    {
-      $match: { email: { $exists: true } }, // email field indicates the gmail
-    },
-    {
-      $lookup: {
-        from: 'accounts',
-        localField: 'accountId',
-        foreignField: '_id',
-        as: 'accounts',
-      },
-    },
-    {
-      $unwind: '$accounts',
-    },
-    {
-      $project: {
-        access_token: '$accounts.token',
-        refresh_token: '$accounts.tokenSecret',
-        scope: '$accounts.scope',
-        expire_date: '$accounts.expireDate',
-      },
-    },
-  ]);
-
-  if (!integrations) {
-    return debugGmail('Gmail Integration not found');
-  }
-
-  for (const { _id, email } of integrations) {
-    const response = await watchPushNotification(email);
-    const { historyId, expiration } = response.data;
-
-    if (!historyId || !expiration) {
-      return debugGmail('Error Google: Failed to renew push notification');
-    }
-
-    await Integrations.updateOne({ _id }, { $set: { gmailHistoryId: historyId, expiration } });
-  }
-};
 
 export const sendRPCMessage = async (message): Promise<any> => {
   const response = await new Promise((resolve, reject) => {
@@ -123,8 +75,6 @@ export const initConsumer = async () => {
         switch (type) {
           case 'facebook':
             await handleFacebookMessage(content);
-          case 'cronjob':
-            await handleRunCronMessage();
           case 'removeCustomers':
             await removeCustomers(content);
         }

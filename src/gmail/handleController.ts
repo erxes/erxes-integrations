@@ -1,12 +1,13 @@
 import { debugGmail } from '../debuggers';
 import { Accounts, Integrations } from '../models';
-import { getAttachment } from './api';
+import { compose } from '../utils';
+import { collectMessagesIds, getAttachment, getHistoryChanges, getMessageById, subscribeUser } from './api';
 import { ConversationMessages } from './models';
 import { sendGmail } from './send';
+import { storeConversation, storeConversationMessage, storeCustomer, updateLastChangesHistoryId } from './store';
 import { getCredentialsByEmailAccountId } from './util';
-import { watchPushNotification } from './watch';
 
-export const createGmailIntegration = async (accountId: string, email: string, integrationId: string) => {
+export const createIntegration = async (accountId: string, email: string, integrationId: string) => {
   const account = await Accounts.findOne({ _id: accountId });
 
   if (!account) {
@@ -16,38 +17,27 @@ export const createGmailIntegration = async (accountId: string, email: string, i
   debugGmail(`Creating gmail integration for ${email}`);
 
   // Check exsting Integration
-  const dummyIntegration = await Integrations.findOne({ kind: 'gmail', accountId, email }).lean();
+  const prevIntegration = await Integrations.findOne({ accountId }).lean();
 
-  if (dummyIntegration) {
+  if (prevIntegration) {
     throw new Error(`Integration already exist with this email: ${email}`);
   }
 
-  const integration = await Integrations.create({
-    kind: 'gmail',
-    accountId,
-    erxesApiId: integrationId,
-    email,
-  });
-
-  debugGmail(`Watch push notification for this ${email} user`);
-
-  let historyId;
-  let expiration;
-
   try {
-    const response = await watchPushNotification(email);
+    const response = await subscribeUser(account.token, email);
 
-    historyId = response.data.historyId;
-    expiration = response.data.expiration;
+    await Integrations.create({
+      kind: 'gmail',
+      email,
+      accountId,
+      gmailHistoryId: response.historyId,
+      expiration: response.expiration,
+      erxesApiId: integrationId,
+    });
   } catch (e) {
-    debugGmail(`Error Google: Could not subscribe user ${email} to topic`);
+    debugGmail(`Error Google: Could not subscribe user ${email} to a topic`);
     throw e;
   }
-
-  integration.gmailHistoryId = historyId;
-  integration.expiration = expiration;
-
-  return integration.save();
 };
 
 export const sendEmail = async (erxesApiId: string, mailParams: any) => {
@@ -74,7 +64,7 @@ export const sendEmail = async (erxesApiId: string, mailParams: any) => {
   }
 };
 
-export const getGmailMessage = async (erxesApiMessageId: string, integrationId: string) => {
+export const getMessage = async (erxesApiMessageId: string, integrationId: string) => {
   debugGmail(`Request to get gmailData with: ${erxesApiMessageId}`);
 
   if (!erxesApiMessageId) {
@@ -120,6 +110,40 @@ export const getGmailAttachment = async (messageId: string, attachmentId: string
 
     return attachment;
   } catch (e) {
+    throw e;
+  }
+};
+
+export const handleMessage = async ({ email, historyId }: { email: string; historyId: string }) => {
+  debugGmail(`Executing: handleMessage email: ${email}`);
+
+  try {
+    const integration = await Integrations.findOne({ email }).lean();
+
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const parsedEmails = await compose(getMessageById, collectMessagesIds, getHistoryChanges)({ email, historyId });
+
+    // No changes made with recent historyId nothing to sync
+    if (!parsedEmails) {
+      return;
+    }
+
+    const { id, erxesApiId } = integration;
+
+    for (const emailObj of parsedEmails) {
+      await compose(
+        storeConversationMessage,
+        storeConversation,
+        storeCustomer,
+      )({ email: emailObj, integrationIds: { id, erxesApiId } });
+    }
+
+    return updateLastChangesHistoryId(email, historyId);
+  } catch (e) {
+    debugGmail(`Failed: handleMessage email ${email}`);
     throw e;
   }
 };

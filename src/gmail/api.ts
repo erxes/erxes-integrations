@@ -1,11 +1,11 @@
 import { google } from 'googleapis';
-import * as request from 'request';
 import { debugGmail } from '../debuggers';
-import { getEnv } from '../utils';
-import { SCOPES_GMAIL } from './constant';
-import { ICredentials, IMessage, IMessageAdded } from './types';
-import { getGoogleConfigs } from './util';
-import { parseBatchResponse } from './util';
+import { Accounts } from '../models';
+import { getEnv, sendRequest } from '../utils';
+import { GMAIL_API_URL, GOOGLE_AUTH_URL, HISTORY_TYPES, SCOPES } from './constant';
+import { parseMail } from './mailUtil';
+import { ICredentials } from './types';
+import { getGoogleConfigs, gmailRequest } from './util';
 
 const gmail: any = google.gmail({
   version: 'v1',
@@ -45,7 +45,7 @@ export const getAuthorizeUrl = async (): Promise<string> => {
   try {
     const auth = await getOauthClient();
 
-    return auth.generateAuthUrl({ access_type: 'offline', scope: SCOPES_GMAIL });
+    return auth.generateAuthUrl({ access_type: 'offline', scope: SCOPES });
   } catch (e) {
     debugGmail(`Google OAuthClient failed to generate auth url`);
     throw e;
@@ -127,94 +127,6 @@ export const getAttachment = async (credentials: ICredentials, messageId: string
   }
 };
 
-export const sendSingleRequest = async (auth: any, messages: IMessageAdded[]) => {
-  const [data] = messages;
-  const { message } = data;
-
-  let response: IMessage;
-
-  debugGmail(`Request to get a single message`);
-
-  try {
-    response = await gmailClient.messages.get({
-      auth,
-      userId: 'me',
-      id: message.id,
-    });
-  } catch (e) {
-    debugGmail(`Error Google: Request to get a single message failed ${e}`);
-    throw e;
-  }
-
-  return response;
-};
-
-/**
- * Send multiple request at once
- */
-export const sendBatchRequest = (auth: any, messages: IMessageAdded[]) => {
-  debugGmail('Sending batch request');
-
-  const { credentials } = auth;
-  const { access_token } = credentials;
-  const boundary = 'erxes';
-
-  let body = '';
-
-  for (const item of messages) {
-    body += `--${boundary}\n`;
-    body += 'Content-Type: application/http\n\n';
-    body += `GET /gmail/v1/users/me/messages/${item.message.id}?format=full\n`;
-  }
-
-  body += `--${boundary}--\n`;
-
-  const headers = {
-    'Content-Type': 'multipart/mixed; boundary=' + boundary,
-    Authorization: 'Bearer ' + access_token,
-  };
-
-  return new Promise((resolve, reject) => {
-    request.post(
-      'https://www.googleapis.com/batch/gmail/v1',
-      {
-        body,
-        headers,
-      },
-      (error, response, _body) => {
-        if (!error && response.statusCode === 200) {
-          const payloads = parseBatchResponse(_body);
-
-          return resolve(payloads);
-        }
-
-        return reject(error);
-      },
-    );
-  });
-};
-
-export const getHistoryList = async (auth: any, startHistoryId: string) => {
-  try {
-    const historyResponse = await gmailClient.history.list({
-      auth,
-      userId: 'me',
-      startHistoryId,
-    });
-
-    const { data = {} } = historyResponse;
-
-    if (!data.history || !data.historyId) {
-      debugGmail(`No changes made with given historyId ${startHistoryId}`);
-      return;
-    }
-
-    return data;
-  } catch (e) {
-    throw e;
-  }
-};
-
 export const getAccessToken = async (code: string): Promise<ICredentials> => {
   debugGmail(`Google OAuthClient request to get token with ${code}`);
 
@@ -235,6 +147,154 @@ export const getAccessToken = async (code: string): Promise<ICredentials> => {
     );
   } catch (e) {
     debugGmail(`Error Google: Google OAuthClient failed to get access token with ${code}`);
+    throw e;
+  }
+};
+
+export const refreshAccessToken = async () => {
+  debugGmail('Executed: refreshAccessToken');
+
+  try {
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
+    const accounts = await Accounts.find({ kind: 'gmail' });
+
+    for (const account of accounts) {
+      await sendRequest({
+        method: 'POST',
+        url: GOOGLE_AUTH_URL,
+        body: {
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          grant_type: 'refresh_token',
+          refresh_token: account.tokenSecret,
+        },
+      });
+    }
+  } catch (e) {
+    debugGmail('Failed to refresh access token');
+    throw e;
+  }
+};
+
+// v2 ======================================================================
+export const subscribeUser = async (accessToken: string, email: string) => {
+  debugGmail(`Executing subscribeUser with ${email}`);
+
+  try {
+    const { GOOGLE_PROJECT_ID, GOOGLE_GMAIL_TOPIC } = await getGoogleConfigs();
+
+    const response = await sendRequest({
+      url: `${GMAIL_API_URL}/me/watch`,
+      method: 'POST',
+      body: {
+        labelIds: ['INBOX', 'CATEGORY_PERSONAL'],
+        labelFilterAction: 'include',
+        topicName: `projects/${GOOGLE_PROJECT_ID}/topics/${GOOGLE_GMAIL_TOPIC}`,
+      },
+      headerParams: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    return response;
+  } catch (e) {
+    debugGmail(`Failed to subscribe user ${email}: ${e.message}`);
+    throw e;
+  }
+};
+
+export const unsubscribeUser = async (accessToken: string, email: string) => {
+  debugGmail(`Executing unsubscribeUser with ${email}`);
+
+  try {
+    const response = await sendRequest({
+      url: `${GMAIL_API_URL}/me/stop`,
+      method: 'POST',
+      body: { userId: email },
+      headerParams: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    return response;
+  } catch (e) {
+    debugGmail(`Failed to unsubscribe user ${email}: ${e.message}`);
+    throw e;
+  }
+};
+
+export const getHistoryChanges = async ({ email, historyId }: { email: string; historyId: string }) => {
+  debugGmail(`Executing: getHistoryChanges email: ${email} historyId: ${historyId}`);
+
+  try {
+    const historyResponse = await gmailRequest({
+      method: 'GET',
+      email,
+      type: 'history',
+      params: {
+        historyTypes: HISTORY_TYPES.MESSAGE_ADDED,
+        startHistoryId: historyId,
+      },
+    });
+
+    return { email, historyResponse };
+  } catch (e) {
+    debugGmail(`Failed: getHistoryChanges email: ${email} ${e.message}`);
+    throw e;
+  }
+};
+
+export const collectMessagesIds = async ({ email, historyResponse }: { email: string; historyResponse: any }) => {
+  debugGmail(`Executing: collectMessagesIds`);
+
+  try {
+    // TODO history: [{ id: 'historyId', messagesAdded: [Messages] }]
+    const histories = historyResponse.history || [];
+
+    if (histories.length === 0) {
+      return debugGmail(`No changes made with historyId: ${historyResponse.historyId}`);
+    }
+
+    const messageIds = [];
+
+    for (const history of histories) {
+      const messagesAdded = history.messagesAdded || [];
+
+      messagesAdded.map(item => messageIds.push(item.message.id));
+    }
+
+    return { email, messageIds };
+  } catch (e) {
+    debugGmail(`Failed: collectMessagesIds: ${e.message}`);
+    throw e;
+  }
+};
+
+export const getMessageById = async (args: { email?: string; messageIds?: string[] } = {}) => {
+  const { email, messageIds } = args;
+
+  debugGmail(`Executing: getMessageById messageIds: ${messageIds}`);
+
+  if (!email) {
+    return debugGmail('Email not found in getMessageById');
+  }
+
+  const mails: any = [];
+
+  try {
+    for (const messageId of messageIds) {
+      const response = await gmailRequest({
+        method: 'GET',
+        email,
+        type: 'messages',
+        params: {
+          id: messageId,
+          format: 'raw',
+        },
+      });
+
+      mails.push(response);
+    }
+
+    return parseMail(mails);
+  } catch (e) {
+    debugGmail(`Failed: getMessageById ${e.message}`);
     throw e;
   }
 };
