@@ -1,3 +1,15 @@
+## [0.17.3](https://github.com/erxes/erxes-integrations/compare/0.17.2...0.17.3) (2020-08-20)
+
+
+### Bug Fixes
+
+* **message-broker:** fixed integrations notifications bug ([d82bb17](https://github.com/erxes/erxes-integrations/commit/d82bb177340bbce02a7e98b045f3e32e5ab46893))
+
+
+### Performance Improvements
+
+* **message-broker:** added http client ([3f83d2b](https://github.com/erxes/erxes-integrations/commit/3f83d2bdb54bbea5ea3c38ee031dc2fdba2fd141))
+
 ## [0.17.2](https://github.com/erxes/erxes-integrations/compare/0.17.1...0.17.2) (2020-08-20)
 
 ## [0.17.1](https://github.com/erxes/erxes-integrations/compare/0.17.0...0.17.1) (2020-08-20)
