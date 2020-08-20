@@ -1,5 +1,6 @@
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
+
 import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect, mongoStatus } from './connection';
@@ -15,6 +16,7 @@ import { initNylas } from './nylas/controller';
 import initProductBoard from './productBoard/controller';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
+import initTelnyx from './telnyx/controller';
 import initTwitter from './twitter/controller';
 import userMiddleware from './userMiddleware';
 import initDaily from './videoCall/controller';
@@ -138,6 +140,9 @@ initSmooch(app);
 
 // init product board
 initProductBoard(app);
+
+// telnyx
+initTelnyx(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
