@@ -55,10 +55,11 @@ dotenv.config();
 
 let client;
 
-export const initBroker = async () => {
+export const initBroker = async server => {
   client = await messageBroker({
     name: 'integrations',
-    RABBITMQ_HOST: process.env.RABBITMQ_HOST,
+    server,
+    envs: process.env,
   });
 
   const { consumeQueue, consumeRPCQueue } = client;
@@ -99,19 +100,17 @@ export const initBroker = async () => {
   });
 
   consumeQueue('erxes-api:integrations-notification', async content => {
-    if (content.type === 'cancelImport') {
-      const { type } = content;
+    const { type } = content;
 
-      switch (type) {
-        case 'facebook':
-          await handleFacebookMessage(content);
-          break;
-        case 'cronjob':
-          await handleRunCronMessage();
-          break;
-        case 'removeCustomers':
-          await removeCustomers(content);
-      }
+    switch (type) {
+      case 'facebook':
+        await handleFacebookMessage(content);
+        break;
+      case 'cronjob':
+        await handleRunCronMessage();
+        break;
+      case 'removeCustomers':
+        await removeCustomers(content);
     }
   });
 };
