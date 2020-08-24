@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 
-import { debugGmail } from './debuggers';
+import { debugExternalRequests, debugGmail } from './debuggers';
 import { removeAccount, removeCustomers } from './helpers';
 
 import messageBroker from 'erxes-message-broker';
@@ -8,6 +8,7 @@ import { handleFacebookMessage } from './facebook/handleFacebookMessage';
 import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
 import { getLineWebhookUrl } from './smooch/api';
+import { sendSms } from './telnyx/api';
 
 const handleRunCronMessage = async () => {
   const integrations = await Integrations.aggregate([
@@ -111,6 +112,17 @@ export const initBroker = async server => {
         break;
       case 'removeCustomers':
         await removeCustomers(content);
+    }
+  });
+
+  // sms queue
+  consumeQueue('erxes-api:conversation-sms', async data => {
+    debugExternalRequests(`Receiving queue data from erxes-api`, data);
+
+    const { action, payload } = data;
+
+    if (action === 'sendConversationSms') {
+      await sendSms(payload);
     }
   });
 };

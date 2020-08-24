@@ -141,9 +141,6 @@ initSmooch(app);
 // init product board
 initProductBoard(app);
 
-// telnyx
-initTelnyx(app);
-
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
@@ -164,3 +161,6 @@ app.listen(PORT, () => {
 
   debugInit(`Integrations server is running on port ${PORT}`);
 });
+
+// checks config after mongo starts
+initTelnyx(app);
