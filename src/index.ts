@@ -13,6 +13,7 @@ import Accounts from './models/Accounts';
 import Configs from './models/Configs';
 import { initNylas } from './nylas/controller';
 import initProductBoard from './productBoard/controller';
+import { initRedis } from './redisClient';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
 import initTwitter from './twitter/controller';
@@ -152,6 +153,8 @@ app.listen(PORT, () => {
     await initBroker(app);
 
     initMemoryStorage();
+
+    initRedis();
 
     // Initialize startup
     init();
