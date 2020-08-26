@@ -1,6 +1,6 @@
 import { debugRequest, debugTelnyx } from '../debuggers';
-import { getConfig } from '../utils';
-import { createIntegration, relayIncomingMessage, updateMessageDelivery } from './api';
+import { createIntegration, updateMessageDelivery } from './api';
+import { relayIncomingMessage } from './store';
 
 const processHookData = async req => {
   debugRequest(debugTelnyx, req);
@@ -32,31 +32,11 @@ const init = async app => {
     return res.json({ status: 'ok' });
   });
 
-  app.post('/telnyx/webhook-failover', async (req, res) => {
+  app.post('/telnyx/webhook-failver', async (req, res) => {
     await processHookData(req);
 
     return res.json({ status: 'ok' });
   });
-
-  const TELNYX_WEBHOOK_URL = await getConfig('TELNYX_WEBHOOK_URL');
-  const TELNYX_WEBHOOK_FAIL_URL = await getConfig('TELNYX_WEBHOOK_FAIL_URL');
-
-  if (TELNYX_WEBHOOK_URL) {
-    // receive sms hook
-    app.post(`${TELNYX_WEBHOOK_URL}`, async (req, res) => {
-      await processHookData(req);
-
-      return res.json({ status: 'ok' });
-    });
-  }
-
-  if (TELNYX_WEBHOOK_FAIL_URL) {
-    app.post(`${TELNYX_WEBHOOK_FAIL_URL}`, async (req, res) => {
-      await processHookData(req);
-
-      return res.json({ status: 'ok' });
-    });
-  }
 };
 
 export default init;

@@ -6,18 +6,24 @@ interface ISmsStatus {
   status: string;
 }
 
+interface ICommon {
+  erxesApiId?: string;
+  integrationId: string;
+}
+
 export interface ISmsRequest {
   from?: string;
   to?: string;
-  status?: string;
+  content?: string;
   requestData?: string;
+  conversationId: string;
+  erxesApiId?: string;
+  // telnyx data
+  status?: string;
   responseData?: string;
   telnyxId?: string;
   statusUpdates?: ISmsStatus[];
   errorMessages?: string[];
-  erxesApiId?: string;
-  conversationId: string;
-  integrationId: string;
   direction?: string;
 }
 
@@ -29,12 +35,48 @@ interface ISmsRequestUpdate {
   telnyxId?: string;
 }
 
+interface ICustomer extends ICommon {
+  createdAt: Date;
+  phoneNumber: string;
+}
+
+interface IConversation extends ICommon {
+  from: string;
+  to: string;
+}
+
+const commonFields = {
+  createdAt: { type: Date, label: 'Created at', default: new Date() },
+  erxesApiId: { type: String, label: 'Erxes api id' },
+  integrationId: { type: String, label: 'Integration id' },
+};
+
+const customerSchema = new Schema({
+  ...commonFields,
+  phoneNumber: { type: String, label: 'Phone number', unique: true },
+});
+
+const conversationSchema = new Schema({
+  ...commonFields,
+  from: { type: String, label: 'Source phone number' },
+  to: { type: String, label: 'Destination phone number' },
+  customerId: { type: String, label: 'Customer saved in integrations-api' },
+});
+
+export interface ICustomerDocument extends ICustomer, Document {}
+
 export interface ISmsRequestDocument extends ISmsRequest, Document {}
+
+export interface IConversationDocument extends IConversation, Document {}
 
 export interface ISmsRequestModel extends Model<ISmsRequestDocument> {
   createRequest(doc: ISmsRequest): Promise<ISmsRequestDocument>;
   updateRequest(_id: string, doc: ISmsRequestUpdate): Promise<ISmsRequestDocument>;
 }
+
+export interface ICustomerModel extends Model<ICustomerDocument> {}
+
+export interface IConversationModel extends Model<IConversationDocument> {}
 
 const statusSchema = new Schema(
   {
@@ -44,10 +86,12 @@ const statusSchema = new Schema(
   { _id: false },
 );
 
+// this serves as a conversation message
 const schema = new Schema({
   createdAt: { type: Date, default: new Date(), label: 'Created at' },
   from: { type: String, label: 'Sender phone number' },
   to: { type: String, label: 'Receiver phone number' },
+  content: { type: String, label: 'Sms content' },
   requestData: { type: String, label: 'Stringified request JSON' },
   // erxes-api data
   erxesApiId: { type: String, label: 'Conversation message id' },
@@ -91,4 +135,13 @@ export const loadLogClass = () => {
 loadLogClass();
 
 // tslint:disable-next-line
-export const SmsRequests = model<ISmsRequestDocument, ISmsRequestModel>('sms_requests', schema);
+export const SmsRequests = model<ISmsRequestDocument, ISmsRequestModel>('conversation_messages_telnyx', schema);
+
+// tslint:disable-next-line
+export const Customers = model<ICustomerDocument, ICustomerModel>('customers_telnyx', customerSchema);
+
+// tslint:disable-next-line
+export const Conversations = model<IConversationDocument, IConversationModel>(
+  'conversations_telnyx',
+  conversationSchema,
+);

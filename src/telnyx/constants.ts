@@ -6,7 +6,17 @@ export const SMS_DELIVERY_STATUSES = {
   SENDING_FAILED: 'sending_failed',
   DELIVERY_FAILED: 'delivery_failed',
   DELIVERY_UNCONFIRMED: 'delivery_unconfirmed',
-  ALL: ['queued', 'sending', 'sent', 'delivered', 'sending_failed', 'delivery_failed', 'delivery_unconfirmed'],
+  WEBHOOK_DELIVERED: 'webhook_delivered',
+  ALL: [
+    'queued',
+    'sending',
+    'sent',
+    'delivered',
+    'sending_failed',
+    'delivery_failed',
+    'delivery_unconfirmed',
+    'webhook_delivered',
+  ],
   OPTIONS: [
     {
       value: 'queued',
@@ -35,6 +45,10 @@ export const SMS_DELIVERY_STATUSES = {
     {
       value: 'delivery_unconfirmed',
       label: 'There is no indication whether or not the message has reached the receiver',
+    },
+    {
+      value: 'webhook_delivered',
+      label: 'Incoming sms delivered through webhook',
     },
   ],
 };

@@ -1,7 +1,6 @@
 import * as Telnyx from 'telnyx';
-import { sendRPCMessage } from '../messageBroker';
 import { Integrations } from '../models';
-import { getConfig } from '../utils';
+import { getConfig, getEnv } from '../utils';
 import { SMS_DELIVERY_STATUSES, SMS_DIRECTIONS } from './constants';
 import { SmsRequests } from './models';
 
@@ -29,7 +28,7 @@ interface ICallbackParams {
 
 // prepares sms object matching telnyx requirements
 const prepareMessage = async ({ content, integrationId, to }: IMessageParams): Promise<ITelnyxMessageParams> => {
-  // const MAIN_API_DOMAIN = getEnv({ name: 'MAIN_API_DOMAIN' });
+  const DOMAIN = await getEnv({ name: 'DOMAIN' });
   const integration = await Integrations.getIntegration({ erxesApiId: integrationId });
   const { telnyxPhoneNumber, telnyxProfileId } = integration;
 
@@ -38,10 +37,8 @@ const prepareMessage = async ({ content, integrationId, to }: IMessageParams): P
     to,
     text: content,
     messaging_profile_id: '',
-    webhook_url: `https://25d9ce34970a.ngrok.io/telnyx/webhook`,
-    // webhook_url: `${MAIN_API_DOMAIN}/telnyx/webhook`,
-    webhook_failover_url: `https://25d9ce34970a.ngrok.io/telnyx/webhook-failover`,
-    // webhook_failover_url: `${MAIN_API_DOMAIN}/telnyx/webhook-failover`,
+    webhook_url: `${DOMAIN}/telnyx/webhook`,
+    webhook_failover_url: `${DOMAIN}/telnyx/webhook-failver`,
   };
 
   // telnyx sets from text properly when making international sms
@@ -53,12 +50,11 @@ const prepareMessage = async ({ content, integrationId, to }: IMessageParams): P
 };
 
 const handleMessageCallback = async (err: any, res: any, data: ICallbackParams) => {
-  const { conversationId, conversationMessageId, integrationId, msg } = data;
+  const { conversationId, conversationMessageId, msg } = data;
 
   const request = await SmsRequests.createRequest({
     conversationId,
     erxesApiId: conversationMessageId,
-    integrationId,
     to: msg.to,
     requestData: JSON.stringify(msg),
     direction: SMS_DIRECTIONS.OUTBOUND,
@@ -176,48 +172,4 @@ export const sendSms = async (data: any) => {
   await telnyx.messages.create(msg, async (err: any, res: any) => {
     await handleMessageCallback(err, res, { conversationId, conversationMessageId, integrationId, msg });
   });
-};
-
-/**
- * Sends incoming sms to erxes-api to create conversation.
- * There are 2 situations.
- * 1. Sms from erxes has been sent to a specific phone number first.
- * 2. No sms has been sent before. The user is initiating the conversation.
- * @param data Telnyx data
- */
-export const relayIncomingMessage = async (data: any) => {
-  if (data && data.payload) {
-    const { direction, from, messaging_profile_id, text, to = [] } = data.payload;
-
-    if (direction === SMS_DIRECTIONS.INBOUND) {
-      for (const receiver of to) {
-        // check for properly configured integrations
-        const integration = await Integrations.getIntegration({
-          telnyxPhoneNumber: receiver.phone_number,
-          telnyxProfileId: messaging_profile_id,
-        });
-
-        if (integration) {
-          // if erxes contacted first
-          const smsRequest = await SmsRequests.findOne({
-            from: receiver.phone_number,
-            to: from.phone_number,
-            direction: SMS_DIRECTIONS.OUTBOUND,
-          });
-
-          const payload = { from: from.phone_number, content: text, conversationId: '' };
-
-          if (smsRequest) {
-            payload.conversationId = smsRequest.conversationId;
-          }
-
-          // send data to erxes-api
-          await sendRPCMessage({
-            action: 'create-conversation-message',
-            payload: JSON.stringify(payload),
-          });
-        }
-      }
-    } // end direction checking
-  } // end data.payload checking
 };
