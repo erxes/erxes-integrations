@@ -10,8 +10,7 @@ import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
 import { initMemoryStorage } from './inmemoryStorage';
 import { initBroker } from './messageBroker';
-import Accounts from './models/Accounts';
-import Configs from './models/Configs';
+import { Accounts, Configs, Integrations } from './models/index';
 import { initNylas } from './nylas/controller';
 import initProductBoard from './productBoard/controller';
 import initSmooch from './smooch/controller';
@@ -114,6 +113,16 @@ app.get('/accounts', async (req, res) => {
   return res.json(accounts);
 });
 
+app.get('/integrations', async (req, res) => {
+  const { kind } = req.query;
+
+  const integrations = await Integrations.find({ kind });
+
+  debugResponse(debugIntegrations, req, JSON.stringify(integrations));
+
+  return res.json(integrations);
+});
+
 // init bots
 initFacebook(app);
 
@@ -141,6 +150,9 @@ initSmooch(app);
 // init product board
 initProductBoard(app);
 
+// init telnyx
+initTelnyx(app);
+
 // Error handling middleware
 app.use((error, _req, res, _next) => {
   console.error(error.stack);
@@ -161,6 +173,3 @@ app.listen(PORT, () => {
 
   debugInit(`Integrations server is running on port ${PORT}`);
 });
-
-// checks config after mongo starts
-initTelnyx(app);
