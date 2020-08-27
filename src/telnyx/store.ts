@@ -35,6 +35,7 @@ const getOrCreateCustomer = async ({ from, to }: IMessageParams) => {
       payload: JSON.stringify({
         integrationId: integration.erxesApiId,
         primaryPhone: from,
+        phoneValidationStatus: 'valid',
       }),
     });
 

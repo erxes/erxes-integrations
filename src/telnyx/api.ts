@@ -38,7 +38,7 @@ const prepareMessage = async ({ content, integrationId, to }: IMessageParams): P
     text: content,
     messaging_profile_id: '',
     webhook_url: `${DOMAIN}/telnyx/webhook`,
-    webhook_failover_url: `${DOMAIN}/telnyx/webhook-failver`,
+    webhook_failover_url: `${DOMAIN}/telnyx/webhook-failover`,
   };
 
   // telnyx sets from text properly when making international sms
@@ -165,11 +165,15 @@ export const updateMessageDelivery = async (data: any) => {
 export const sendSms = async (data: any) => {
   const { content, conversationId, conversationMessageId, integrationId, toPhone } = JSON.parse(data || '{}');
 
-  const telnyx = await getTelnyxInstance();
+  try {
+    const telnyx = await getTelnyxInstance();
 
-  const msg = await prepareMessage({ content, integrationId, to: toPhone });
+    const msg = await prepareMessage({ content, integrationId, to: toPhone });
 
-  await telnyx.messages.create(msg, async (err: any, res: any) => {
-    await handleMessageCallback(err, res, { conversationId, conversationMessageId, integrationId, msg });
-  });
+    await telnyx.messages.create(msg, async (err: any, res: any) => {
+      await handleMessageCallback(err, res, { conversationId, conversationMessageId, integrationId, msg });
+    });
+  } catch (e) {
+    throw new Error(e);
+  }
 };

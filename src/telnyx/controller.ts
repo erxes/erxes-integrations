@@ -1,5 +1,5 @@
 import { debugRequest, debugTelnyx } from '../debuggers';
-import { createIntegration, updateMessageDelivery } from './api';
+import { createIntegration, sendSms, updateMessageDelivery } from './api';
 import { relayIncomingMessage } from './store';
 
 const processHookData = async req => {
@@ -32,8 +32,18 @@ const init = async app => {
     return res.json({ status: 'ok' });
   });
 
-  app.post('/telnyx/webhook-failver', async (req, res) => {
+  app.post('/telnyx/webhook-failover', async (req, res) => {
     await processHookData(req);
+
+    return res.json({ status: 'ok' });
+  });
+
+  app.post('/telnyx/send-sms', async (req, res) => {
+    debugRequest(debugTelnyx, req);
+
+    const { integrationId, content, to } = req.body;
+
+    await sendSms(JSON.stringify({ integrationId, content, toPhone: to }));
 
     return res.json({ status: 'ok' });
   });
