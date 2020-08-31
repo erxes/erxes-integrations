@@ -9,6 +9,7 @@ import { watchPushNotification } from './gmail/watch';
 import { Integrations } from './models';
 import { getLineWebhookUrl } from './smooch/api';
 import { sendSms } from './telnyx/api';
+import { getConfig } from './utils';
 
 const handleRunCronMessage = async () => {
   const integrations = await Integrations.aggregate([
@@ -95,6 +96,16 @@ export const initBroker = async server => {
           errorMessage: e.message,
         };
       }
+    }
+
+    if (action === 'getTelnyxInfo') {
+      response = {
+        status: 'success',
+        data: {
+          telnyxApiKey: await getConfig('TELNYX_API_KEY'),
+          integrations: await Integrations.find({ kind: 'telnyx' }),
+        },
+      };
     }
 
     return response;
