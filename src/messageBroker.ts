@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 
-import { debugExternalRequests, debugGmail } from './debuggers';
+import { debugGmail } from './debuggers';
 import { removeAccount, removeCustomers } from './helpers';
 
 import messageBroker from 'erxes-message-broker';
@@ -112,7 +112,7 @@ export const initBroker = async server => {
   });
 
   consumeQueue('erxes-api:integrations-notification', async content => {
-    const { type } = content;
+    const { action, payload, type } = content;
 
     switch (type) {
       case 'facebook':
@@ -123,14 +123,10 @@ export const initBroker = async server => {
         break;
       case 'removeCustomers':
         await removeCustomers(content);
+        break;
+      default:
+        break;
     }
-  });
-
-  // sms queue
-  consumeQueue('erxes-api:conversation-sms', async data => {
-    debugExternalRequests(`Receiving queue data from erxes-api`, data);
-
-    const { action, payload } = data;
 
     if (action === 'sendConversationSms') {
       await sendSms(payload);
