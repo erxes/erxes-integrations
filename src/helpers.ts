@@ -412,7 +412,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
       await TelnyxConversations.deleteMany(selector);
       await TelnyxConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
     } catch (e) {
-      throw e;
+      throw new Error(e.message);
     }
   }
 

@@ -28,7 +28,7 @@ interface ICallbackParams {
 
 // prepares sms object matching telnyx requirements
 const prepareMessage = async ({ content, integrationId, to }: IMessageParams): Promise<ITelnyxMessageParams> => {
-  const DOMAIN = await getEnv({ name: 'DOMAIN' });
+  const DOMAIN = getEnv({ name: 'DOMAIN' });
   const integration = await Integrations.getIntegration({ erxesApiId: integrationId });
   const { telnyxPhoneNumber, telnyxProfileId } = integration;
 
