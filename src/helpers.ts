@@ -67,9 +67,9 @@ import {
   SmoochViberCustomers,
 } from './smooch/models';
 import {
+  ConversationMessages as TelnyxConversationMessages,
   Conversations as TelnyxConversations,
   Customers as TelnyxCustomers,
-  SmsRequests as TelnyxConversationMessages,
 } from './telnyx/models';
 import { getTwitterConfig, unsubscribe } from './twitter/api';
 import {

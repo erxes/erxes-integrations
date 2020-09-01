@@ -1,7 +1,7 @@
 import { sendRPCMessage } from '../messageBroker';
 import { Integrations } from '../models/index';
 import { SMS_DELIVERY_STATUSES, SMS_DIRECTIONS } from './constants';
-import { Conversations, Customers, SmsRequests } from './models';
+import { ConversationMessages, Conversations, Customers } from './models';
 
 interface IMessageParams {
   content: string;
@@ -107,7 +107,7 @@ const createConversationMessage = async ({ content, to, from, payload }: IMessag
     status: SMS_DELIVERY_STATUSES.WEBHOOK_DELIVERED,
   };
 
-  const conversationMessage = await SmsRequests.create(args);
+  const conversationMessage = await ConversationMessages.create(args);
 
   try {
     const response = await sendRPCMessage({
@@ -122,7 +122,7 @@ const createConversationMessage = async ({ content, to, from, payload }: IMessag
 
     await conversationMessage.save();
   } catch (e) {
-    await SmsRequests.deleteOne({ _id: conversationMessage._id });
+    await ConversationMessages.deleteOne({ _id: conversationMessage._id });
     throw e;
   }
 };

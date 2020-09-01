@@ -11,7 +11,7 @@ interface ICommon {
   integrationId: string;
 }
 
-export interface ISmsRequest {
+interface IConversationMessage {
   from?: string;
   to?: string;
   content?: string;
@@ -27,7 +27,7 @@ export interface ISmsRequest {
   direction?: string;
 }
 
-interface ISmsRequestUpdate {
+interface IConversationMessageUpdate {
   status?: string;
   statusUpdates?: ISmsStatus[];
   responseData?: string;
@@ -63,20 +63,20 @@ const conversationSchema = new Schema({
   customerId: { type: String, label: 'Customer saved in integrations-api' },
 });
 
-export interface ICustomerDocument extends ICustomer, Document {}
+interface ICustomerDocument extends ICustomer, Document {}
 
-export interface ISmsRequestDocument extends ISmsRequest, Document {}
+interface IConversationMessageDocument extends IConversationMessage, Document {}
 
-export interface IConversationDocument extends IConversation, Document {}
+interface IConversationDocument extends IConversation, Document {}
 
-export interface ISmsRequestModel extends Model<ISmsRequestDocument> {
-  createRequest(doc: ISmsRequest): Promise<ISmsRequestDocument>;
-  updateRequest(_id: string, doc: ISmsRequestUpdate): Promise<ISmsRequestDocument>;
+interface IConversationMessageModel extends Model<IConversationMessageDocument> {
+  createRequest(doc: IConversationMessage): Promise<IConversationMessageDocument>;
+  updateRequest(_id: string, doc: IConversationMessageUpdate): Promise<IConversationMessageDocument>;
 }
 
-export interface ICustomerModel extends Model<ICustomerDocument> {}
+interface ICustomerModel extends Model<ICustomerDocument> {}
 
-export interface IConversationModel extends Model<IConversationDocument> {}
+interface IConversationModel extends Model<IConversationDocument> {}
 
 const statusSchema = new Schema(
   {
@@ -106,36 +106,39 @@ const schema = new Schema({
   errorMessages: { type: [String], label: 'Error messages' },
 });
 
-export const loadLogClass = () => {
-  class SmsRequest {
-    public static async createRequest(doc: ISmsRequest) {
+const loadConversationMessageClass = () => {
+  class ConversationMessage {
+    public static async createRequest(doc: IConversationMessage) {
       const { erxesApiId, to } = doc;
 
-      const exists = await SmsRequests.findOne({ erxesApiId, to });
+      const exists = await ConversationMessages.findOne({ erxesApiId, to });
 
       if (exists) {
         throw new Error(`Sms request to "${to}" from conversation message id "${erxesApiId}" already exists.`);
       }
 
-      return SmsRequests.create(doc);
+      return ConversationMessages.create(doc);
     }
 
-    public static async updateRequest(_id: string, doc: ISmsRequestUpdate) {
-      await SmsRequests.updateOne({ _id }, { $set: doc });
+    public static async updateRequest(_id: string, doc: IConversationMessageUpdate) {
+      await ConversationMessages.updateOne({ _id }, { $set: doc });
 
-      return SmsRequests.findOne({ _id });
+      return ConversationMessages.findOne({ _id });
     }
   }
 
-  schema.loadClass(SmsRequest);
+  schema.loadClass(ConversationMessage);
 
   return schema;
 };
 
-loadLogClass();
+loadConversationMessageClass();
 
 // tslint:disable-next-line
-export const SmsRequests = model<ISmsRequestDocument, ISmsRequestModel>('conversation_messages_telnyx', schema);
+export const ConversationMessages = model<IConversationMessageDocument, IConversationMessageModel>(
+  'conversation_messages_telnyx',
+  schema,
+);
 
 // tslint:disable-next-line
 export const Customers = model<ICustomerDocument, ICustomerModel>('customers_telnyx', customerSchema);

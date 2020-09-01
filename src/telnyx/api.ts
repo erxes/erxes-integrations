@@ -2,7 +2,7 @@ import * as Telnyx from 'telnyx';
 import { Integrations } from '../models';
 import { getConfig, getEnv } from '../utils';
 import { SMS_DELIVERY_STATUSES, SMS_DIRECTIONS } from './constants';
-import { SmsRequests } from './models';
+import { ConversationMessages } from './models';
 
 interface IMessageParams {
   content: string;
@@ -52,7 +52,7 @@ const prepareMessage = async ({ content, integrationId, to }: IMessageParams): P
 const handleMessageCallback = async (err: any, res: any, data: ICallbackParams) => {
   const { conversationId, conversationMessageId, msg } = data;
 
-  const request = await SmsRequests.createRequest({
+  const request = await ConversationMessages.createRequest({
     conversationId,
     erxesApiId: conversationMessageId,
     to: msg.to,
@@ -62,7 +62,7 @@ const handleMessageCallback = async (err: any, res: any, data: ICallbackParams) 
   });
 
   if (err) {
-    await SmsRequests.updateRequest(request._id, {
+    await ConversationMessages.updateRequest(request._id, {
       errorMessages: [err.message],
     });
   }
@@ -70,7 +70,7 @@ const handleMessageCallback = async (err: any, res: any, data: ICallbackParams) 
   if (res && res.data && res.data.to) {
     const receiver = res.data.to.find(item => item.phone_number === msg.to);
 
-    await SmsRequests.updateRequest(request._id, {
+    await ConversationMessages.updateRequest(request._id, {
       status: receiver && receiver.status,
       responseData: JSON.stringify(res.data),
       telnyxId: res.data.id,
@@ -137,7 +137,7 @@ export const updateMessageDelivery = async (data: any) => {
   if (data && data.payload) {
     const { to = [], id } = data.payload;
 
-    const initialRequest = await SmsRequests.findOne({ telnyxId: id });
+    const initialRequest = await ConversationMessages.findOne({ telnyxId: id });
 
     if (initialRequest) {
       const receiver = to.find(item => item.phone_number === initialRequest.to);
@@ -148,7 +148,7 @@ export const updateMessageDelivery = async (data: any) => {
 
         statuses.push({ date: new Date(), status: receiver.status });
 
-        return SmsRequests.updateRequest(initialRequest._id, {
+        return ConversationMessages.updateRequest(initialRequest._id, {
           status: receiver.status,
           responseData: JSON.stringify(data.payload),
           statusUpdates: statuses,
