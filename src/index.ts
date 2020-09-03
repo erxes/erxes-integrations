@@ -15,6 +15,7 @@ import initProductBoard from './productBoard/controller';
 import { initRedis, redisStatus } from './redisClient';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
+import systemStatus from './systemStatus';
 import initTwitter from './twitter/controller';
 import userMiddleware from './userMiddleware';
 import initDaily from './videoCall/controller';
@@ -73,6 +74,10 @@ app.get('/status', async (_req, res, next) => {
   }
 
   res.end('ok');
+});
+
+app.get('/system-status', async (_req, res) => {
+  return res.json(await systemStatus());
 });
 
 app.post('/update-configs', async (req, res, next) => {
