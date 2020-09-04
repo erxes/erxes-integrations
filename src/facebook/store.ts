@@ -97,7 +97,11 @@ export const getOrCreatePost = async (
 
   const doc = generatePostDoc(postParams, pageId, userId);
 
-  post = await Posts.create(doc);
+  try {
+    post = await Posts.create(doc);
+  } catch (e) {
+    throw new Error(e.message.includes('duplicate') ? 'Concurrent request: post duplication' : e);
+  }
 
   // create conversation in api
   try {

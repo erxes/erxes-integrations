@@ -129,7 +129,7 @@ export interface IPostDocument extends IPost, Document {}
 
 export const postSchema = new Schema({
   _id: field({ pkey: true }),
-  postId: { type: String, index: true },
+  postId: { type: String, index: true, unique: true },
   recipientId: { type: String, index: true },
   senderId: String,
   content: String,
