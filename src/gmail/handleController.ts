@@ -1,9 +1,8 @@
 import { debugGmail } from '../debuggers';
 import { Accounts, Integrations } from '../models';
 import { compose } from '../utils';
-import { collectMessagesIds, getAttachment, getHistoryChanges, getMessageById, subscribeUser } from './api';
+import { collectMessagesIds, getAttachment, getHistoryChanges, getMessageById, send, subscribeUser } from './api';
 import { ConversationMessages } from './models';
-import { sendGmail } from './send';
 import { storeConversation, storeConversationMessage, storeCustomer, updateLastChangesHistoryId } from './store';
 import { getCredentialsByEmailAccountId } from './util';
 
@@ -41,23 +40,20 @@ export const createIntegration = async (accountId: string, email: string, integr
 };
 
 export const sendEmail = async (erxesApiId: string, mailParams: any) => {
-  const integration = await Integrations.findOne({ erxesApiId });
+  const integration = await Integrations.findOne({ erxesApiId }).lean();
 
   if (!integration) {
     throw new Error('Integration not found');
   }
 
-  const account = await Accounts.findOne({ _id: integration.accountId });
+  const account = await Accounts.findOne({ _id: integration.accountId }).lean();
 
   if (!account) {
     throw new Error('Account not found');
   }
 
   try {
-    const { uid, _id } = account;
-    const doc = { from: uid, ...mailParams };
-
-    return sendGmail(_id, uid, doc);
+    return send(account.uid, { from: account.uid, ...mailParams });
   } catch (e) {
     debugGmail('Error Google: Failed to send email');
     throw e;
@@ -124,7 +120,11 @@ export const handleMessage = async ({ email, historyId }: { email: string; histo
       throw new Error('Integration not found');
     }
 
-    const parsedEmails = await compose(getMessageById, collectMessagesIds, getHistoryChanges)({ email, historyId });
+    const parsedEmails = await compose(
+      getMessageById,
+      collectMessagesIds,
+      getHistoryChanges,
+    )({ email, historyId: integration.gmailHistoryId });
 
     // No changes made with recent historyId nothing to sync
     if (!parsedEmails) {

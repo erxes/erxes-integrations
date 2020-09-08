@@ -43,11 +43,11 @@ export const conversationSchema = new Schema({
   _id: field({ pkey: true }),
   to: { type: String, index: true },
   from: { type: String, index: true },
-  threadId: { type: String, index: true },
   content: String,
   customerId: String,
   erxesApiId: String,
   integrationId: String,
+  threadId: String,
   createdAt: field({ type: Date, index: true, default: new Date() }),
 });
 
@@ -72,28 +72,31 @@ export const attachmentSchema = new Schema({
   attachmentId: String,
 });
 
-const emailSchema = {
-  _id: false,
-  name: String,
-  email: String,
-};
+const emailSchema = new Schema(
+  {
+    name: String,
+    email: String,
+  },
+  { _id: false },
+);
 
 export const conversationMessageSchema = new Schema({
   _id: field({ pkey: true }),
   conversationId: String,
   erxesApiMessageId: String,
-  messageId: { type: String, unique: true },
-  threadId: String,
   subject: String,
+  messageId: { type: String, unique: true },
   body: String,
+  threadId: String,
   to: [emailSchema],
   cc: [emailSchema],
   bcc: [emailSchema],
   from: [emailSchema],
-  references: String,
+  references: [String],
   headerId: String,
-  labelIds: [String],
-  reply: [String],
+  sender: String,
+  replyTo: String,
+  inReplyTo: String,
   attachments: [attachmentSchema],
   createdAt: field({ type: Date, index: true, default: new Date() }),
 });

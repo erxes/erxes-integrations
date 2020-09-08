@@ -1,5 +1,5 @@
 import { debugGmail } from '../debuggers';
-import Accounts, { IAccount } from '../models/Accounts';
+import Accounts from '../models/Accounts';
 import { getCommonGoogleConfigs, getConfig, sendRequest } from '../utils';
 import { BASE_URL } from './constant';
 import { ICredentials, IGmailRequest } from './types';
@@ -28,18 +28,13 @@ export const getCredentialsByEmailAccountId = async ({
     return;
   }
 
-  return getCredentials(account);
+  return {
+    access_token: account.token,
+    refresh_token: account.tokenSecret,
+    expiry_date: parseInt(account.expireDate, 10),
+    scope: account.scope,
+  };
 };
-
-/**
- * Get credential values from account and return formatted
- */
-export const getCredentials = (credentials: IAccount): ICredentials => ({
-  access_token: credentials.token,
-  refresh_token: credentials.tokenSecret,
-  expiry_date: parseInt(credentials.expireDate, 10),
-  scope: credentials.scope,
-});
 
 export const getGoogleConfigs = async () => {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_PROJECT_ID } = await getCommonGoogleConfigs();
@@ -52,7 +47,7 @@ export const getGoogleConfigs = async () => {
   };
 };
 
-export const gmailRequest = async ({ email, type, method, params, body }: IGmailRequest) => {
+export const gmailRequest = async ({ accessToken, email, type, method, params = {}, body }: IGmailRequest) => {
   try {
     const credential = await getCredentialsByEmailAccountId({ email });
 
@@ -61,7 +56,7 @@ export const gmailRequest = async ({ email, type, method, params, body }: IGmail
       body,
       method,
       params,
-      headerParams: { Authorization: `Bearer ${credential.access_token}` },
+      headerParams: { Authorization: `Bearer ${accessToken || credential.access_token}` },
     });
 
     return response;

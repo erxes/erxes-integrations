@@ -31,6 +31,7 @@ export interface IMailParams {
   conversationId: string;
   erxesApiMessageId: string;
   messageId: string;
+  headerId: string;
   threadId: string;
   subject: string;
   body: string;
@@ -38,8 +39,9 @@ export interface IMailParams {
   cc: IGmail[];
   bcc: IGmail[];
   from: IGmail[];
-  references?: string;
-  headerId?: string;
+  references?: string[];
+  inReplyTo?: string;
+  replyTo?: string;
   labelIds?: string[];
   reply?: string[];
   attachments?: IAttachmentParams[];
@@ -90,7 +92,8 @@ export interface IPubsubMessage {
 }
 
 export interface IGmailRequest {
-  email: string;
+  email?: string;
+  accessToken?: string;
   type: string;
   method: string;
   params?: { [key: string]: string };

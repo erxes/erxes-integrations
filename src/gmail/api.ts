@@ -1,11 +1,16 @@
+import * as dotenv from 'dotenv';
 import { google } from 'googleapis';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
 import { getEnv, sendRequest } from '../utils';
-import { GMAIL_API_URL, GOOGLE_AUTH_URL, HISTORY_TYPES, SCOPES } from './constant';
-import { parseMail } from './mailUtil';
-import { ICredentials } from './types';
+import { BASE_URL, ERROR_CODES, GOOGLE_AUTH_URL, HISTORY_TYPES } from './constant';
+import { createMimeMessage, parseMail } from './mailUtil';
+import { ICredentials, IMailParams } from './types';
 import { getGoogleConfigs, gmailRequest } from './util';
+
+dotenv.config();
+
+const { GMAIL_REDIRECT } = process.env;
 
 const gmail: any = google.gmail({
   version: 'v1',
@@ -39,73 +44,6 @@ export const getOauthClient = async () => {
   }
 };
 
-export const getAuthorizeUrl = async (): Promise<string> => {
-  debugGmail(`Google OAuthClient generate auth url`);
-
-  try {
-    const auth = await getOauthClient();
-
-    return auth.generateAuthUrl({ access_type: 'offline', scope: SCOPES });
-  } catch (e) {
-    debugGmail(`Google OAuthClient failed to generate auth url`);
-    throw e;
-  }
-};
-
-/**
- * Gets the current user's Gmail profile
- */
-export const getProfile = async (credentials: ICredentials, email?: string) => {
-  debugGmail(`Gmail get an user profile`);
-
-  try {
-    const auth = await getOauthClient();
-
-    auth.setCredentials(credentials);
-
-    return gmailClient.getProfile({
-      auth,
-      userId: email || 'me',
-    });
-  } catch (e) {
-    debugGmail(`Error Google: Gmail failed to get user profile ${e}`);
-    throw e;
-  }
-};
-
-export const composeEmail = async ({
-  credentials,
-  message,
-  threadId,
-}: {
-  credentials: ICredentials;
-  message: string;
-  accountId: string;
-  threadId?: string;
-}) => {
-  try {
-    const auth = await getOauthClient();
-
-    auth.setCredentials(credentials);
-
-    const params = {
-      auth,
-      userId: 'me',
-      response: { threadId },
-      uploadType: 'multipart',
-      media: {
-        mimeType: 'message/rfc822',
-        body: message,
-      },
-    };
-
-    return gmailClient.messages.send(params);
-  } catch (e) {
-    debugGmail(`Error Google: Could not send email ${e}`);
-    throw e;
-  }
-};
-
 export const getAttachment = async (credentials: ICredentials, messageId: string, attachmentId: string) => {
   debugGmail('Request to get an attachment');
 
@@ -127,56 +65,7 @@ export const getAttachment = async (credentials: ICredentials, messageId: string
   }
 };
 
-export const getAccessToken = async (code: string): Promise<ICredentials> => {
-  debugGmail(`Google OAuthClient request to get token with ${code}`);
-
-  try {
-    const oauth2Client = await getOauthClient();
-
-    return new Promise((resolve, reject) =>
-      oauth2Client.getToken(code, (err: any, token: ICredentials) => {
-        if (err) {
-          return reject(new Error(err.response.data.error));
-        }
-
-        // set access token
-        oauth2Client.setCredentials(token);
-
-        return resolve(token);
-      }),
-    );
-  } catch (e) {
-    debugGmail(`Error Google: Google OAuthClient failed to get access token with ${code}`);
-    throw e;
-  }
-};
-
-export const refreshAccessToken = async () => {
-  debugGmail('Executed: refreshAccessToken');
-
-  try {
-    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
-    const accounts = await Accounts.find({ kind: 'gmail' });
-
-    for (const account of accounts) {
-      await sendRequest({
-        method: 'POST',
-        url: GOOGLE_AUTH_URL,
-        body: {
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
-          grant_type: 'refresh_token',
-          refresh_token: account.tokenSecret,
-        },
-      });
-    }
-  } catch (e) {
-    debugGmail('Failed to refresh access token');
-    throw e;
-  }
-};
-
-// v2 ======================================================================
+// v2 ==========================================================================
 export const subscribeUser = async (accessToken: string, email: string) => {
   debugGmail(`Executing subscribeUser with ${email}`);
 
@@ -184,7 +73,7 @@ export const subscribeUser = async (accessToken: string, email: string) => {
     const { GOOGLE_PROJECT_ID, GOOGLE_GMAIL_TOPIC } = await getGoogleConfigs();
 
     const response = await sendRequest({
-      url: `${GMAIL_API_URL}/me/watch`,
+      url: `${BASE_URL}/me/watch`,
       method: 'POST',
       body: {
         labelIds: ['INBOX', 'CATEGORY_PERSONAL'],
@@ -197,6 +86,9 @@ export const subscribeUser = async (accessToken: string, email: string) => {
     return response;
   } catch (e) {
     debugGmail(`Failed to subscribe user ${email}: ${e.message}`);
+
+    await checkAccessTokenExpired(e.message, email);
+
     throw e;
   }
 };
@@ -206,7 +98,7 @@ export const unsubscribeUser = async (accessToken: string, email: string) => {
 
   try {
     const response = await sendRequest({
-      url: `${GMAIL_API_URL}/me/stop`,
+      url: `${BASE_URL}/me/stop`,
       method: 'POST',
       body: { userId: email },
       headerParams: { Authorization: `Bearer ${accessToken}` },
@@ -215,6 +107,9 @@ export const unsubscribeUser = async (accessToken: string, email: string) => {
     return response;
   } catch (e) {
     debugGmail(`Failed to unsubscribe user ${email}: ${e.message}`);
+
+    await checkAccessTokenExpired(e.message, email);
+
     throw e;
   }
 };
@@ -236,6 +131,9 @@ export const getHistoryChanges = async ({ email, historyId }: { email: string; h
     return { email, historyResponse };
   } catch (e) {
     debugGmail(`Failed: getHistoryChanges email: ${email} ${e.message}`);
+
+    await checkAccessTokenExpired(e.message, email);
+
     throw e;
   }
 };
@@ -295,6 +193,132 @@ export const getMessageById = async (args: { email?: string; messageIds?: string
     return parseMail(mails);
   } catch (e) {
     debugGmail(`Failed: getMessageById ${e.message}`);
+
+    await checkAccessTokenExpired(e.message, email);
+
+    throw e;
+  }
+};
+
+export const getUserInfo = async (accessToken: string): Promise<any> => {
+  debugGmail('Executing getUserInfo');
+
+  try {
+    const response = await gmailRequest({
+      method: 'GET',
+      accessToken,
+      type: 'profile',
+      params: {},
+    });
+
+    return response;
+  } catch (e) {
+    debugGmail('Failed to getUserInfo');
+    throw e;
+  }
+};
+
+export const getAccessToken = async (code: string): Promise<ICredentials> => {
+  debugGmail('Executing getAuthToken');
+
+  try {
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
+
+    const response = await sendRequest({
+      method: 'POST',
+      url: `${GOOGLE_AUTH_URL}/token`,
+      params: {
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: GMAIL_REDIRECT,
+        grant_type: 'authorization_code',
+      },
+    });
+
+    return response;
+  } catch (e) {
+    debugGmail('Failed to get access token');
+    throw e;
+  }
+};
+
+export const checkAccessTokenExpired = async (error: string, email: string) => {
+  if (error.includes(ERROR_CODES.ACCESS_TOKEN_EXPIRED)) {
+    await refreshAccessToken(email);
+  }
+};
+
+export const refreshAccessToken = async (email: string) => {
+  debugGmail('Executed: refreshAccessToken');
+
+  try {
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
+
+    const account = await Accounts.findOne({ kind: 'gmail', email }).lean();
+
+    const response = await sendRequest({
+      method: 'POST',
+      url: `${GOOGLE_AUTH_URL}/token`,
+      body: {
+        grant_type: 'refresh_token',
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        refresh_token: account.tokenSecret,
+      },
+    });
+
+    return Accounts.updateOne({ _id: account._id }, { $set: { token: response.access_token } });
+  } catch (e) {
+    debugGmail('Failed to refresh access token');
+    throw e;
+  }
+};
+
+export const send = async (email: string, mailOptions: IMailParams) => {
+  debugGmail('Executing send');
+
+  try {
+    const message = createMimeMessage(mailOptions);
+
+    return gmailRequest({
+      email,
+      method: 'POST',
+      type: 'messages/send',
+      body: {
+        raw: new Buffer(message).toString('base64'),
+      },
+    });
+  } catch (e) {
+    debugGmail('Failed to send email');
+
+    if (e.message.includes(ERROR_CODES.ACCESS_TOKEN_EXPIRED)) {
+      await refreshAccessToken(email);
+
+      // Call itself again after refresh access token
+      return send(email, mailOptions);
+    }
+
+    throw e;
+  }
+};
+
+export const revokeToken = async (email: string) => {
+  debugGmail(`Executing revokeToken`);
+
+  try {
+    const account = await Accounts.findOne({ email }).lean();
+
+    return sendRequest({
+      method: 'POST',
+      url: `${GOOGLE_AUTH_URL}/revoke`,
+      headerType: 'Content-type:application/x-www-form-urlencoded',
+      params: {
+        token: account.token,
+      },
+    });
+  } catch (e) {
+    debugGmail('Failed to revoke token: ', email);
     throw e;
   }
 };

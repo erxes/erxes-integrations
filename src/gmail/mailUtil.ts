@@ -1,4 +1,5 @@
 import { simpleParser } from 'mailparser';
+import { IMailParams } from './types';
 
 /**
  * Extract string from to, cc, bcc
@@ -45,9 +46,10 @@ export const parseMail = async (mails: any) => {
     const mailString = Buffer.from(mail.raw, 'base64').toString('utf-8');
     const mailObject = await simpleParser(mailString);
 
-    console.log(mailObject);
-
     const { headers } = mailObject;
+
+    doc.messageId = mail.id;
+    doc.threadId = mail.threadId;
 
     if (headers.has('subject')) {
       doc.subject = headers.get('subject');
@@ -55,6 +57,8 @@ export const parseMail = async (mails: any) => {
 
     if (headers.has('from')) {
       doc.from = headers.get('from').text;
+      doc.sender = headers.get('from').value[0].name;
+      doc.fromEmail = headers.get('from').value[0].address;
     }
 
     if (headers.has('to')) {
@@ -69,16 +73,20 @@ export const parseMail = async (mails: any) => {
       doc.bcc = headers.get('bcc').text;
     }
 
-    if (headers.has('sender')) {
-      doc.sender = headers.get('sender').text;
-    }
-
     if (headers.has('reply-to')) {
       doc.replyTo = headers.get('reply-to').text;
     }
 
-    if (mailObject.messagrId) {
-      doc.messageId = mailObject.messagrId;
+    if (mailObject.inReplyTo) {
+      doc.inReplyTo = mailObject.inReplyTo;
+    }
+
+    if (mailObject.references) {
+      doc.references = mailObject.references;
+    }
+
+    if (mailObject.messageId) {
+      doc.headerId = mailObject.messageId;
     }
 
     if (mailObject.html) {
@@ -93,4 +101,82 @@ export const parseMail = async (mails: any) => {
   }
 
   return docs;
+};
+
+// const encodeBase64 = (subject: string) => {
+//   return `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+// };
+
+const chunkSubstr = (str: string, size: number) => {
+  const numChunks = Math.ceil(str.length / size);
+  const chunks = new Array(numChunks);
+
+  for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    chunks[i] = str.substr(o, size);
+  }
+
+  return chunks;
+};
+
+/**
+ * Create a MIME message that complies with RFC 2822
+ * @see {https://tools.ietf.org/html/rfc2822}
+ */
+export const createMimeMessage = (mailParams: IMailParams): string => {
+  const { bcc, cc, to, body, headerId, references, inReplyTo, from, subject, attachments } = mailParams;
+
+  const nl = '\n';
+  const boundary = '__erxes__';
+
+  const mimeBase = [
+    'MIME-Version: 1.0',
+    'To: ' + to, // "user1@email.com, user2@email.com"
+    'From: <' + from + '>',
+    'Subject: ' + subject,
+  ];
+
+  // Reply
+  if (references) {
+    mimeBase.push('References:' + references);
+  }
+
+  if (inReplyTo) {
+    mimeBase.push(['In-Reply-To: ' + inReplyTo].join(nl));
+  }
+
+  if (headerId) {
+    mimeBase.push(['In-Reply-To: ' + headerId, 'Message-ID: ' + headerId].join(nl));
+  }
+
+  if (cc && cc.length > 0) {
+    mimeBase.push('Cc: ' + cc);
+  }
+
+  if (bcc && bcc.length > 0) {
+    mimeBase.push('Bcc: ' + bcc);
+  }
+
+  mimeBase.push('Content-Type: multipart/mixed; boundary=' + boundary + nl);
+  mimeBase.push(
+    ['--' + boundary, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: 8bit' + nl, body].join(nl),
+  );
+
+  if (attachments && attachments.length > 0) {
+    for (const attachment of attachments) {
+      const mimeAttachment = [
+        '--' + boundary,
+        'Content-Type: ' + attachment.mimeType,
+        'Content-Length: ' + attachment.size,
+        'Content-Disposition: attachment; filename="' + attachment.filename + '"',
+        'Content-Transfer-Encoding: base64' + nl,
+        chunkSubstr(attachment.data, 76),
+      ];
+
+      mimeBase.push(mimeAttachment.join(nl));
+    }
+  }
+
+  mimeBase.push('--' + boundary + '--');
+
+  return mimeBase.join(nl);
 };

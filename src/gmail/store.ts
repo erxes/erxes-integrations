@@ -4,6 +4,7 @@ import { Integrations } from '../models';
 import { cleanHtml } from '../utils';
 import { getEmailsAsObject } from './mailUtil';
 import { ConversationMessages, Conversations, Customers } from './models';
+import { IAttachmentParams } from './types';
 
 interface IIntegrationIds {
   id: string;
@@ -12,15 +13,21 @@ interface IIntegrationIds {
 
 interface IEmail {
   subject: string;
-  html: string;
-  date: string;
   from: string;
+  fromEmail: string;
+  threadId: string;
+  headerId: string;
+  sender: string;
   to: string;
   cc: string;
   bcc: string;
-  sender: string;
+  date: string;
+  html: string;
+  references: string;
   replyTo: string;
+  inReplyTo: string;
   messageId: string;
+  attachments: IAttachmentParams;
 }
 
 export const updateLastChangesHistoryId = async (email: string, historyId: string) => {
@@ -45,9 +52,9 @@ export const updateLastChangesHistoryId = async (email: string, historyId: strin
 export const storeCustomer = async ({ email, integrationIds }: { email: IEmail; integrationIds: IIntegrationIds }) => {
   debugGmail('Creating customer');
 
-  const { from } = email;
+  const { sender, fromEmail } = email;
 
-  const prevCustomer = await Customers.findOne({ email: from });
+  const prevCustomer = await Customers.findOne({ email: fromEmail });
 
   if (prevCustomer) {
     return {
@@ -61,17 +68,17 @@ export const storeCustomer = async ({ email, integrationIds }: { email: IEmail; 
     const apiCustomerResponse = await sendRPCMessage({
       action: 'get-create-update-customer',
       payload: JSON.stringify({
-        emails: [from],
-        firstName: '',
+        emails: [fromEmail],
+        firstName: sender,
         lastName: '',
-        primaryEmail: from,
+        primaryEmail: fromEmail,
         integrationId: integrationIds.erxesApiId,
       }),
     });
 
     const customer = await Customers.create({
-      email: from,
-      firstName: '',
+      email: fromEmail,
+      firstName: sender,
       lastName: '',
       integrationId: integrationIds.id,
       erxesApiId: apiCustomerResponse._id,
@@ -97,12 +104,12 @@ export const storeConversation = async (args: {
 
   const { email, integrationIds, customerErxesApiId } = args;
   const { id, erxesApiId } = integrationIds;
-  const { to, subject, replyTo, from } = email;
+  const { to, subject, inReplyTo, from } = email;
 
   let conversation;
 
-  if (replyTo) {
-    const headerIds = Array.isArray(replyTo) ? replyTo : [replyTo];
+  if (inReplyTo) {
+    const headerIds = Array.isArray(inReplyTo) ? inReplyTo : [inReplyTo];
 
     const message = await ConversationMessages.findOne({ headerId: { $in: headerIds } });
 
@@ -173,8 +180,10 @@ export const storeConversationMessage = async (args: {
     return debugGmail(`Message with id: ${messageId} already exists`);
   }
 
+  let apiMessageResponse;
+
   try {
-    const apiMessageResponse = await sendRPCMessage({
+    apiMessageResponse = await sendRPCMessage({
       action: 'create-conversation-message',
       metaInfo: 'replaceContent',
       payload: JSON.stringify({
@@ -187,21 +196,32 @@ export const storeConversationMessage = async (args: {
     return ConversationMessages.create({
       conversationId: id,
       messageId,
-      to: getEmailsAsObject(email.to),
-      from: getEmailsAsObject(email.from),
-      cc: getEmailsAsObject(email.cc),
-      bcc: getEmailsAsObject(email.bcc),
+      headerId: email.headerId,
       subject: email.subject,
       body: email.html,
+      references: email.references,
+      threadId: email.threadId,
       customerId: customerErxesApiId,
+      replyTo: email.replyTo,
+      inReplyTo: email.inReplyTo,
       erxesApiMessageId: apiMessageResponse._id,
-      // threadId: message.threadId,
-      // headerId: message.headerId,
-      // reference: message.reference,
-      // reply: message.reply,
-      // attachments: message.attachments,
+      to: getEmailsAsObject(email.to),
+      cc: getEmailsAsObject(email.cc),
+      bcc: getEmailsAsObject(email.bcc),
+      from: getEmailsAsObject(email.from),
+      sender: email.sender,
+      attachments: email.attachments,
     });
   } catch (e) {
+    await sendRPCMessage({
+      action: 'remove-conversations-messages',
+      payload: JSON.stringify({
+        conversationId: erxesApiId,
+        conversationMessageId: apiMessageResponse._id,
+      }),
+    });
+
+    await Conversations.deleteOne({ _id: conversationIds.id });
     await ConversationMessages.deleteOne({ messageId });
     throw e;
   }
