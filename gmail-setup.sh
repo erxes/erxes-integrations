@@ -22,18 +22,27 @@ function log {
 (
   set -e
 
-  log "Starting setup 👾🚀👽"
+  log "Loading... 👾🚀👽"
 
-  # Removing previous configuration if any
-
-  # gcloud config unset account gcloud
-  # config configurations delete account
+  echo "
+  /*      _\|/_
+          (o o)
+  +----oOO-{_}-OOo----------------------------------+
+  |                                                 |
+  |                                                 |
+  |            Thanks for using Erxes               |
+  |           Let's setup Gmail for you             |
+  |     Please install Google Cloud Platform SDK    |
+  |  https://cloud.google.com/sdk/docs/quickstarts  |
+  |                                                 |
+  +-------------------------------------------------*/
+  "
 
   # Initialize 
-  gcloud init --skip-diagnostics
+  gcloud init --skip-diagnostics 
 
   # Login to account
-  gcloud auth login
+  gcloud auth login --quiet
 
   log "Creating GCP Project ${PROJECT_ID}"
 
@@ -66,11 +75,6 @@ function log {
 
   log "Creating Gmail subscription ${SUBSCRIPTION}"
 
-  # grant Cloud Pub/Sub the permission to create tokens
-  gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-   --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
-   --role='roles/iam.serviceAccountTokenCreator'
-
   # configure the subscription push identity
   gcloud pubsub subscriptions create ${SUBSCRIPTION} \
    --topic=${TOPIC} \
@@ -86,7 +90,7 @@ function log {
    --role="roles/pubsub.publisher"
 
   log "Gmail setup succesfully done 🛸🛸🛸"
-  log "Thanks for using ＥＲＸＥＳ"
+  log "ＥＲＸＥＳ Rocks!"
 )
 
 errorCode=$?
