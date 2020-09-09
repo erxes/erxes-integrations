@@ -2,9 +2,9 @@ import { debugGmail } from '../debuggers';
 import { sendRPCMessage } from '../messageBroker';
 import { Integrations } from '../models';
 import { cleanHtml } from '../utils';
-import { getEmailsAsObject } from './mailUtil';
 import { ConversationMessages, Conversations, Customers } from './models';
 import { IAttachmentParams } from './types';
+import { getEmailsAsObject } from './utils';
 
 interface IIntegrationIds {
   id: string;
@@ -16,6 +16,7 @@ interface IEmail {
   from: string;
   fromEmail: string;
   threadId: string;
+  unread?: boolean;
   headerId: string;
   sender: string;
   to: string;
@@ -203,6 +204,7 @@ export const storeConversationMessage = async (args: {
       threadId: email.threadId,
       customerId: customerErxesApiId,
       replyTo: email.replyTo,
+      unread: email.unread,
       inReplyTo: email.inReplyTo,
       erxesApiMessageId: apiMessageResponse._id,
       to: getEmailsAsObject(email.to),

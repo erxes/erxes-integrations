@@ -4,7 +4,7 @@ import { createIntegration, getGmailAttachment, getMessage, handleMessage, sendE
 import loginMiddleware from './loginMiddleware';
 
 const init = async app => {
-  app.get('/gmaillogin', loginMiddleware);
+  app.get('/gmail/login', loginMiddleware);
 
   app.post('/gmail/webhook', async (req, res, next) => {
     debugGmail('Webhook received a message');

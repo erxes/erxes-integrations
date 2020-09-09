@@ -64,13 +64,15 @@ export interface IConversationMessage extends IMailParams {
 
 export interface IConversationMessageDocument extends IConversationMessage, Document {}
 
-export const attachmentSchema = new Schema({
-  _id: field({ pkey: true }),
-  filename: String,
-  mimeType: String,
-  size: Number,
-  attachmentId: String,
-});
+export const attachmentSchema = new Schema(
+  {
+    filename: String,
+    mimeType: String,
+    size: Number,
+    attachmentId: String,
+  },
+  { _id: false },
+);
 
 const emailSchema = new Schema(
   {
@@ -93,6 +95,7 @@ export const conversationMessageSchema = new Schema({
   bcc: [emailSchema],
   from: [emailSchema],
   references: [String],
+  unread: { type: Boolean, default: true },
   headerId: String,
   sender: String,
   replyTo: String,

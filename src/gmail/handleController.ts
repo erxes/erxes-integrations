@@ -4,7 +4,6 @@ import { compose } from '../utils';
 import { collectMessagesIds, getAttachment, getHistoryChanges, getMessageById, send, subscribeUser } from './api';
 import { ConversationMessages } from './models';
 import { storeConversation, storeConversationMessage, storeCustomer, updateLastChangesHistoryId } from './store';
-import { getCredentialsByEmailAccountId } from './util';
 
 export const createIntegration = async (accountId: string, email: string, integrationId: string) => {
   const account = await Accounts.findOne({ _id: accountId });
@@ -23,7 +22,7 @@ export const createIntegration = async (accountId: string, email: string, integr
   }
 
   try {
-    const response = await subscribeUser(account.token, email);
+    const response = await subscribeUser(email);
 
     await Integrations.create({
       kind: 'gmail',
@@ -52,8 +51,10 @@ export const sendEmail = async (erxesApiId: string, mailParams: any) => {
     throw new Error('Account not found');
   }
 
+  const { email } = account;
+
   try {
-    return send(account.uid, { from: account.uid, ...mailParams });
+    return send(email, { from: email, ...mailParams });
   } catch (e) {
     debugGmail('Error Google: Failed to send email');
     throw e;
@@ -99,15 +100,7 @@ export const getGmailAttachment = async (messageId: string, attachmentId: string
     throw new Error('Account not found!');
   }
 
-  const credentials = await getCredentialsByEmailAccountId({ accountId: account._id });
-
-  try {
-    const attachment = await getAttachment(credentials, messageId, attachmentId);
-
-    return attachment;
-  } catch (e) {
-    throw e;
-  }
+  return getAttachment(account.email, messageId, attachmentId);
 };
 
 export const handleMessage = async ({ email, historyId }: { email: string; historyId: string }) => {
@@ -131,14 +124,19 @@ export const handleMessage = async ({ email, historyId }: { email: string; histo
       return;
     }
 
-    const { id, erxesApiId } = integration;
+    const { _id, erxesApiId } = integration;
 
     for (const emailObj of parsedEmails) {
+      // Skip emails that sent from itself
+      if (!emailObj.inReplyTo && emailObj.labelIds.indexOf('SENT') > -1) {
+        continue;
+      }
+
       await compose(
         storeConversationMessage,
         storeConversation,
         storeCustomer,
-      )({ email: emailObj, integrationIds: { id, erxesApiId } });
+      )({ email: emailObj, integrationIds: { id: _id, erxesApiId } });
     }
 
     return updateLastChangesHistoryId(email, historyId);

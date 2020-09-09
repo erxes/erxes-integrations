@@ -5,7 +5,7 @@ import Accounts from '../models/Accounts';
 import { getEnv } from '../utils';
 import { getAccessToken, getUserInfo } from './api';
 import { GOOGLE_AUTH_CODE, SCOPE } from './constant';
-import { getGoogleConfigs } from './util';
+import { getGoogleConfigs } from './utils';
 
 dotenv.config();
 

@@ -1,11 +1,15 @@
-import { simpleParser } from 'mailparser';
-import { IMailParams } from './types';
+import * as parseMessage from 'gmail-api-parse-message';
+import { debugGmail } from '../debuggers';
+import { Accounts } from '../models';
+import { getCommonGoogleConfigs, getConfig, sendRequest } from '../utils';
+import { BASE_URL } from './constant';
+import { IGmailRequest, IMailParams } from './types';
 
 /**
  * Extract string from to, cc, bcc
  * ex: Name <user@mail.com>
  */
-export const extractEmailFromString = (str?: string) => {
+export const extractEmailFromString = (str?: string): string => {
   if (!str || str.length === 0) {
     return '';
   }
@@ -20,7 +24,7 @@ export const extractEmailFromString = (str?: string) => {
   return emails.join(' ');
 };
 
-export const getEmailsAsObject = (rawString: string) => {
+export const getEmailsAsObject = (rawString: string): Array<{ email: string }> => {
   if (!rawString) {
     return;
   }
@@ -37,64 +41,87 @@ export const getEmailsAsObject = (rawString: string) => {
     .filter(email => email !== undefined);
 };
 
+function parseEmailHeader(value) {
+  const header = value.trim();
+
+  const extract = { name: '', email: '' };
+
+  const emails = header.match(/[^@<\s]+@[^@\s>]+/g);
+
+  if (emails) {
+    extract.email = emails[0];
+  }
+
+  const names = header.split(/\s+/);
+
+  if (names.length > 1) {
+    names.pop();
+    extract.name = names.join(' ').replace(/"/g, '');
+  }
+
+  return extract;
+}
+
 export const parseMail = async (mails: any) => {
   const docs = [];
 
   for (const mail of mails) {
     const doc: any = {};
 
-    const mailString = Buffer.from(mail.raw, 'base64').toString('utf-8');
-    const mailObject = await simpleParser(mailString);
+    const mailObject = parseMessage(mail);
 
-    const { headers } = mailObject;
+    const { id, labelIds, threadId, headers } = mailObject;
 
-    doc.messageId = mail.id;
-    doc.threadId = mail.threadId;
+    doc.messageId = id;
+    doc.labelIds = labelIds;
+    doc.threadId = threadId;
 
-    if (headers.has('subject')) {
-      doc.subject = headers.get('subject');
+    if (headers.subject) {
+      doc.subject = headers.subject;
     }
 
-    if (headers.has('from')) {
-      doc.from = headers.get('from').text;
-      doc.sender = headers.get('from').value[0].name;
-      doc.fromEmail = headers.get('from').value[0].address;
+    if (headers.from) {
+      const { email, name } = parseEmailHeader(headers.from);
+
+      doc.from = headers.from;
+      doc.sender = name;
+      doc.fromEmail = email;
     }
 
-    if (headers.has('to')) {
-      doc.to = headers.get('to').text;
+    if (headers.to) {
+      doc.to = extractEmailFromString(headers.to);
     }
 
-    if (headers.has('cc')) {
-      doc.cc = headers.get('cc').text;
+    if (headers.cc) {
+      doc.cc = extractEmailFromString(headers.cc);
     }
 
-    if (headers.has('bcc')) {
-      doc.bcc = headers.get('bcc').text;
+    if (headers.bcc) {
+      doc.bcc = extractEmailFromString(headers.bcc);
     }
 
-    if (headers.has('reply-to')) {
-      doc.replyTo = headers.get('reply-to').text;
+    if (headers['reply-to']) {
+      doc.replyTo = headers['reply-to'];
     }
 
-    if (mailObject.inReplyTo) {
-      doc.inReplyTo = mailObject.inReplyTo;
+    if (headers['in-reply-to']) {
+      doc.inReplyTo = headers['in-reply-to'];
     }
 
-    if (mailObject.references) {
+    if (headers.references) {
       doc.references = mailObject.references;
     }
 
-    if (mailObject.messageId) {
-      doc.headerId = mailObject.messageId;
+    if (headers['message-id']) {
+      doc.headerId = headers['message-id'];
     }
 
-    if (mailObject.html) {
-      doc.html = mailObject.html;
+    if (mailObject.textHtml) {
+      doc.html = mailObject.textHtml;
     }
 
-    if (mailObject.date) {
-      doc.date = mailObject.date;
+    if (mailObject.attachments) {
+      doc.attachments = mailObject.attachments;
     }
 
     docs.push(doc);
@@ -102,10 +129,6 @@ export const parseMail = async (mails: any) => {
 
   return docs;
 };
-
-// const encodeBase64 = (subject: string) => {
-//   return `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-// };
 
 const chunkSubstr = (str: string, size: number) => {
   const numChunks = Math.ceil(str.length / size);
@@ -179,4 +202,34 @@ export const createMimeMessage = (mailParams: IMailParams): string => {
   mimeBase.push('--' + boundary + '--');
 
   return mimeBase.join(nl);
+};
+
+export const getGoogleConfigs = async () => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_PROJECT_ID } = await getCommonGoogleConfigs();
+
+  return {
+    GOOGLE_PROJECT_ID,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_GMAIL_TOPIC: await getConfig('GOOGLE_GMAIL_TOPIC', 'gmail_topic'),
+  };
+};
+
+export const gmailRequest = async ({ url, accessToken, email, type, method, params = {}, body }: IGmailRequest) => {
+  try {
+    const { token } = await Accounts.findOne({ email }).lean();
+
+    const response = await sendRequest({
+      url: url || `${BASE_URL}/me/${type}/${params.id ? params.id : ''}`,
+      body,
+      method,
+      params,
+      headerParams: { Authorization: `Bearer ${accessToken || token}` },
+    });
+
+    return response;
+  } catch (e) {
+    debugGmail(`Failed: gmailRequest email: ${email} type: ${type} ${e.message}`);
+    throw e;
+  }
 };
