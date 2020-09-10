@@ -5,7 +5,6 @@ import { BASE_URL, ERROR_CODES, GMAIL_API_URL, GOOGLE_AUTH_URL, HISTORY_TYPES } 
 import { ICredentials, IMailParams } from './types';
 import { createMimeMessage, getGoogleConfigs, gmailRequest, parseMail } from './utils';
 
-// v2 ==========================================================================
 export const subscribeUser = async (email: string) => {
   debugGmail(`Executing subscribeUser with ${email}`);
 
