@@ -1,4 +1,3 @@
-import { executionAsyncId } from 'async_hooks';
 import * as sinon from 'sinon';
 import { accountFactory, integrationFactory } from '../factories';
 import * as api from '../gmail/api';
@@ -46,7 +45,9 @@ describe('Gmail controller test', () => {
   afterEach(async () => {
     await Accounts.remove({});
     await Integrations.remove({});
+
     await ConversationMessages.remove({});
+    await Conversations.remove({});
     await Customers.remove({});
 
     googleConfigMock.restore();
