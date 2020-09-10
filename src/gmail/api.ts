@@ -13,11 +13,7 @@ export const subscribeUser = async (email: string) => {
 
     if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC) {
       throw new Error(
-        `
-          Missing following config: 
-          GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID}
-          GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC}
-        `,
+        `Missing following config: GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID} GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC}`,
       );
     }
 
@@ -103,7 +99,6 @@ export const collectMessagesIds = async ({ email, historyResponse }: { email: st
   debugGmail(`Executing: collectMessagesIds`);
 
   try {
-    // TODO history: [{ id: 'historyId', messagesAdded: [Messages] }]
     const histories = historyResponse.history || [];
 
     if (histories.length === 0) {

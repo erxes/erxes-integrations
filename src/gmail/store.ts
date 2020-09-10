@@ -12,42 +12,37 @@ interface IIntegrationIds {
 }
 
 interface IEmail {
-  subject: string;
-  from: string;
-  fromEmail: string;
-  threadId: string;
+  subject?: string;
+  from?: string;
+  fromEmail?: string;
+  threadId?: string;
   unread?: boolean;
-  headerId: string;
+  headerId?: string;
   sender: string;
-  to: string;
-  cc: string;
-  bcc: string;
-  date: string;
-  html: string;
-  references: string;
-  replyTo: string;
-  inReplyTo: string;
-  messageId: string;
-  attachments: IAttachmentParams;
+  to?: string;
+  cc?: string;
+  bcc?: string;
+  date?: string;
+  html?: string;
+  references?: string;
+  replyTo?: string;
+  inReplyTo?: string;
+  messageId?: string;
+  attachments?: IAttachmentParams;
 }
 
 export const updateLastChangesHistoryId = async (email: string, historyId: string) => {
   debugGmail(`Executing: updateLastChangesHistoryId email: ${email}`);
 
-  try {
-    const integration = await Integrations.findOne({ email });
+  const integration = await Integrations.findOne({ email });
 
-    if (!integration) {
-      throw new Error(`Integration not found with email: ${email}`);
-    }
-
-    integration.gmailHistoryId = historyId;
-
-    return integration.save();
-  } catch (e) {
-    debugGmail(`Failed: updateLastChangesHistoryId email: ${email}`);
-    throw e;
+  if (!integration) {
+    throw new Error(`Integration not found with email: ${email}`);
   }
+
+  integration.gmailHistoryId = historyId;
+
+  return integration.save();
 };
 
 export const storeCustomer = async ({ email, integrationIds }: { email: IEmail; integrationIds: IIntegrationIds }) => {
@@ -157,7 +152,7 @@ export const storeConversation = async (args: {
     };
   } catch (e) {
     debugGmail(`Failed to create conversation ${e.message}`);
-    throw new Error(e);
+    throw e;
   }
 };
 
@@ -215,14 +210,6 @@ export const storeConversationMessage = async (args: {
       attachments: email.attachments,
     });
   } catch (e) {
-    await sendRPCMessage({
-      action: 'remove-conversations-messages',
-      payload: JSON.stringify({
-        conversationId: erxesApiId,
-        conversationMessageId: apiMessageResponse._id,
-      }),
-    });
-
     await Conversations.deleteOne({ _id: conversationIds.id });
     await ConversationMessages.deleteOne({ messageId });
     throw e;
