@@ -1,14 +1,9 @@
-import * as dotenv from 'dotenv';
 import { debugGmail } from '../debuggers';
 import { Accounts } from '../models';
-import { sendRequest } from '../utils';
+import { getEnv, sendRequest } from '../utils';
 import { BASE_URL, ERROR_CODES, GMAIL_API_URL, GOOGLE_AUTH_URL, HISTORY_TYPES } from './constant';
 import { ICredentials, IMailParams } from './types';
 import { createMimeMessage, getGoogleConfigs, gmailRequest, parseMail } from './utils';
-
-dotenv.config();
-
-const { GMAIL_REDIRECT } = process.env;
 
 // v2 ==========================================================================
 export const subscribeUser = async (email: string) => {
@@ -190,6 +185,7 @@ export const getAccessToken = async (code: string): Promise<ICredentials> => {
 
   try {
     const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = await getGoogleConfigs();
+    const GMAIL_REDIRECT_URL = `${getEnv({ name: 'DOMAIN' })}/gmail/login`;
 
     const response = await sendRequest({
       method: 'POST',
@@ -198,7 +194,7 @@ export const getAccessToken = async (code: string): Promise<ICredentials> => {
         code,
         client_id: GOOGLE_CLIENT_ID,
         client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: GMAIL_REDIRECT,
+        redirect_uri: GMAIL_REDIRECT_URL,
         grant_type: 'authorization_code',
       },
     });

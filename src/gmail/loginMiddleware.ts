@@ -1,4 +1,3 @@
-import * as dotenv from 'dotenv';
 import * as qs from 'querystring';
 import { debugGmail, debugRequest, debugResponse } from '../debuggers';
 import Accounts from '../models/Accounts';
@@ -7,14 +6,12 @@ import { getAccessToken, getUserInfo } from './api';
 import { GOOGLE_AUTH_CODE, SCOPE } from './constant';
 import { getGoogleConfigs } from './utils';
 
-dotenv.config();
-
 export const getAuthCode = async (): Promise<string> => {
   const { GOOGLE_CLIENT_ID } = await getGoogleConfigs();
-  const { GMAIL_REDIRECT } = process.env;
+  const GMAIL_REDIRECT_URL = `${getEnv({ name: 'DOMAIN' })}/gmail/login`;
 
   return `${GOOGLE_AUTH_CODE}?${qs.stringify({
-    redirect_uri: GMAIL_REDIRECT,
+    redirect_uri: GMAIL_REDIRECT_URL,
     client_id: GOOGLE_CLIENT_ID,
     response_type: 'code',
     access_type: 'offline',
