@@ -17,6 +17,16 @@ export const subscribeUser = async (email: string) => {
   try {
     const { GOOGLE_PROJECT_ID, GOOGLE_GMAIL_TOPIC } = await getGoogleConfigs();
 
+    if (!GOOGLE_PROJECT_ID || !GOOGLE_GMAIL_TOPIC) {
+      throw new Error(
+        `
+          Missing following config: 
+          GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID}
+          GOOGLE_GMAIL_TOPIC: ${GOOGLE_GMAIL_TOPIC}
+        `,
+      );
+    }
+
     const { token } = await Accounts.findOne({ email });
 
     const response = await sendRequest({
