@@ -2,27 +2,25 @@
 # author: Munkh-Orgil Myagmarsuren 
 # Create and configure Google Cloud Project for Gmail API
 
-NOCOLOR='\033[0m'
+RESET='\033[0m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
-RED='\033[0;31m'
+
+BOLD='\033[1m'
 
 PROJECT_ID="erxes-gmail-$(echo $RANDOM)"
 TOPIC="erxes-gmail-topic-$(echo $RANDOM)"
 SUBSCRIPTION="erxes-gmail-subscription"
 SERVICE_ACCOUNT="erxes-service-account-$(echo $RANDOM)"
 PUBSUB_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com"
-PUSH_ENDPOINT_URI=""
-SERVICE_ACCOUNT_EMAIL=""
+DOMAIN=""
 
 function log {
-  echo -e "${GREEN}${1}${NOCOLOR}"
+  echo -e "${GREEN}${1}${RESET}"
 }
 
 (
   set -e
-
-  log "Loading... 👾🚀👽"
 
   echo "
   /*      _\|/_
@@ -37,6 +35,13 @@ function log {
   |                                                 |
   +-------------------------------------------------*/
   "
+
+  read -p "Please enter your domain: " DOMAIN
+
+  if [ -z "$DOMAIN" ]
+  then
+    exit 'echo DOMAIN did not supplied'
+  fi
 
   # Initialize 
   gcloud init --skip-diagnostics 
@@ -79,7 +84,7 @@ function log {
   gcloud pubsub subscriptions create ${SUBSCRIPTION} \
    --topic=${TOPIC} \
    --topic-project=${PROJECT_ID} \
-   --push-endpoint=${PUSH_ENDPOINT_URI}
+   --push-endpoint="https://${DOMAIN}/integrations/gmail/webhook"
   # --push-auth-service-account=${SERVICE_ACCOUNT_EMAIL} \
 
   log "Adding publish role to gmail-api-push service account"
@@ -88,6 +93,40 @@ function log {
   gcloud pubsub topics add-iam-policy-binding ${TOPIC} \
    --member="serviceAccount:gmail-api-push@system.gserviceaccount.com" \
    --role="roles/pubsub.publisher"
+
+  echo -e "
+  
+  \033[33;7m${BOLD}ONE LAST STEP${RESET}
+  +==================================================================================================================+
+
+     ${PURPLE}${BOLD}[ Create app in OAuth Consent screen ]${RESET}                                                 
+     1. Navigate to https://console.cloud.google.com/apis/credentials/consent?project=${PROJECT_ID}                  
+     2. Fill the form and create/edit app                                                                           
+     3. Click on the [Add Scope] button                                                                             
+     4. Search [Gmail API] and select https://mail.google.com/ scope and [Add]                                      
+                                                                                                                    
+     ${PURPLE}${BOLD}[ Create OAuth Client ]${RESET}                                                                
+     1. Navigate to https://console.cloud.google.com/apis/credentials?project=${PROJECT_ID}                         
+     2. Click on the +Credentials and select OAuth Client ID                                                        
+     3. Select [Web Application] type and write App name                                                            
+     4. Authorized redirect URIs add as http://yourdomain.com/integrations/gmail/login              
+     5. Click Create button and you will get your [Client ID] and [Client Secret] copy them          
+  
+  
+     ${PURPLE}${BOLD}[ Navigate to Erxes [System config] and fill them as follows ]${RESET}
+     PROJECT_ID: ${GREEN}${PROJECT_ID}${RESET}                                   
+     TOPIC: ${GREEN}${TOPIC}${RESET}                                             
+    ┏━ GOOGLE_CLIENT_ID: // CLIENT_ID in OAuth Client            
+    ┣━ GOOGLE_CLIENT_SECRET: // CLIENT_SECRET in OAuth Client      
+    ┃                                                               
+    ┗━ ${GREEN}Navigate to https://console.cloud.google.com/apis/credentials?project=${PROJECT_ID} and select [Web Client]${RESET}
+  
+  +==================================================================================================================+
+
+  References
+  ==========
+  Configure your Push Endpoint https://console.cloud.google.com/cloudpubsub/subscription/detail/erxes-gmail-subscription?project=${PROJECT_ID}
+  "
 
   log "Gmail setup succesfully done 🛸🛸🛸"
   log "ＥＲＸＥＳ Rocks!"
