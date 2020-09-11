@@ -939,14 +939,14 @@ describe('Utils test', () => {
     expect(emailObj).toEqual([{ email: 'user1@mail.com' }, { email: 'user2@mail.com' }]);
   });
 
-  test('Exctract and build email obj from string', () => {
+  test('Extract and build email obj from string', () => {
     const rawString = 'TestUser1 <user1@mail.com>, TestUser2 <user2@mail.com>';
 
     const emailObj = extractEmailFromString(rawString);
     const isEmpty = extractEmailFromString('');
 
     expect(isEmpty).toBe('');
-    expect(emailObj).toEqual([{ email: 'user1@mail.com' }, { email: 'user2@mail.com' }]);
+    expect(emailObj).toBe('user1@mail.com user2@mail.com');
   });
 
   test('Clean html and css', () => {

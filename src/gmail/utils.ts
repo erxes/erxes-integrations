@@ -41,7 +41,7 @@ export const getEmailsAsObject = (rawString: string): Array<{ email: string }> =
     .filter(email => email !== undefined);
 };
 
-function parseEmailHeader(value) {
+export const parseEmailHeader = (value: string): { name: string; email: string } => {
   const header = value.trim();
 
   const extract = { name: '', email: '' };
@@ -60,9 +60,9 @@ function parseEmailHeader(value) {
   }
 
   return extract;
-}
+};
 
-export const parseMail = async (mails: any) => {
+export const parseMail = (mails: any) => {
   const docs = [];
 
   for (const mail of mails) {
@@ -130,7 +130,7 @@ export const parseMail = async (mails: any) => {
   return docs;
 };
 
-const chunkSubstr = (str: string, size: number) => {
+export const chunkSubstr = (str: string, size: number) => {
   const numChunks = Math.ceil(str.length / size);
   const chunks = new Array(numChunks);
 

@@ -264,7 +264,7 @@ describe('Gmail controller test', () => {
       to: 'toEmail@mail.com',
       subject: 'subject',
       from: 'fromEmail@mail.com',
-      messageId: 'messageId',
+      messageId: 'messageId123',
     };
 
     const sendRPCMessageMock = sinon.stub(broker, 'sendRPCMessage');
@@ -306,6 +306,14 @@ describe('Gmail controller test', () => {
 
     const updatedIntegration = await Integrations.findOne({ email: accountUid }).lean();
 
+    const createdCustomer = await Customers.findOne({ email: 'jacob@mail.com' });
+    const createdConversation = await Conversations.findOne({ erxesApiId: 'conversationId' });
+    const createdConversationMessage = await ConversationMessages.findOne({ messageId: 'messageId123' });
+
+    expect(createdConversationMessage.messageId).toBe('messageId123');
+    expect(createdConversationMessage.subject).toBe('subject');
+    expect(createdConversation.to).toBe('toEmail@mail.com');
+    expect(createdCustomer.firstName).toBe('John');
     expect(updatedIntegration.gmailHistoryId).toBe('historyId123');
 
     getHistoryChangesMock.restore();
