@@ -1,5 +1,6 @@
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
+
 import initCallPro from './callpro/controller';
 import initChatfuel from './chatfuel/controller';
 import { connect, mongoStatus } from './connection';
@@ -7,15 +8,15 @@ import { debugInit, debugIntegrations, debugRequest, debugResponse } from './deb
 import initFacebook from './facebook/controller';
 import initGmail from './gmail/controller';
 import { removeIntegration, updateIntegrationConfigs } from './helpers';
-import { initConsumer, rabbitMQStatus } from './messageBroker';
-import Accounts from './models/Accounts';
-import Configs from './models/Configs';
+import { initMemoryStorage } from './inmemoryStorage';
+import { initBroker } from './messageBroker';
+import { Accounts, Configs, Integrations } from './models/index';
 import { initNylas } from './nylas/controller';
 import initProductBoard from './productBoard/controller';
-import { initRedis, redisStatus } from './redisClient';
 import initSmooch from './smooch/controller';
 import { init } from './startup';
 import systemStatus from './systemStatus';
+import initTelnyx from './telnyx/controller';
 import initTwitter from './twitter/controller';
 import userMiddleware from './userMiddleware';
 import initDaily from './videoCall/controller';
@@ -59,21 +60,6 @@ app.get('/status', async (_req, res, next) => {
     debugIntegrations('MongoDB is not running');
     return next(e);
   }
-
-  try {
-    await redisStatus();
-  } catch (e) {
-    debugIntegrations('Redis is not running');
-    return next(e);
-  }
-
-  try {
-    await rabbitMQStatus();
-  } catch (e) {
-    debugIntegrations('RabbitMQ is not running');
-    return next(e);
-  }
-
   res.end('ok');
 });
 
@@ -133,6 +119,16 @@ app.get('/accounts', async (req, res) => {
   return res.json(accounts);
 });
 
+app.get('/integrations', async (req, res) => {
+  const { kind } = req.query;
+
+  const integrations = await Integrations.find({ kind });
+
+  debugResponse(debugIntegrations, req, JSON.stringify(integrations));
+
+  return res.json(integrations);
+});
+
 // init bots
 initFacebook(app);
 
@@ -150,6 +146,7 @@ initChatfuel(app);
 
 // init whatsapp
 initWhatsapp(app);
+
 // init chatfuel
 initDaily(app);
 
@@ -160,6 +157,8 @@ initSmooch(app);
 initProductBoard(app);
 
 initWebhook(app);
+// init telnyx
+initTelnyx(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
@@ -171,8 +170,9 @@ const { PORT } = process.env;
 
 app.listen(PORT, () => {
   connect().then(async () => {
-    await initRedis();
-    await initConsumer();
+    await initBroker(app);
+
+    initMemoryStorage();
 
     // Initialize startup
     init();

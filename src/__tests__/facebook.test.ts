@@ -12,9 +12,12 @@ import {
   facebookPostFactory,
   integrationFactory,
 } from '../factories';
+import { initMemoryStorage } from '../inmemoryStorage';
 import * as message from '../messageBroker';
 import { Accounts, Integrations } from '../models';
 import './setup.ts';
+
+initMemoryStorage();
 
 describe('Facebook test', () => {
   let accountId;
@@ -44,6 +47,7 @@ describe('Facebook test', () => {
     photo: 'photo',
     video: 'video',
     restoredCommentCreatedAt: '1577927844',
+    post: { permalink_url: 'link' },
   };
 
   beforeEach(async () => {
@@ -181,13 +185,17 @@ describe('Facebook test', () => {
       return Promise.resolve({ _id: '123456789' });
     });
 
-    await store.getOrCreateComment(commentParams, 'pageId123', 'facebook-post');
+    await store.getOrCreateComment(commentParams, 'pageId123', 'facebook-post', '');
 
     const comment = await Comments.findOne({ commentId: commentParams.comment_id });
 
     expect(comment.commentId).toEqual(commentParams.comment_id);
 
-    await store.getOrCreateComment(commentParams, 'pageId123', 'facebook-post');
+    await store.getOrCreateComment(commentParams, 'pageId123', 'facebook-post', 'edited');
+
+    expect(await Comments.countDocuments()).toEqual(1);
+
+    await store.getOrCreateComment(commentParams, 'pageId123', 'facebook-post', '');
 
     expect(await Comments.countDocuments()).toEqual(1);
 

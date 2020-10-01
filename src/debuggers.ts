@@ -17,6 +17,7 @@ export const debugDaily = debug('erxes-integrations:daily');
 export const debugSmooch = debug('erxes-integrations:smooch');
 export const debugWebhook = debug('erxes-integrations:webhook');
 export const debugProductBoard = debug('erxes-integrations:productBoard');
+export const debugTelnyx = debug('erxes-integrations:telnyx');
 
 export const debugRequest = (debugInstance, req) =>
   debugInstance(`
