@@ -1,5 +1,5 @@
 import { debugRequest, debugWebhook } from '../debuggers';
-import { createIntegration } from './api';
+import { createIntegration, saveConversationToApi } from './api';
 import { Webhooks } from './models';
 
 const init = async app => {
@@ -19,13 +19,15 @@ const init = async app => {
     debugRequest(debugWebhook, req);
 
     try {
-      const { type, body } = req.body;
+      const { token } = req.headers;
 
-      const webhook = await Webhooks.findOne({ type });
+      const webhook = await Webhooks.findOne({ token });
 
       if (!webhook) {
-        throw new Error('Webhook not found');
+        throw new Error('Not authorized');
       }
+
+      saveConversationToApi(req.body, webhook.erxesApiId);
     } catch (e) {
       return next(e);
     }
