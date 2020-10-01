@@ -19,6 +19,7 @@ import systemStatus from './systemStatus';
 import initTwitter from './twitter/controller';
 import userMiddleware from './userMiddleware';
 import initDaily from './videoCall/controller';
+import initWebhook from './webhook/controller';
 import initWhatsapp from './whatsapp/controller';
 
 const app = express();
@@ -157,6 +158,8 @@ initSmooch(app);
 
 // init product board
 initProductBoard(app);
+
+initWebhook(app);
 
 // Error handling middleware
 app.use((error, _req, res, _next) => {
