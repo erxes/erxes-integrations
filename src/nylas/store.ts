@@ -1,6 +1,6 @@
 import { debugNylas } from '../debuggers';
+import memoryStorage from '../inmemoryStorage';
 import { sendRPCMessage } from '../messageBroker';
-import { Accounts } from '../models';
 import { cleanHtml } from '../utils';
 import {
   NylasCalendars,
@@ -143,19 +143,6 @@ const storeEvents = async (events: IEvent[]) => {
   }
 
   return NylasEvent.insertMany(doc);
-};
-
-/**
- * Connect account and add nylas token
- * @param {String} _id
- * @param {String} accountId
- * @param {String} access_token
- */
-const updateAccount = async (_id: string, accountId: string, accessToken: string, billingState: string) => {
-  const selector = { _id };
-  const updateFields = { $set: { uid: accountId, nylasToken: accessToken, billingState } };
-
-  await Accounts.updateOne(selector, updateFields);
 };
 
 /**
@@ -325,12 +312,14 @@ const createOrGetNylasConversationMessage = async ({
     createdAt,
   };
 
+  const isUnreadMessage = await memoryStorage().inArray('nylas_unread_messageId', message.id);
+
   // fields to save on api
   const api = {
     customerId,
     conversationId: erxesApiId,
     content: cleanHtml(message.body),
-    unread: message.unread,
+    unread: isUnreadMessage ? true : message.unread,
     createdAt,
   };
 
@@ -402,7 +391,6 @@ export const getOrCreate = async ({ kind, collectionName, selector, fields }: IG
 };
 
 export {
-  NYLAS_MODELS,
   createOrGetNylasCustomer,
   createOrGetNylasConversation,
   createOrGetNylasConversationMessage,
@@ -410,5 +398,5 @@ export {
   storeEvents,
   updateEvent,
   updateCalendar,
-  updateAccount,
+  NYLAS_MODELS,
 };

@@ -1,11 +1,12 @@
 import * as dotenv from 'dotenv';
 import { debugNylas } from '../debuggers';
-import { IAccount } from '../models/Accounts';
+import memoryStorage from '../inmemoryStorage';
+import { Integrations } from '../models';
 import { getConfig, sendRequest } from '../utils';
+import { checkEmailDuplication, enableOrDisableAccount } from './api';
 import { CONNECT_AUTHORIZE_URL, CONNECT_TOKEN_URL, NYLAS_API_URL } from './constants';
-import { updateAccount } from './store';
-import { IIntegrateProvider } from './types';
-import { decryptPassword, getNylasConfig, getProviderSettings } from './utils';
+import { IIntegrateProvider, INylasIntegrationData } from './types';
+import { getNylasConfig, getProviderSettings } from './utils';
 
 // loading config
 dotenv.config();
@@ -15,10 +16,24 @@ dotenv.config();
  * @param {String} kind
  * @param {Object} account
  */
-const connectProviderToNylas = async (kind: string, account: IAccount & { _id: string }) => {
-  const { email, tokenSecret } = account;
+const connectProviderToNylas = async (kind: string, integrationId: string, uid: string) => {
+  const crendentialKey = `${uid}-credential`;
 
-  const settings = await getProviderSettings(kind, tokenSecret);
+  const providerCredential = await memoryStorage().get(crendentialKey, false);
+
+  if (!providerCredential) {
+    throw new Error(`Refresh token not found ${kind}`);
+  }
+
+  const [email, refreshToken] = providerCredential.split(',');
+
+  const isEmailDuplicated = await checkEmailDuplication(email, kind);
+
+  if (isEmailDuplicated) {
+    throw new Error(`${email} is already exists`);
+  }
+
+  const settings = await getProviderSettings(kind, refreshToken);
 
   try {
     const { access_token, account_id, billing_state } = await integrateProviderToNylas({
@@ -28,7 +43,16 @@ const connectProviderToNylas = async (kind: string, account: IAccount & { _id: s
       ...(kind === 'gmail' ? { scopes: 'contacts,calendar,email.read_only,email.drafts,email.send,email.modify' } : {}),
     });
 
-    await updateAccount(account._id, account_id, access_token, billing_state);
+    await memoryStorage().removeKey(crendentialKey);
+
+    await createIntegration({
+      kind,
+      email,
+      integrationId,
+      nylasToken: access_token,
+      nylasAccountId: account_id,
+      status: billing_state,
+    });
   } catch (e) {
     throw e;
   }
@@ -39,36 +63,35 @@ const connectProviderToNylas = async (kind: string, account: IAccount & { _id: s
  * @param {String} kind
  * @param {Object} account
  */
-const connectYahooAndOutlookToNylas = async (kind: string, account: IAccount & { _id: string }) => {
-  const { email, password } = account;
+const connectYahooAndOutlookToNylas = async (kind: string, integrationId: string, data: INylasIntegrationData) => {
+  const { email, password } = data;
 
   try {
     const { access_token, account_id, billing_state } = await integrateProviderToNylas({
       email,
       kind,
       scopes: 'email',
-      settings: { username: email, password: await decryptPassword(password) },
+      settings: { username: email, password },
     });
 
-    await updateAccount(account._id, account_id, access_token, billing_state);
+    await createIntegration({
+      kind,
+      email,
+      integrationId,
+      nylasToken: access_token,
+      nylasAccountId: account_id,
+      status: billing_state,
+    });
   } catch (e) {
     throw e;
   }
 };
 
-const connectExchangeToNylas = async (account: IAccount & { _id: string }) => {
-  const { username = '', password, email, host } = account;
+const connectExchangeToNylas = async (integrationId: string, data: INylasIntegrationData) => {
+  const { username = '', password, email, host } = data;
 
   if (!password || !email || !host) {
-    throw new Error('Missing Exhange config in Account');
-  }
-
-  let decryptedPassword;
-
-  try {
-    decryptedPassword = await decryptPassword(password);
-  } catch (e) {
-    throw new Error(e.message);
+    throw new Error('Missing Exhange config');
   }
 
   try {
@@ -78,38 +101,32 @@ const connectExchangeToNylas = async (account: IAccount & { _id: string }) => {
       scopes: 'email',
       settings: {
         username,
-        password: decryptedPassword,
+        password,
         eas_server_host: host,
       },
     });
 
-    await updateAccount(account._id, account_id, access_token, billing_state);
+    await createIntegration({
+      email,
+      kind: 'exchange',
+      integrationId,
+      nylasToken: access_token,
+      nylasAccountId: account_id,
+      status: billing_state,
+    });
   } catch (e) {
     throw e;
   }
 };
 
-/**
- * Connect IMAP to Nylas
- * @param {String} kind
- * @param {Object} account
- */
-const connectImapToNylas = async (account: IAccount & { _id: string }) => {
-  const { imapHost, imapPort, smtpHost, smtpPort } = account;
+const connectImapToNylas = async (integrationId: string, data: INylasIntegrationData) => {
+  const { imapHost, imapPort, smtpHost, smtpPort } = data;
 
   if (!imapHost || !imapPort || !smtpHost || !smtpPort) {
     throw new Error('Missing imap config');
   }
 
-  const { email, password } = account;
-
-  let decryptedPassword;
-
-  try {
-    decryptedPassword = await decryptPassword(password);
-  } catch (e) {
-    throw new Error(e.message);
-  }
+  const { email, password } = data;
 
   try {
     const { access_token, account_id, billing_state } = await integrateProviderToNylas({
@@ -118,9 +135,9 @@ const connectImapToNylas = async (account: IAccount & { _id: string }) => {
       scopes: 'email',
       settings: {
         imap_username: email,
-        imap_password: decryptedPassword,
+        imap_password: password,
         smtp_username: email,
-        smtp_password: decryptedPassword,
+        smtp_password: password,
         imap_host: imapHost,
         imap_port: Number(imapPort),
         smtp_host: smtpHost,
@@ -129,7 +146,14 @@ const connectImapToNylas = async (account: IAccount & { _id: string }) => {
       },
     });
 
-    await updateAccount(account._id, account_id, access_token, billing_state);
+    await createIntegration({
+      email,
+      kind: 'imap',
+      integrationId,
+      nylasToken: access_token,
+      nylasAccountId: account_id,
+      status: billing_state,
+    });
   } catch (e) {
     throw e;
   }
@@ -224,6 +248,35 @@ const removeExistingNylasWebhook = async (): Promise<void> => {
   } catch (e) {
     debugNylas(e.message);
   }
+};
+
+const createIntegration = async ({
+  email,
+  integrationId,
+  nylasAccountId,
+  nylasToken,
+  status,
+  kind,
+}: {
+  email?: string;
+  integrationId: string;
+  nylasAccountId: string;
+  nylasToken: string;
+  status: string;
+  kind: string;
+}) => {
+  if (status === 'cancelled') {
+    await enableOrDisableAccount(nylasAccountId, true);
+  }
+
+  return Integrations.create({
+    ...(email ? { email } : {}),
+    kind,
+    erxesApiId: integrationId,
+    nylasToken,
+    nylasAccountId,
+    nylasBillingState: 'paid',
+  });
 };
 
 export {

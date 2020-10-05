@@ -4,6 +4,10 @@ import { field } from './utils';
 export interface IIntegration {
   kind: string;
   accountId: string;
+  emailScope?: string;
+  nylasToken?: string;
+  nylasAccountId?: string;
+  nylasBillingState?: string;
   erxesApiId: string;
   facebookPageIds?: string[];
   facebookPageTokensMap?: { [key: string]: string };
@@ -24,6 +28,8 @@ export interface IIntegration {
   smoochIntegrationId?: string;
   whatsappinstanceId?: string;
   whatsappToken?: string;
+  telnyxPhoneNumber?: string;
+  telnyxProfileId?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {}
@@ -36,6 +42,10 @@ export const integrationSchema = new Schema({
   erxesApiId: String,
   phoneNumber: String,
   recordUrl: String,
+  emailScope: String,
+  nylasToken: String,
+  nylasAccountId: String,
+  nylasBillingState: String,
   facebookPageIds: [String],
   email: String,
   expiration: String,
@@ -59,6 +69,8 @@ export const integrationSchema = new Schema({
   smoochIntegrationId: String,
   whatsappinstanceId: String,
   whatsappToken: String,
+  telnyxPhoneNumber: field({ type: String, label: 'Telnyx phone number' }),
+  telnyxProfileId: field({ type: String, label: 'Telnyx messaging profile id' }),
 });
 
 export interface IIntegrationModel extends Model<IIntegrationDocument> {

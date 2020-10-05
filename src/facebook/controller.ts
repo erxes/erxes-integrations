@@ -112,11 +112,28 @@ const init = async app => {
 
     const post = await Posts.getPost({ erxesApiId }, true);
 
-    const commentCount = await Comments.countDocuments({ postId: post.postId });
-
     return res.json({
       ...post,
+    });
+  });
+
+  app.get('/facebook/get-comments-count', async (req, res) => {
+    debugFacebook(`Request to get post data with: ${JSON.stringify(req.query)}`);
+
+    const { postId, isResolved = false } = req.query;
+
+    const post = await Posts.getPost({ erxesApiId: postId }, true);
+
+    const commentCount = await Comments.countDocuments({ postId: post.postId, isResolved });
+    const commentCountWithoutReplies = await Comments.countDocuments({
+      postId: post.postId,
+      isResolved,
+      parentId: null,
+    });
+
+    return res.json({
       commentCount,
+      commentCountWithoutReplies,
     });
   });
 
@@ -158,11 +175,15 @@ const init = async app => {
   app.get('/facebook/get-comments', async (req, res) => {
     debugFacebook(`Request to get comments with: ${JSON.stringify(req.query)}`);
 
-    const { postId, commentId, senderId } = req.query;
+    const { postId, commentId, senderId, isResolved } = req.query;
 
     const post = await Posts.getPost({ erxesApiId: postId });
 
-    const query: { postId: string; parentId?: string; senderId?: string } = { postId: post.postId };
+    const query: { postId: string; isResolved?: boolean; parentId?: string; senderId?: string } = {
+      postId: post.postId,
+    };
+
+    query.isResolved = isResolved === 'false' ? false : true;
 
     let { limit } = req.query;
 
@@ -276,13 +297,13 @@ const init = async app => {
       return;
     }
 
-    debugFacebook(`Received webhook data ${JSON.stringify(data)}`);
-
     const adapter = await getAdapter();
 
     for (const entry of data.entry) {
       // receive chat
       if (entry.messaging) {
+        debugFacebook(`Received messenger data ${JSON.stringify(data)}`);
+
         adapter
           .processActivity(req, res, async context => {
             const { activity } = await context;
@@ -322,9 +343,12 @@ const init = async app => {
       // receive post and comment
       if (entry.changes) {
         for (const event of entry.changes) {
+          debugFacebook(`Received post data ${JSON.stringify(event.value)}`);
+
           if (event.value.item === 'comment') {
             try {
               await receiveComment(event.value, entry.id);
+              debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
               res.end('success');
             } catch (e) {
               debugFacebook(`Error processing comment: ${e.message}`);
@@ -335,6 +359,7 @@ const init = async app => {
           if (FACEBOOK_POST_TYPES.includes(event.value.item)) {
             try {
               await receivePost(event.value, entry.id);
+              debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
               res.end('success');
             } catch (e) {
               debugFacebook(`Error processing comment: ${e.message}`);
@@ -343,8 +368,6 @@ const init = async app => {
           } else {
             res.end('success');
           }
-
-          debugFacebook(`Successfully saved  ${JSON.stringify(event.value)}`);
         }
       }
     }

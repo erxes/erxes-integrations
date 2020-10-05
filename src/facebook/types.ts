@@ -14,6 +14,7 @@ export interface IPostParams {
   source?: string;
   message?: string;
   from?: any;
+  permalink_url?: string;
 }
 
 export interface ICommentParams {
@@ -27,6 +28,8 @@ export interface ICommentParams {
   from?: any;
   message?: string;
   restoredCommentCreatedAt?: string;
+  verb?: string;
+  post?: any;
 }
 
 export interface IChannelData {

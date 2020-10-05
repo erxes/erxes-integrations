@@ -2,10 +2,10 @@ import * as dotenv from 'dotenv';
 import * as request from 'request-promise';
 import * as sanitizeHtml from 'sanitize-html';
 import { debugBase, debugExternalRequests } from './debuggers';
+import memoryStorage from './inmemoryStorage';
 import { sendRPCMessage } from './messageBroker';
 import Configs from './models/Configs';
 import { IParticipants, IProviderSettings } from './nylas/types';
-import { get, set } from './redisClient';
 
 dotenv.config();
 
@@ -16,7 +16,16 @@ interface IRequestParams {
   headerParams?: { [key: string]: string };
   method: string;
   params?: { [key: string]: string | boolean };
-  body?: { [key: string]: string | number | string[] | boolean | IProviderSettings | IParticipants[] };
+  body?: {
+    [key: string]:
+      | string
+      | string[]
+      | boolean
+      | number
+      | { [key: string]: string }
+      | IProviderSettings
+      | IParticipants[];
+  };
 }
 
 /**
@@ -151,7 +160,7 @@ export const downloadAttachment = urlOrName => {
 };
 
 export const getConfigs = async () => {
-  const configsCache = await get('configs_erxes_integrations');
+  const configsCache = await memoryStorage().get('configs_erxes_integrations');
 
   if (configsCache && configsCache !== '{}') {
     return JSON.parse(configsCache);
@@ -164,7 +173,7 @@ export const getConfigs = async () => {
     configsMap[config.code] = config.value;
   }
 
-  set('configs_erxes_integrations', JSON.stringify(configsMap));
+  memoryStorage().set('configs_erxes_integrations', JSON.stringify(configsMap));
 
   return configsMap;
 };
@@ -186,12 +195,20 @@ export const getCommonGoogleConfigs = async () => {
 
   return {
     GOOGLE_PROJECT_ID: configs.GOOGLE_PROJECT_ID,
-    GOOGLE_APPLICATION_CREDENTIALS: configs.GOOGLE_APPLICATION_CREDENTIALS,
     GOOGLE_CLIENT_ID: configs.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: configs.GOOGLE_CLIENT_SECRET,
   };
 };
 
 export const resetConfigsCache = () => {
-  set('configs_erxes_integrations', '');
+  memoryStorage().set('configs_erxes_integrations', '');
+};
+
+export const generateUid = () => {
+  return (
+    '_' +
+    Math.random()
+      .toString(36)
+      .substr(2, 9)
+  );
 };

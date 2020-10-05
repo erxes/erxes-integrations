@@ -1,6 +1,15 @@
-import { inArray } from './redisClient';
+import { sendRPCMessage } from './messageBroker';
 
-const EXCLUDE_PATH = ['/nylas/webhook', '/nylas/auth/callback', '/nylas/oauth2/callback', '/gmaillogin'];
+const EXCLUDE_PATH = [
+  '/nylas/webhook',
+  '/nylas/get-message',
+  '/nylas/auth/callback',
+  '/nylas/oauth2/callback',
+  '/gmail/webhook',
+  '/gmaillogin',
+];
+
+let userIds = [];
 
 const userMiddleware = async (req, _res, next) => {
   const { path, headers, query } = req;
@@ -9,11 +18,21 @@ const userMiddleware = async (req, _res, next) => {
     return next();
   }
 
-  if (path.startsWith('/gmail') || path.startsWith('/accounts') || path.startsWith('/nylas')) {
+  if (userIds.length === 0) {
+    const response = await sendRPCMessage({ action: 'getUserIds' });
+    userIds = response.userIds;
+  }
+
+  if (
+    path.startsWith('/gmail') ||
+    path.startsWith('/accounts') ||
+    path.startsWith('/nylas') ||
+    path.startsWith('/integrations')
+  ) {
     try {
       const userId = headers.userid || query.userId;
 
-      if (await inArray('userIds', userId)) {
+      if (userIds.includes(userId)) {
         return next();
       }
 

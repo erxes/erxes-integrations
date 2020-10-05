@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as Nylas from 'nylas';
 import { debugNylas } from '../debuggers';
-import { Accounts } from '../models';
+import { Integrations } from '../models';
 import { sendRequest } from '../utils';
 import { NYLAS_API_URL } from './constants';
 import { ICalendarAvailability, IEvent, IEventDoc, IMessageDraft } from './types';
@@ -236,8 +236,18 @@ export const enableOrDisableAccount = async (accountId: string, enable: boolean)
 
     return account.downgrade();
   });
+};
 
-  return Accounts.updateOne({ uid: accountId }, { $set: { billingState: enable ? 'paid' : 'cancelled' } });
+export const checkEmailDuplication = async (email: string, kind: string): Promise<any> => {
+  debugNylas(`Checking email duplication: ${email}`);
+
+  const integration = await Integrations.findOne({ email, kind }).lean();
+
+  if (integration) {
+    return true;
+  }
+
+  return false;
 };
 
 const getCalendarOrEvent = async (id: string, type: 'calendars' | 'events', accessToken: string) => {

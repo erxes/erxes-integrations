@@ -13,6 +13,7 @@ import {
   debugGmail,
   debugNylas,
   debugSmooch,
+  debugTelnyx,
   debugTwitter,
   debugWhatsapp,
 } from './debuggers';
@@ -65,6 +66,11 @@ import {
   SmoochViberConversations,
   SmoochViberCustomers,
 } from './smooch/models';
+import {
+  ConversationMessages as TelnyxConversationMessages,
+  Conversations as TelnyxConversations,
+  Customers as TelnyxCustomers,
+} from './telnyx/models';
 import { getTwitterConfig, unsubscribe } from './twitter/api';
 import {
   ConversationMessages as TwitterConversationMessages,
@@ -79,12 +85,11 @@ import {
   Customers as WhatsappCustomers,
 } from './whatsapp/models';
 
-import { stopPushNotification } from './gmail/watch';
+import { revokeToken, unsubscribeUser } from './gmail/api';
 import Configs from './models/Configs';
 import { enableOrDisableAccount } from './nylas/api';
 import { setupNylas } from './nylas/controller';
 import { createNylasWebhook } from './nylas/tracker';
-import { setupSmooch } from './smooch/controller';
 
 export const removeIntegration = async (integrationErxesApiId: string): Promise<string> => {
   const integration = await Integrations.findOne({ erxesApiId: integrationErxesApiId });
@@ -136,26 +141,27 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await Integrations.deleteOne({ _id });
   }
 
-  if (kind === 'gmail' && !account.nylasToken) {
+  if (kind === 'gmail' && !integration.nylasToken) {
     debugGmail('Removing gmail entries');
 
     const conversationIds = await GmailConversations.find(selector).distinct('_id');
 
     integrationRemoveBy = { email: integration.email };
 
-    try {
-      await stopPushNotification(account.uid);
-    } catch (e) {
-      debugGmail('Failed to stop push notification of gmail account');
-      throw e;
-    }
-
     await GmailCustomers.deleteMany(selector);
     await GmailConversations.deleteMany(selector);
     await GmailConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+
+    try {
+      await unsubscribeUser(integration.email);
+      await revokeToken(integration.email);
+    } catch (e) {
+      debugGmail('Failed to unsubscribe gmail account');
+      throw e;
+    }
   }
 
-  if (kind === 'gmail' && account.nylasToken) {
+  if (kind === 'gmail' && integration.nylasToken) {
     debugNylas('Removing nylas entries');
 
     const conversationIds = await NylasGmailConversations.find(selector).distinct('_id');
@@ -166,7 +172,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to cancel nylas-gmail account subscription');
       throw e;
@@ -249,7 +255,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to cancel subscription of nylas-imap account');
       throw e;
@@ -267,7 +273,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to subscription nylas-office365 account');
       throw e;
@@ -285,7 +291,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to subscription nylas-outlook account');
       throw e;
@@ -303,7 +309,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to subscription nylas-exchange account');
       throw e;
@@ -321,7 +327,7 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
 
     try {
       // Cancel nylas subscription
-      await enableOrDisableAccount(account.uid, false);
+      await enableOrDisableAccount(integration.nylasAccountId, false);
     } catch (e) {
       debugNylas('Failed to subscription nylas-yahoo account');
       throw e;
@@ -395,6 +401,20 @@ export const removeIntegration = async (integrationErxesApiId: string): Promise<
     await SmoochTwilioCustomers.deleteMany(selector);
     await SmoochTwilioConversations.deleteMany(selector);
     await SmoochTwilioConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+  }
+
+  if (kind === 'telnyx') {
+    debugTelnyx('Removing telnyx entries');
+
+    const conversationIds = await TelnyxConversations.find(selector).distinct('_id');
+
+    try {
+      await TelnyxCustomers.deleteMany(selector);
+      await TelnyxConversations.deleteMany(selector);
+      await TelnyxConversationMessages.deleteMany({ conversationId: { $in: conversationIds } });
+    } catch (e) {
+      throw new Error(e.message);
+    }
   }
 
   await Integrations.deleteOne({ _id });
@@ -504,7 +524,8 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
       await createNylasWebhook();
     }
   } catch (e) {
-    debugNylas(e);
+    debugNylas(e.message);
+    throw e;
   }
 
   try {
@@ -531,7 +552,7 @@ export const updateIntegrationConfigs = async (configsMap): Promise<void> => {
       prevSmoochAppKeySecret !== updatedSmoochAppKeySecret ||
       prevSmoochAppId !== updatedSmoochAppId
     ) {
-      await setupSmooch();
+      await smoochApi.setupSmooch();
       await smoochApi.setupSmoochWebhook();
     }
 

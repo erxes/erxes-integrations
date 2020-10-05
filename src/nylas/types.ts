@@ -204,3 +204,16 @@ export interface IEventDoc {
   participants: IParticipants[];
   notifyParticipants: boolean;
 }
+
+export interface INylasIntegrationData {
+  username?: string;
+  password?: string;
+  email?: string;
+  host?: string;
+  imapHost?: string;
+  imapPort?: number;
+  smtpHost?: string;
+  smtpPort?: number;
+  uid?: string;
+  billingState?: string;
+}
