@@ -1,3 +1,11 @@
+* Merge branch 'develop' (05183c8)
+* remove console.log (4595495)
+* add permalink url (b3ae8d9)
+* Merge branch 'develop' of github.com:erxes/erxes-integrations into develop (aea278a)
+* erxes/erxes#2291 (98e4a45)
+* erxes/erxes#2291 (acd6af1)
+* create integration with email (5c71ce7)
+
 * Merge branch 'develop' (93aacc5)
 * ci: rename packages inside release assets (f291a0b)
 
