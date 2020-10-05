@@ -30,48 +30,49 @@ export const initBroker = async server => {
   // listen for rpc queue =========
   consumeRPCQueue('rpc_queue:api_to_integrations', async parsedObject => {
     const { action, data } = parsedObject;
+    const { _id, erxesApiId, eventId, doc } = data;
 
     let response = null;
-    // 'delete-event': {
-    //   params: { accountId, eventId },
-    //   call: nylasDeleteCalendarEvent,
-    // },
-    // 'create-event': {
-    //   params: { accountId, doc },
-    //   call: nylasCreateCalenderEvent,
-    // },
-    // 'update-event': {
-    //   params: { accountId, eventId },
-    //   call: nylasUpdateEvent,
-    // },
-    // 'send-attendance': {
-    //   params: { accountId, eventId, doc },
-    //   call: nylasSendEventAttendance,
-    // },
-    if (action === 'remove-account') {
-      try {
-        response = {
-          status: 'success',
-          data: await removeAccount(data._id),
-        };
-      } catch (e) {
-        response = {
-          status: 'error',
-          errorMessage: e.message,
-        };
-      }
-    } else if (action === 'line-webhook') {
-      try {
-        response = {
-          status: 'success',
-          data: await getLineWebhookUrl(data._id),
-        };
-      } catch (e) {
-        response = {
-          status: 'error',
-          errorMessage: e.message,
-        };
-      }
+
+    const actionsMap = {
+      'remove-account': {
+        params: _id,
+        call: removeAccount,
+      },
+      'line-webhook': {
+        params: _id,
+        call: getLineWebhookUrl,
+      },
+      'delete-event': {
+        params: { erxesApiId, eventId },
+        call: nylasDeleteCalendarEvent,
+      },
+      'create-event': {
+        params: { erxesApiId, doc },
+        call: nylasCreateCalenderEvent,
+      },
+      'update-event': {
+        params: { erxesApiId, eventId },
+        call: nylasUpdateEvent,
+      },
+      'send-attendance': {
+        params: { erxesApiId, eventId, doc },
+        call: nylasSendEventAttendance,
+      },
+    };
+
+    try {
+      const { call, params } = actionsMap[action];
+
+      response = {
+        status: 'success',
+        data: await call(params),
+      };
+    } catch (e) {
+      response = {
+        status: 'error',
+        errorMessage: e.message,
+      };
     }
 
     if (action === 'getTelnyxInfo') {

@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as formidable from 'formidable';
 import * as Nylas from 'nylas';
 import { debugNylas, debugRequest } from '../debuggers';
-import { Accounts } from '../models';
+import { Integrations } from '../models';
 import {
   // createNylasIntegration,
   createNylasIntegration,
@@ -166,13 +166,13 @@ export const initNylas = async app => {
         kind = kind.split('-')[1];
       }
 
-      const accounts = await Accounts.find({ kind });
+      const integrations = await Integrations.find({ kind });
 
-      if (!accounts) {
-        throw new Error('Accounts not found');
+      if (!integrations) {
+        throw new Error('Integratoin not found');
       }
 
-      const uids = accounts.map(account => account.uid);
+      const uids = integrations.map(integration => integration.nylasAccountId);
 
       const calendars = await NylasCalendars.find({ accountUid: { $in: uids } });
       console.log(calendars);
@@ -218,10 +218,10 @@ export const initNylas = async app => {
   });
 
   app.get('/nylas/get-calendar-event', async (req, res, next) => {
-    const { id, type, accountId } = req.query;
+    const { id, type, erxesApiId } = req.query;
 
     try {
-      const response = await nylasGetCalendarOrEvent(id, type, accountId);
+      const response = await nylasGetCalendarOrEvent(id, type, erxesApiId);
 
       return res.json(response);
     } catch (e) {
@@ -230,10 +230,10 @@ export const initNylas = async app => {
   });
 
   app.get('/nylas/check-calendar-availability', async (req, res, next) => {
-    const { accountId, dates } = req.query;
+    const { erxesApiId, dates } = req.query;
 
     try {
-      const response = await nylasCheckCalendarAvailability(accountId, dates);
+      const response = await nylasCheckCalendarAvailability(erxesApiId, dates);
 
       return res.json(response);
     } catch (e) {
