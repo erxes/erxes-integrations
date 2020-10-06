@@ -1,3 +1,6 @@
+* Merge branch 'develop' (422dca4)
+* fix gmail oauth (0c5d82d)
+
 * Merge branch 'develop' (05183c8)
 * remove console.log (4595495)
 * add permalink url (b3ae8d9)
