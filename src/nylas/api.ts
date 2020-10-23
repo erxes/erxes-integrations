@@ -353,7 +353,7 @@ const createEvent = async (doc: IEventDoc, accessToken: string): Promise<IEvent>
     event.busy = doc.busy;
     event.calendarId = doc.calendarId;
     event.participants = doc.participants;
-    event.when = doc.when;
+    event.when = { start_time: new Date(doc.start).getTime() / 1000, end_time: new Date(doc.end).getTime() / 1000 };
     event.start = doc.start;
     event.end = doc.end;
 

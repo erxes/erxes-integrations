@@ -6,10 +6,10 @@ const EXCLUDE_PATH = [
   '/nylas/auth/callback',
   '/nylas/oauth2/callback',
   '/gmail/webhook',
-  '/gmaillogin',
+  '/gmail/login',
 ];
 
-let userIds = [];
+export let userIds = [];
 
 const userMiddleware = async (req, _res, next) => {
   const { path, headers, query } = req;

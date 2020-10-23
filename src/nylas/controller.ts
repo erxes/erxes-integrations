@@ -9,6 +9,7 @@ import {
   createNylasIntegration,
   getMessage,
   nylasCheckCalendarAvailability,
+  nylasCreateCalenderEvent,
   nylasFileUpload,
   nylasGetAttachment,
   nylasGetCalendarOrEvent,
@@ -200,12 +201,19 @@ export const initNylas = async app => {
   });
 
   app.get('/nylas/get-events', async (req, res, next) => {
-    const { calendarId } = req.query;
+    const { calendarId, startTime, endTime } = req.query;
+
+    const getTime = (date: string) => {
+      return new Date(date).getTime() / 1000;
+    };
 
     try {
       debugNylas(`Get events with calendarId: ${calendarId}`);
 
-      const events = await NylasEvent.find({ providerCalendarId: calendarId });
+      const events = await NylasEvent.find({
+        providerCalendarId: calendarId,
+        $and: [{ 'when.start_time': { $gte: getTime(startTime) } }, { 'when.end_time': { $lte: getTime(endTime) } }],
+      });
 
       if (!events) {
         throw new Error('Events not found');
@@ -234,6 +242,18 @@ export const initNylas = async app => {
 
     try {
       const response = await nylasCheckCalendarAvailability(erxesApiId, dates);
+
+      return res.json(response);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get('/nylas/create-calendar-event', async (req, res, next) => {
+    const { erxesApiId, ...doc } = req.query;
+
+    try {
+      const response = await nylasCreateCalenderEvent({ erxesApiId, doc });
 
       return res.json(response);
     } catch (e) {

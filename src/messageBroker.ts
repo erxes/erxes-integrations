@@ -3,7 +3,6 @@ import { removeAccount, removeCustomers } from './helpers';
 
 import messageBroker from 'erxes-message-broker';
 import { handleFacebookMessage } from './facebook/handleFacebookMessage';
-import { Integrations } from './models';
 import {
   nylasCreateCalenderEvent,
   nylasDeleteCalendarEvent,
@@ -12,7 +11,7 @@ import {
 } from './nylas/handleController';
 import { getLineWebhookUrl } from './smooch/api';
 import { sendSms } from './telnyx/api';
-import { getConfig } from './utils';
+import { userIds } from './userMiddleware';
 
 dotenv.config();
 
@@ -75,16 +74,6 @@ export const initBroker = async server => {
       };
     }
 
-    if (action === 'getTelnyxInfo') {
-      response = {
-        status: 'success',
-        data: {
-          telnyxApiKey: await getConfig('TELNYX_API_KEY'),
-          integrations: await Integrations.find({ kind: 'telnyx' }),
-        },
-      };
-    }
-
     return response;
   });
 
@@ -97,6 +86,9 @@ export const initBroker = async server => {
         break;
       case 'removeCustomers':
         await removeCustomers(content);
+        break;
+      case 'addUserId':
+        userIds.push(payload._id);
         break;
       default:
         break;
