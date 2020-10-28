@@ -52,7 +52,7 @@ app.use((req, _res, next) => {
 });
 
 // for health check
-app.get('/status', async (_req, res, next) => {
+app.get('/health', async (_req, res, next) => {
   try {
     await mongoStatus();
   } catch (e) {
@@ -126,6 +126,16 @@ app.get('/integrations', async (req, res) => {
   debugResponse(debugIntegrations, req, JSON.stringify(integrations));
 
   return res.json(integrations);
+});
+
+app.get('/integrationDetail', async (req, res) => {
+  const { erxesApiId } = req.query;
+
+  const integration = await Integrations.findOne({ erxesApiId });
+
+  debugResponse(debugIntegrations, req, JSON.stringify(integration));
+
+  return res.json(integration);
 });
 
 // init bots
